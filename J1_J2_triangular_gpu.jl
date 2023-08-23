@@ -1,6 +1,8 @@
 using MKL
 using ITensors
 using ITensorTDVP
+using ITensorGPU
+using CUDA
 using Printf
 using PyPlot
 using HDF5
@@ -85,17 +87,17 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
     L = C^2
     N = C * L
     
-    sites = siteinds("S=1/2", N; conserve_qns=true)
-    H = MPO(model(C, L, J1, J2), sites)
+    sites = siteinds("S=1/2", N; conserve_qns=false)
+    H = cuMPO(MPO(model(C, L, J1, J2), sites))
 
     nsweeps = 5
     state = [isodd(n) ? "Up" : "Dn" for n=1:N]
-    ψ0 = MPS(sites, state)
+    ψ0 = cuMPS(MPS(sites, state))
 
     energy, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
 
     c = div(L, 2) # center site
-    Sz_center = op("Sz",sites[c])
+    Sz_center = cuITensor(op("Sz",sites[c]))
     orthogonalize!(ψ, c)
     ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
 
@@ -105,12 +107,12 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
     ψ2_norms = Float64[]
     start_time = 0.0
 
-    filename = "data/C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_unnormed.h5"
+    filename = "C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_unnormed.h5"
     for t in start_time:δt:ttotal
         orthogonalize!(ψ, c)
         corr = ComplexF64[]
         for i in range(1,N)
-            push!(corr, inner(apply(2 * op("Sz",sites[i]), ψ2; cutoff, maxdim), ψ))
+            push!(corr, inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ2; cutoff, maxdim), ψ))
         end
         println("$t")
         flush(stdout)
@@ -123,8 +125,8 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
         F = h5open(filename,"w")
         F["times"] = times
         F["corrs"] = hcat(corrs...)
-        F["psi"] = ψ
-        F["psi2"] = ψ2
+        # F["psi"] = ψ
+        # F["psi2"] = ψ2
         F["psi_norms"] = ψ_norms
         F["psi2_norms"] = ψ2_norms
         close(F)
@@ -157,8 +159,10 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
     return times, corrs
 end
 
+gpu = cu
+
 ITensors.Strided.set_num_threads(1)
-BLAS.set_num_threads(80)
+BLAS.set_num_threads(1)
 # ITensors.enable_threaded_blocksparse(true)
 
 C = parse(Int64, ARGS[1])
