@@ -94,7 +94,7 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
     state = [isodd(n) ? "Up" : "Dn" for n=1:N]
     ψ0 = cuMPS(MPS(sites, state))
 
-    energy, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
+    E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
 
     c = div(L, 2) # center site
     Sz_center = cuITensor(op("Sz",sites[c]))
@@ -112,7 +112,7 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
         orthogonalize!(ψ, c)
         corr = ComplexF64[]
         for i in range(1,N)
-            push!(corr, inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ2; cutoff, maxdim), ψ))
+            push!(corr, exp(im * E0 * t) * inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ2; cutoff, maxdim), ψ))
         end
         println("$t")
         flush(stdout)
@@ -138,14 +138,6 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
         #   ψ2 = basis_extend(ψ2, H_real; cutoff, extension_krylovdim=2)
         # end
     
-        ψ = tdvp(H, -im * δt, ψ;
-          nsweeps=1,
-          reverse_step=true,
-          normalize=false,
-          maxdim=maxdim,
-          cutoff=cutoff,
-          outputlevel=1
-        )
         ψ2 = tdvp(H, -im * δt, ψ2;
           nsweeps=1,
           reverse_step=true,
