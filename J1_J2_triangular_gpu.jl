@@ -96,7 +96,7 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
 
     E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
 
-    c = div(L, 2) # center site
+    c = div(N, 2) # center site
     Sz_center = cuITensor(op("Sz",sites[c]))
     orthogonalize!(ψ, c)
     ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
@@ -107,12 +107,12 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
     ψ2_norms = Float64[]
     start_time = 0.0
 
-    filename = "C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_unnormed.h5"
+    filename = "data_gpu/C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_unnormed.h5"
     for t in start_time:δt:ttotal
-        orthogonalize!(ψ, c)
         corr = ComplexF64[]
         for i in range(1,N)
-            push!(corr, exp(im * E0 * t) * inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ2; cutoff, maxdim), ψ))
+            orthogonalize!(ψ, i)
+            push!(corr, exp(im * E0 * t) * inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
         println("$t")
         flush(stdout)

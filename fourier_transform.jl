@@ -46,15 +46,15 @@ Y2 = transpose([-2*pi/3,0.0])
 
 interval = vcat(LinRange(0,0.99,100))
 
-BZ_path2 = (1 .- b) .* Γ .+ b .* Y1
-BZ_path2 = vcat(BZ_path2, (1 .- b) .* Y1 .+ b .* K1)
-BZ_path2 = vcat(BZ_path2, (1 .- b) .* K2 .+ b .* M1)
-BZ_path2 = vcat(BZ_path2, (1 .- b) .* M1 .+ b .* K3)
-BZ_path2 = vcat(BZ_path2, (1 .- b) .* K4 .+ b .* Y2)
-BZ_path2 = vcat(BZ_path2, (1 .- b) .* Y2 .+ b .* Γ)
+BZ_path2 = (1 .- interval) .* Γ .+ interval .* Y1
+BZ_path2 = vcat(BZ_path2, (1 .- interval) .* Y1 .+ interval .* K1)
+BZ_path2 = vcat(BZ_path2, (1 .- interval) .* K2 .+ interval .* M1)
+BZ_path2 = vcat(BZ_path2, (1 .- interval) .* M1 .+ interval .* K3)
+BZ_path2 = vcat(BZ_path2, (1 .- interval) .* K4 .+ interval .* Y2)
+BZ_path2 = vcat(BZ_path2, (1 .- interval) .* Y2 .+ interval .* Γ)
 
 eta = sqrt(0.02)
-dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* times)
+dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* times.^2)
 corrs = transpose(dampening .* corrs')
 
 omegas = transpose(vcat(LinRange(0,5.9,60)))
@@ -66,4 +66,5 @@ S = (δt / (pi * N)) .* cos.(BZ_path2 * xs) * S
 G = h5open(newfile,"w")
 G["times"] = times
 G["corrs"] = corrs
+G["S"] = S
 close(G)
