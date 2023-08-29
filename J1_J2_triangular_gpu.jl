@@ -112,8 +112,10 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
         corr = ComplexF64[]
         for i in range(1,N)
             orthogonalize!(ψ, i)
+            orthogonalize!(ψ2, i)
             push!(corr, exp(im * E0 * t) * inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
+        orthogonalize!(ψ2, c)
         println("$t")
         flush(stdout)
         push!(times, t)
