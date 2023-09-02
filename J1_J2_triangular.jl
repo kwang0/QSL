@@ -129,6 +129,7 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
         F["psi2"] = ψ2
         F["psi_norms"] = ψ_norms
         F["psi2_norms"] = ψ2_norms
+        F["E0"] = E0
         close(F)
     
         t≈ttotal && break
