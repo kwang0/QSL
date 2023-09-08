@@ -13,8 +13,10 @@ function coord(i, C)
     if (y % 2 == 1)
         x += 0.5
     end
+    x -= (C^2/2 - 0.5)
+    y -= (C-1)
     y *= sqrt(3)/2
-    return x, y
+    return [x, y]
 end
 
 # Convert row/col label to MPS index, with PBC in rows
@@ -84,28 +86,46 @@ end
 function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
     L = C^2
     N = C * L
-    
-    sites = siteinds("S=1/2", N; conserve_qns=true)
-    H = MPO(model(C, L, J1, J2), sites)
-
-    nsweeps = 5
-    state = [isodd(n) ? "Up" : "Dn" for n=1:N]
-    ψ0 = MPS(sites, state)
-
-    E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
-
-    c = div(N, 2) # center site
-    Sz_center = op("Sz",sites[c])
-    orthogonalize!(ψ, c)
-    ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
-
-    times = Float64[]
-    corrs = []
-    ψ_norms = Float64[]
-    ψ2_norms = Float64[]
-    start_time = 0.0
 
     filename = "data/C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_unnormed.h5"
+    if (isfile(filename))
+        F = h5open(filename,"r")
+        times = read(F, "times")
+        corrs = read(F, "corrs")
+        ψ = read(F, "psi", MPS)
+        ψ2 = read(F, "psi2", MPS)
+        ψ_norms = read(F, "psi_norms")
+        ψ2_norms = read(F, "psi2_norms")
+        E0 = read(F, "E0")
+        start_time = last(times) + δt
+        close(F)
+    
+        sites = siteinds(ψ)
+        c = div(N, 2) # center site
+        Sz_center = op("Sz",sites[c])
+        H = MPO(model(C, L, J1, J2), sites)
+    else
+        sites = siteinds("S=1/2", N; conserve_qns=true)
+        H = MPO(model(C, L, J1, J2), sites)
+
+        nsweeps = 5
+        state = [isodd(n) ? "Up" : "Dn" for n=1:N]
+        ψ0 = MPS(sites, state)
+
+        E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
+
+        c = div(N, 2) # center site
+        Sz_center = op("Sz",sites[c])
+        orthogonalize!(ψ, c)
+        ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
+
+        times = Float64[]
+        corrs = []
+        ψ_norms = Float64[]
+        ψ2_norms = Float64[]
+        start_time = 0.0
+    end
+
     for t in start_time:δt:ttotal
         corr = ComplexF64[]
         for i in range(1,N)
@@ -117,14 +137,14 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
         println("$t")
         flush(stdout)
         push!(times, t)
-        push!(corrs, corr)
+        t == 0.0 ? corrs = corr : corrs = hcat(corrs, corr)
         push!(ψ_norms, norm(ψ))
         push!(ψ2_norms, norm(ψ2))
     
         # Writing to data file
         F = h5open(filename,"w")
         F["times"] = times
-        F["corrs"] = hcat(corrs...)
+        F["corrs"] = corrs
         F["psi"] = ψ
         F["psi2"] = ψ2
         F["psi_norms"] = ψ_norms

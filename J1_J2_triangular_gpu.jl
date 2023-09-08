@@ -10,13 +10,14 @@ using LinearAlgebra
 
 # Converts index into physical coordinate on triangular lattice (centers MPS site N/2 at coord (0,0))
 function coord(i, C)
-    y = i % C
-    x = i ÷ C
+    y = (i-1) % C
+    x = (i-1) ÷ C
     if (y % 2 == 1)
         x += 0.5
     end
+    x -= (C^2/2 - 0.5)
+    y -= (C-1)
     y *= sqrt(3)/2
-    x -= C^2 / 2
     return [x, y]
 end
 
@@ -114,7 +115,7 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
     N = C * L
     
     sites = siteinds("S=1/2", N; conserve_qns=false)
-    H = cuMPO(MPO(square_model(C, L, J1), sites))
+    H = cuMPO(MPO(triangular_model(C, L, J1, J2), sites))
 
     nsweeps = 5
     state = [isodd(n) ? "Up" : "Dn" for n=1:N]

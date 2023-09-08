@@ -12,6 +12,6 @@
 
 export OMP_NUM_THREADS=40
 export MKL_NUM_THREADS=40
-julia $1 $2 $3 $4 $5 > logs/C${2}_J${3}_chi${4}_dt${5}_unnormed.txt
+julia --heap-size-hint=100G $1 $2 $3 $4 $5 > logs/C${2}_J${3}_chi${4}_dt${5}_unnormed.txt
 
 exit 0
