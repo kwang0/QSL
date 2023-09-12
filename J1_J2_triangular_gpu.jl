@@ -28,7 +28,7 @@ end
 
 # Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
 # Lattice has length L and height C, with PBC along height (cylindrical).
-function triangular_model(C, L, J1, J2)
+function triangular_model(C, L, J1, J2, Δ1 = 1.0, Δ2 = 1.0)
     os = OpSum()
 
     for col in range(0,L-1)
@@ -36,46 +36,46 @@ function triangular_model(C, L, J1, J2)
             index = ind(row, col, C)
             
             # NN couplings
-            os += J1, "Sz", index, "Sz", ind(row + 1, col, C)
+            os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col, C)
             os += 0.5*J1, "S+", index, "S-", ind(row + 1, col, C)
             os += 0.5*J1, "S-", index, "S+", ind(row + 1, col, C)
 
             if (col < L-1)
-                os += J1, "Sz", index, "Sz", ind(row, col + 1, C)
+                os += Δ1*J1, "Sz", index, "Sz", ind(row, col + 1, C)
                 os += 0.5*J1, "S+", index, "S-", ind(row, col + 1, C)
                 os += 0.5*J1, "S-", index, "S+", ind(row, col + 1, C)
 
                 # Odd rows
                 if (row % 2 == 1)
-                    os += J1, "Sz", index, "Sz", ind(row + 1, col + 1, C)
+                    os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col + 1, C)
                     os += 0.5*J1, "S+", index, "S-", ind(row + 1, col + 1, C)
                     os += 0.5*J1, "S-", index, "S+", ind(row + 1, col + 1, C)
 
-                    os += J1, "Sz", index, "Sz", ind(row - 1, col + 1, C)
+                    os += Δ1*J1, "Sz", index, "Sz", ind(row - 1, col + 1, C)
                     os += 0.5*J1, "S+", index, "S-", ind(row - 1, col + 1, C)
                     os += 0.5*J1, "S-", index, "S+", ind(row - 1, col + 1, C)
                 end
             end
 
             # NNN couplings
-            os += J2, "Sz", index, "Sz", ind(row + 2, col, C)
+            os += Δ2*J2, "Sz", index, "Sz", ind(row + 2, col, C)
             os += 0.5*J2, "S+", index, "S-", ind(row + 2, col, C)
             os += 0.5*J2, "S-", index, "S+", ind(row + 2, col, C)
 
             if ((col < L-1) && (row % 2 == 0))
-                os += J2, "Sz", index, "Sz", ind(row + 1, col + 1, C)
+                os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 1, C)
                 os += 0.5*J2, "S+", index, "S-", ind(row + 1, col + 1, C)
                 os += 0.5*J2, "S-", index, "S+", ind(row + 1, col + 1, C)
 
-                os += J2, "Sz", index, "Sz", ind(row - 1, col + 1, C)
+                os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 1, C)
                 os += 0.5*J2, "S+", index, "S-", ind(row - 1, col + 1, C)
                 os += 0.5*J2, "S-", index, "S+", ind(row - 1, col + 1, C)
             elseif ((col < L-2) && (row % 2 == 1))
-                os += J2, "Sz", index, "Sz", ind(row + 1, col + 2, C)
+                os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 2, C)
                 os += 0.5*J2, "S+", index, "S-", ind(row + 1, col + 2, C)
                 os += 0.5*J2, "S-", index, "S+", ind(row + 1, col + 2, C)
 
-                os += J2, "Sz", index, "Sz", ind(row - 1, col + 2, C)
+                os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 2, C)
                 os += 0.5*J2, "S+", index, "S-", ind(row - 1, col + 2, C)
                 os += 0.5*J2, "S-", index, "S+", ind(row - 1, col + 2, C)
             end
@@ -110,32 +110,50 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
+function main(; C=4, J1=1.0, J2=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
     L = C^2
     N = C * L
-    
-    sites = siteinds("S=1/2", N; conserve_qns=false)
-    H = cuMPO(MPO(triangular_model(C, L, J1, J2), sites))
 
-    nsweeps = 5
-    state = [isodd(n) ? "Up" : "Dn" for n=1:N]
-    ψ0 = cuMPS(MPS(sites, state))
-
-    E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
-
-    c = div(N, 2) # center site
-    Sz_center = cuITensor(op("Sz",sites[c]))
-    orthogonalize!(ψ, c)
-    ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
-
-    times = Float64[]
-    corrs = []
-    ψ_norms = Float64[]
-    ψ2_norms = Float64[]
-    start_time = 0.0
-
-    filename = "data_gpu/C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_unnormed.h5"
+    filename = "data_gpu/C$(C)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt).h5"
     # filename = "data_gpu/square_C$(C)_chi$(maxdim)_dt$(δt).h5"
+    if (isfile(filename))
+        F = h5open(filename,"r")
+        times = read(F, "times")
+        corrs = read(F, "corrs")
+        ψ = cuMPS(read(F, "psi", MPS))
+        ψ2 = cuMPS(read(F, "psi2", MPS))
+        ψ_norms = read(F, "psi_norms")
+        ψ2_norms = read(F, "psi2_norms")
+        E0 = read(F, "E0")
+        start_time = last(times) + δt
+        close(F)
+    
+        sites = siteinds(ψ)
+        c = div(N, 2) # center site
+        Sz_center = cuITensor(op("Sz",sites[c]))
+        H = cuMPO(MPO(triangular_model(C, L, J1, J2, Δ1, Δ2), sites))
+    else
+        sites = siteinds("S=1/2", N; conserve_qns=false)
+        H = cuMPO(MPO(triangular_model(C, L, J1, J2, Δ1, Δ2), sites))
+
+        nsweeps = 5
+        state = [isodd(n) ? "Up" : "Dn" for n=1:N]
+        ψ0 = cuMPS(MPS(sites, state))
+
+        E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
+
+        c = div(N, 2) # center site
+        Sz_center = cuITensor(op("Sz",sites[c]))
+        orthogonalize!(ψ, c)
+        ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
+
+        times = Float64[]
+        corrs = []
+        ψ_norms = Float64[]
+        ψ2_norms = Float64[]
+        start_time = 0.0
+    end
+
     for t in start_time:δt:ttotal
         corr = ComplexF64[]
         for i in range(1,N)
@@ -148,19 +166,19 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
         println("$t")
         flush(stdout)
         push!(times, t)
-        push!(corrs, corr)
+        t == 0.0 ? corrs = corr : corrs = hcat(corrs, corr)
         push!(ψ_norms, norm(ψ))
         push!(ψ2_norms, norm(ψ2))
     
         # Writing to data file
         F = h5open(filename,"w")
         F["times"] = times
-        F["corrs"] = hcat(corrs...)
-        # F["psi"] = ψ
-        # F["psi2"] = ψ2
+        F["corrs"] = corrs
+        # F["psi2"] = cpu(ψ2)
+        # F["psi"] = cpu(ψ)
+        F["E0"] = E0
         F["psi_norms"] = ψ_norms
         F["psi2_norms"] = ψ2_norms
-        F["E0"] = E0
         close(F)
     
         t≈ttotal && break
@@ -200,7 +218,9 @@ BLAS.set_num_threads(1)
 
 C = parse(Int64, ARGS[1])
 J2 = parse(Float64, ARGS[2])
-maxdim = parse(Int64, ARGS[3])
-δt = parse(Float64, ARGS[4])
+Δ1 = parse(Float64, ARGS[3])
+Δ2 = parse(Float64, ARGS[4])
+maxdim = parse(Int64, ARGS[5])
+δt = parse(Float64, ARGS[6])
 
-main(C=C, J2=J2, maxdim=maxdim, δt=δt)
+main(C=C, J2=J2, Δ1=Δ1, Δ2=Δ2, maxdim=maxdim, δt=δt)
