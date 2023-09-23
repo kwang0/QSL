@@ -31,7 +31,7 @@ function main(C, J2, maxdim, δt, η)
             psi2_norms = read(F, "psi2_norms")
             close(F)
 
-            corrs ./= psi2_norms' # Normalize correlation function
+            # corrs ./= psi2_norms' # Normalize correlation function
 
             N = C^3
             xs = zeros(2,N)

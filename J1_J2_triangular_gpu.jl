@@ -163,7 +163,7 @@ function main(; C=4, J1=1.0, J2=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, tt
             # push!(corr, inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
         orthogonalize!(ψ2, c)
-        println("$t")
+        println("Time = $t")
         flush(stdout)
         push!(times, t)
         t == 0.0 ? corrs = corr : corrs = hcat(corrs, corr)
