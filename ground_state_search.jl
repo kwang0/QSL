@@ -9,13 +9,13 @@ using HDF5
 using LinearAlgebra
 
 # Converts index into physical coordinate on triangular lattice (centers MPS site N/2 at coord (0,0))
-function coord(i, C, L)
+function coord(i, C)
     y = (i-1) % C
     x = (i-1) ÷ C
     if (y % 2 == 1)
         x += 0.5
     end
-    x -= (L/2 - 0.5)
+    x -= (C^2/2 - 0.5)
     y -= (C-1)
     y *= sqrt(3)/2
     return [x, y]
@@ -113,113 +113,54 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
-    # L = C^2
+function main(; C=4, L=6, J1=1.0, J2=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, maxdim=32)
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt).h5"
-    # filename = "data_gpu/square_C$(C)_chi$(maxdim)_dt$(δt).h5"
-    if (isfile(filename))
-        F = h5open(filename,"r")
-        times = read(F, "times")
-        corrs = read(F, "corrs")
-        ψ = cuMPS(read(F, "psi", MPS))
-        ψ2 = cuMPS(read(F, "psi2", MPS))
-        ψ_norms = read(F, "psi_norms")
-        ψ2_norms = read(F, "psi2_norms")
-        E0 = read(F, "E0")
-        Zs = read(F, "Zs")
-        start_time = last(times)
-        close(F)
+    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+    sites = siteinds("S=1/2", N; conserve_qns=false)
+
+    nsweeps = 5
+    nsamples = 30
+
+    Emin = 10000
+    # ψ = cuMPS(randomMPS(sites))
     
-        sites = siteinds(ψ)
-        c = div(N, 2) # center site
-        Sz_center = cuITensor(op("Sz",sites[c]))
-        H = cuMPO(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
-    else
-        sites = siteinds("S=1/2", N; conserve_qns=false)
-        H = cuMPO(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
+    Bs = Float64[]
+    M_all = []
+    E_all = []
+    for B in 0.0:0.1:5.0
+        println("B = $B")
+        push!(Bs,B)
 
-        nsweeps = 10
-        # state = [isodd(n) ? "Up" : "Dn" for n=1:N]
-        ψ0 = cuMPS(randomMPS(sites))
+        # B_sat = 4.5
+        # N_spinup = ((B * N / 2) ÷ B_sat) + (N ÷ 2) # Naive guess for magnetization
+        # state = [n ≤ N_spinup ? "Up" : "Dn" for n=1:N]
 
-        E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
-        println("E0 = $E0")
-        Zs = expect(ψ, "Sz")
-        M = sum(Zs)
-        println("M = $M")
+        Ms = Float64[]
+        Es = Float64[]
+        for i in 1:nsamples
+            ψ0 = cuMPS(randomMPS(sites))
+            
+            H = cuMPO(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
 
-        Zs .*= 2
-
-        c = div(N, 2) # center site
-        Sz_center = cuITensor(op("Sz",sites[c]))
-        orthogonalize!(ψ, c)
-        ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
-
-        times = Float64[]
-        corrs = []
-        ψ_norms = Float64[]
-        ψ2_norms = Float64[]
-        start_time = 0.0
-    end
-
-    for t in start_time:δt:ttotal
-        corr = ComplexF64[]
-        for i in range(1,N)
-            orthogonalize!(ψ, i)
-            orthogonalize!(ψ2, i)
-            push!(corr, (exp(im * E0 * t) * inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2)) - (Zs[i] * Zs[c]))
-            # push!(corr, inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
+            E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
+            println("E0 = $E0")
+            M = sum(expect(ψ, "Sz"))
+            println("M = $M")
+            
+            push!(Ms,M)
+            push!(Es,E0)
         end
-        orthogonalize!(ψ2, c)
-        println("Time = $t")
-        flush(stdout)
-        push!(times, t)
-        t == 0.0 ? corrs = corr : corrs = hcat(corrs, corr)
-        push!(ψ_norms, norm(ψ))
-        push!(ψ2_norms, norm(ψ2))
-    
-        # Writing to data file
-        F = h5open(filename,"w")
-        F["times"] = times
-        F["corrs"] = corrs
-        F["psi2"] = cpu(ψ2)
-        F["psi"] = cpu(ψ)
-        F["E0"] = E0
-        F["Zs"] = Zs
-        F["psi_norms"] = ψ_norms
-        F["psi2_norms"] = ψ2_norms
-        close(F)
-    
-        t≈ttotal && break
-    
-        # ψ = basis_extend(ψ, H_real; cutoff, extension_krylovdim=2)
-        # if (maxlinkdim(ψ2) < 100)
-        #   ψ2 = basis_extend(ψ2, H_real; cutoff, extension_krylovdim=2)
-        # end
-    
-        # ψ = tdvp(H, -im * δt, ψ;
-        # nsweeps=1,
-        # reverse_step=true,
-        # normalize=false,
-        # maxdim=maxdim,
-        # cutoff=cutoff,
-        # outputlevel=1
-        # )
-
-        ψ2 = tdvp(H, -im * δt, ψ2;
-          nsweeps=1,
-          reverse_step=true,
-          normalize=false,
-          maxdim=maxdim,
-          cutoff=cutoff,
-          outputlevel=1
-        )
+        B == 0.0 ? M_all = Ms : M_all = hcat(M_all, Ms)
+        B == 0.0 ? E_all = Es : E_all = hcat(E_all, Es)
         GC.gc()
-    end
 
-    return times, corrs
+        F = h5open(filename,"w")
+        F["Ms"] = M_all
+        F["Es"] = E_all
+        F["Bs"] = Bs
+        close(F)
+    end
 end
 
 gpu = cu
@@ -231,9 +172,7 @@ BLAS.set_num_threads(1)
 C = parse(Int64, ARGS[1])
 L = parse(Int64, ARGS[2])
 J2 = parse(Float64, ARGS[3])
-B = parse(Float64, ARGS[4])
-Δ = parse(Float64, ARGS[5])
-maxdim = parse(Int64, ARGS[6])
-δt = parse(Float64, ARGS[7])
+Δ = parse(Float64, ARGS[4])
+maxdim = parse(Int64, ARGS[5])
 
-main(C=C, L=L, J2=J2, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt)
+main(C=C, L=L, J2=J2, Δ1=Δ, Δ2=Δ, maxdim=maxdim)

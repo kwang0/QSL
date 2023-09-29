@@ -7,13 +7,13 @@ using HDF5
 using LinearAlgebra
 
 # Converts index into physical coordinate on triangular lattice
-function coord(i, C)
+function coord(i, C, L)
     y = (i-1) % C
     x = (i-1) ÷ C
     if (y % 2 == 1)
         x += 0.5
     end
-    x -= (C^2/2 - 0.5)
+    x -= (L/2 - 0.5)
     y -= (C-1)
     y *= sqrt(3)/2
     return [x, y]
@@ -97,7 +97,7 @@ function main(; C=4, J1=1, J2=0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
         ψ_norms = read(F, "psi_norms")
         ψ2_norms = read(F, "psi2_norms")
         E0 = read(F, "E0")
-        start_time = last(times) + δt
+        start_time = last(times)
         close(F)
     
         sites = siteinds(ψ)
