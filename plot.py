@@ -56,14 +56,20 @@ from matplotlib import colors
 
 
 
-fig1, axs1 = plt.subplots(1,4,sharey=True)
-fig2, axs2 = plt.subplots(1,4,sharey=True)
-fig3, axs3 = plt.subplots(1,4,sharey=True)
+fig1, axs1 = plt.subplots(1,3,sharey=True)
+fig2, axs2 = plt.subplots(1,3,sharey=True)
+fig3, axs3 = plt.subplots(1,3,sharey=True)
 
-for i in range(4):
-    L = 24 + i * 6
+files = []
+files.append("processed_data/C4_L24_J0.072_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1.h5")
+files.append("processed_data/C6_L24_J0.072_1Delta1.0_2Delta1.0_chi512_dt0.1.h5")
+files.append("processed_data/C8_L24_J0.072_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1.h5")
+for i in range(3):
+    # L = 24 + i * 6
+    L = 24
 
-    filename = "processed_data/C6_L{}_J0.12_1Delta1.0_2Delta1.0_chi512_dt0.1.h5".format(L)
+    filename = files[i]
+    # filename = "processed_data/C6_L{}_J0.12_1Delta1.0_2Delta1.0_chi512_dt0.1.h5".format(L)
     S = h5py.File(filename, 'r')['S'][...]
     
     im = axs1[i].plot(np.argmax(S[::-1, :],axis=0)/10)

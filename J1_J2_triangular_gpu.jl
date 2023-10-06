@@ -236,4 +236,4 @@ B = parse(Float64, ARGS[4])
 maxdim = parse(Int64, ARGS[6])
 δt = parse(Float64, ARGS[7])
 
-main(C=C, L=L, J2=J2, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt)
+main(C=C, L=L, J2=J2, B=B, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt)
