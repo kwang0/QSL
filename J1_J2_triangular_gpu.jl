@@ -113,11 +113,16 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=40, maxdim=32)
+function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=80, maxdim=32, component="longitudinal")
     # L = C^2
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt).h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
+    if component == "longitudinal"
+        op_string = "Sz"
+    elseif component == "transverse"
+        op_string = "S-"
+    end
     # filename = "data_gpu/square_C$(C)_chi$(maxdim)_dt$(δt).h5"
     if (isfile(filename))
         F = h5open(filename,"r")
@@ -134,7 +139,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
     
         sites = siteinds(ψ)
         c = div(N, 2) # center site
-        Sz_center = cuITensor(op("Sz",sites[c]))
+        Sz_center = cuITensor(op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
         H = cuMPO(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
     else
         sites = siteinds("S=1/2", N; conserve_qns=false)
@@ -146,14 +151,14 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
 
         E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
         println("E0 = $E0")
-        Zs = expect(ψ, "Sz")
+        Zs = expect(ψ, op_string)
         M = sum(Zs)
         println("M = $M")
 
         Zs .*= 2
 
         c = div(N, 2) # center site
-        Sz_center = cuITensor(op("Sz",sites[c]))
+        Sz_center = cuITensor(op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
         orthogonalize!(ψ, c)
         ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
 
@@ -169,7 +174,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         for i in range(1,N)
             orthogonalize!(ψ, i)
             orthogonalize!(ψ2, i)
-            push!(corr, (exp(im * E0 * t) * inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2)) - (Zs[i] * Zs[c]))
+            push!(corr, (exp(im * E0 * t) * inner(apply(cuITensor(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i])), ψ; cutoff, maxdim), ψ2)))
             # push!(corr, inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
         orthogonalize!(ψ2, c)
@@ -235,5 +240,6 @@ B = parse(Float64, ARGS[4])
 Δ = parse(Float64, ARGS[5])
 maxdim = parse(Int64, ARGS[6])
 δt = parse(Float64, ARGS[7])
+component = ARGS[8]
 
-main(C=C, L=L, J2=J2, B=B, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt)
+main(C=C, L=L, J2=J2, B=B, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt, component=component)

@@ -15,11 +15,12 @@ function coord(i, C, L)
 end
 
 function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
-    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt).h5"
-    newfile = "processed_data/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt).h5"
+    file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_disconnectfirst.h5"
+    input = "/pscratch/sd/k/kwang98/QSL/$file"
+    output = "processed_data/$file"
     # filename = "data_gpu/square_C$(C)_chi$(maxdim)_dt$(δt)_double_evolve.h5"
 
-    F = h5open(filename,"r")
+    F = h5open(input,"r")
     times = read(F, "times")
     corrs = read(F, "corrs")
     psi_norms = read(F, "psi_norms")
@@ -77,7 +78,7 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     # dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* (times .- times').^2)
     # corrs = corrs * dampening
 
-    omegas = transpose(vcat(LinRange(2.0,0.0,21)))
+    omegas = transpose(vcat(LinRange(6.0,0.0,61)))
     thetas = omegas .* times
     S = real(corrs) * cos.(thetas) - imag(corrs) * sin.(thetas)
 
@@ -94,7 +95,7 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     # plt.savefig("plots_gpu/C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_eta2-$(η).png")
     # plt.savefig("plots_gpu/square_C$(C)_chi$(maxdim)_dt$(δt)_eta2-$(η)_double_evolve.png")
 
-    G = h5open(newfile,"w")
+    G = h5open(output,"w")
     G["times"] = times
     G["corrs"] = corrs
     G["S"] = S
@@ -117,8 +118,9 @@ J2 = 0.03
 Δ2 = 1.0
 maxdim = 512
 δt = 0.1
-η = 0.02
+η = 0.01
 
+process(C, L, J2, 0.0, Δ1, Δ2, maxdim, δt, η)
 process(C, L, J2, 0.5, Δ1, Δ2, maxdim, δt, η)
 process(C, L, J2, 1.0, Δ1, Δ2, maxdim, δt, η)
 process(C, L, J2, 1.5, Δ1, Δ2, maxdim, δt, η)

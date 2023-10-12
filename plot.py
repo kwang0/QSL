@@ -53,23 +53,29 @@ from matplotlib import colors
 # plt.show()
 
 
+C = 6
+L = 36
+J2 = 0.03
+B = 0.0
+Delta = 1.0
+maxdim = 512
+dt = 0.1
 
-
-
-fig1, axs1 = plt.subplots(1,3,sharey=True)
-fig2, axs2 = plt.subplots(1,3,sharey=True)
-fig3, axs3 = plt.subplots(1,3,sharey=True)
+nplots = 5
+fig1, axs1 = plt.subplots(1,nplots,sharey=True)
+fig2, axs2 = plt.subplots(1,nplots,sharey=True)
+fig3, axs3 = plt.subplots(1,nplots,sharey=True)
 
 files = []
-files.append("processed_data/C4_L24_J0.072_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1.h5")
-files.append("processed_data/C6_L24_J0.072_1Delta1.0_2Delta1.0_chi512_dt0.1.h5")
-files.append("processed_data/C8_L24_J0.072_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1.h5")
-for i in range(3):
-    # L = 24 + i * 6
-    L = 24
+files.append("processed_data/C4_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
+files.append("processed_data/C6_L{}_J{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,Delta,Delta,maxdim,dt))
+files.append("processed_data/C8_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 
-    filename = files[i]
-    # filename = "processed_data/C6_L{}_J0.12_1Delta1.0_2Delta1.0_chi512_dt0.1.h5".format(L)
+Bs = [0.0,0.5,1.0,1.5,2.0]
+for i in range(nplots):
+    B = Bs[i]
+    # filename = files[i]
+    filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
     S = h5py.File(filename, 'r')['S'][...]
     
     im = axs1[i].plot(np.argmax(S[::-1, :],axis=0)/10)
@@ -79,8 +85,9 @@ for i in range(3):
     axs1[i].set_xticks(ticks = range(0,int(7*L/3),int(L/3)), labels = [r'$\Gamma$', 
         r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
 
-    im = axs2[i].plot(S[::-1, int(2*L/3) + 1] / max(S.flatten()))
-    axs2[i].set_xticks(ticks = [0,5,10,15,20], labels = ['0','0.5','1','1.5','2'])
+    # im = axs2[i].plot(S[::-1, int(2*L/3) + 1] / max(S.flatten()))
+    im = axs2[i].plot(S[::-1, 0] / max(S.flatten()))
+    axs2[i].set_xticks(ticks = [0,10,20,30,40,50,60], labels = ['0','1','2','3','4','5','6'])
     axs2[i].set(xlabel=r'$\omega$')
     axs2[i].set(title=r'$L=${}'.format(L))
 
@@ -96,7 +103,7 @@ for i in range(3):
     axs3[i].set(xlabel=r'$q$')
     axs3[i].set_xticks(ticks = range(0,int(7*L/3),int(L/3)), labels = [r'$\Gamma$', 
         r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
-    axs3[i].set_yticks(ticks = [0,10,20], labels = ['2','1','0'])
+    axs3[i].set_yticks(ticks = [0,10,20,30,40,50,60], labels = reversed(['0','1','2','3','4','5','6']))
     axs3[i].set(title=r'$L=${}'.format(L))
 
 # plt.subplots_adjust(left=0.1,
@@ -106,9 +113,9 @@ for i in range(3):
 #                     wspace=0.05,
 #                     hspace=0.005)
 
-# cbar_ax = fig.add_axes([0.85, 0.15, 0.025, 0.7])
-# fig.subplots_adjust(right=0.8)
-# fig.colorbar(im, cax=cbar_ax)
+cbar_ax = fig3.add_axes([0.85, 0.15, 0.025, 0.7])
+fig3.subplots_adjust(right=0.8)
+fig3.colorbar(im, cax=cbar_ax)
 fig1.suptitle(r'argmax$_\omega S(q,\omega)$ for isotropic $J_2=0.072$')
 fig2.suptitle(r'$S(q=K,\omega)$/$S_\mathrm{max}$ for isotropic $J_2=0.072$')
 
