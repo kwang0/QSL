@@ -64,7 +64,7 @@ dt = 0.1
 nplots = 5
 fig1, axs1 = plt.subplots(1,nplots,sharey=True)
 fig2, axs2 = plt.subplots(1,nplots,sharey=True)
-fig3, axs3 = plt.subplots(1,nplots,sharey=True)
+fig3, axs3 = plt.subplots(nplots,1,sharex=True)
 
 files = []
 files.append("processed_data/C4_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
@@ -81,7 +81,7 @@ for i in range(nplots):
     im = axs1[i].plot(np.argmax(S[::-1, :],axis=0)/10)
     if i == 0:
         axs1[i].set(ylabel=r'$\omega$')
-    axs1[i].set(title=r'$L=${}'.format(L))
+    axs1[i].set(title=r'$B=${}'.format(B))
     axs1[i].set_xticks(ticks = range(0,int(7*L/3),int(L/3)), labels = [r'$\Gamma$', 
         r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
 
@@ -89,7 +89,7 @@ for i in range(nplots):
     im = axs2[i].plot(S[::-1, 0] / max(S.flatten()))
     axs2[i].set_xticks(ticks = [0,10,20,30,40,50,60], labels = ['0','1','2','3','4','5','6'])
     axs2[i].set(xlabel=r'$\omega$')
-    axs2[i].set(title=r'$L=${}'.format(L))
+    axs2[i].set(title=r'$B=${}'.format(B))
 
 
     im = axs3[i].imshow(S / max(S.flatten()), cmap="hot", interpolation="gaussian",
@@ -104,7 +104,7 @@ for i in range(nplots):
     axs3[i].set_xticks(ticks = range(0,int(7*L/3),int(L/3)), labels = [r'$\Gamma$', 
         r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
     axs3[i].set_yticks(ticks = [0,10,20,30,40,50,60], labels = reversed(['0','1','2','3','4','5','6']))
-    axs3[i].set(title=r'$L=${}'.format(L))
+    axs3[i].set(title=r'$B=${}'.format(B))
 
 # plt.subplots_adjust(left=0.1,
 #                     bottom=0.1,

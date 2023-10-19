@@ -7,6 +7,7 @@ using Printf
 using PyPlot
 using HDF5
 using LinearAlgebra
+using TickTock
 
 # Converts index into physical coordinate on triangular lattice (centers MPS site N/2 at coord (0,0))
 function coord(i, C, L)
@@ -114,7 +115,7 @@ function square_model(C, L, J1=1.0)
 end
 
 function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=80, maxdim=32, component="longitudinal")
-    # L = C^2
+    tick()
     N = C * L
 
     filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
@@ -198,6 +199,11 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         close(F)
     
         t≈ttotal && break
+
+        # Stop simulations before HPC limit to ensure no corruption of data writing
+        if peektimer() > (23.5 * 60 * 60)
+            break
+        end
     
         # ψ = basis_extend(ψ, H_real; cutoff, extension_krylovdim=2)
         # if (maxlinkdim(ψ2) < 100)
