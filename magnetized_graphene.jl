@@ -64,9 +64,11 @@ function graphene_model(C, L, t, U, ω_B)
                 os -= t, "Cdagdn", ind(row, col + 1, C), "Cdn", index_B
             end
 
-            # Hubbard/Coulomb interaction (on-site and sublattice)
+            # Hubbard interaction (on-site)
             os += U, "Nup", index_A, "Ndn", index_A
             os += U, "Nup", index_B, "Ndn", index_B
+
+            # Coulomb interaction (sublattice)
             os += U, "Nup", index_A, "Nup", index_B
             os += U, "Ndn", index_A, "Ndn", index_B
             os += U, "Nup", index_A, "Ndn", index_B
