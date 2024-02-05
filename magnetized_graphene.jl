@@ -64,10 +64,13 @@ function graphene_model(C, L, t, U, ω_B)
                 os -= t, "Cdagdn", ind(row, col + 1, C), "Cdn", index_B
             end
 
-            # Hubbard interaction (on-site and sublattice)
+            # Hubbard/Coulomb interaction (on-site and sublattice)
             os += U, "Nup", index_A, "Ndn", index_A
             os += U, "Nup", index_B, "Ndn", index_B
-            os += 2*U, "Nup", index_A, "Ndn", index_B # Factor of 2 for higher sublattice symmetry?
+            os += U, "Nup", index_A, "Nup", index_B
+            os += U, "Ndn", index_A, "Ndn", index_B
+            os += U, "Nup", index_A, "Ndn", index_B
+            os += U, "Ndn", index_A, "Nup", index_B
 
             # Zeeman field
             os -= ω_B, "Nup", index_A
@@ -200,10 +203,8 @@ function main(; C=4, L=6, t=2/3, U=0.1, ω_B=0.1, cutoff=1e-16, δt=0.1, ttotal=
     return times, corrs
 end
 
-gpu = cu
-
 ITensors.Strided.set_num_threads(1)
-BLAS.set_num_threads(1)
+BLAS.set_num_threads(256)
 # ITensors.enable_threaded_blocksparse(true)
 
 C = parse(Int64, ARGS[1])
