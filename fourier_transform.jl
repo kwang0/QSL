@@ -15,9 +15,10 @@ function coord(i, C, L)
 end
 
 function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
-    file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_disconnectfirst.h5"
-    input = "/pscratch/sd/k/kwang98/QSL/$file"
-    output = "processed_data/$file"
+    file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_disconnectfirst.h5"
+    # input = "/pscratch/sd/k/kwang98/QSL/$file"
+    input = "processed_data/$file"
+    output = file
     # filename = "data_gpu/square_C$(C)_chi$(maxdim)_dt$(δt)_double_evolve.h5"
 
     F = h5open(input,"r")
@@ -26,6 +27,8 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     psi_norms = read(F, "psi_norms")
     psi2_norms = read(F, "psi2_norms")
     close(F)
+
+    print(times[end])
 
     # corrs ./= psi2_norms' # Normalize correlation function
 
@@ -72,15 +75,15 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     eta = sqrt(η)
     # Pointwise multiplication
     dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* times.^2)
-    corrs = corrs .* dampening'
+    corrs2 = corrs .* dampening'
     
     # Convolution
     # dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* (times .- times').^2)
-    # corrs = corrs * dampening
+    # corrs2 = corrs * dampening
 
-    omegas = transpose(vcat(LinRange(6.0,0.0,61)))
+    omegas = transpose(vcat(LinRange(6.0,0.0,1001)))
     thetas = omegas .* times
-    S = real(corrs) * cos.(thetas) - imag(corrs) * sin.(thetas)
+    S = real(corrs2) * cos.(thetas) - imag(corrs2) * sin.(thetas)
 
     S = (δt / (pi * N)) .* cos.(BZ_path2 * xs) * S
 
@@ -118,7 +121,7 @@ J2 = 0.03
 Δ2 = 1.0
 maxdim = 512
 δt = 0.1
-η = 0.01
+η = 0.0001
 
 process(C, L, J2, 0.0, Δ1, Δ2, maxdim, δt, η)
 process(C, L, J2, 0.5, Δ1, Δ2, maxdim, δt, η)

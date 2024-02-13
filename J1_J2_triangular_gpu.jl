@@ -173,12 +173,12 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
     for t in start_time:δt:ttotal
         corr = ComplexF64[]
         for i in range(1,N)
-            orthogonalize!(ψ, i)
-            orthogonalize!(ψ2, i)
+            # orthogonalize!(ψ, i)
+            # orthogonalize!(ψ2, i)
             push!(corr, (exp(im * E0 * t) * inner(apply(cuITensor(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i])), ψ; cutoff, maxdim), ψ2)))
             # push!(corr, inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
-        orthogonalize!(ψ2, c)
+        # orthogonalize!(ψ2, c)
         println("Time = $t")
         flush(stdout)
         push!(times, t)

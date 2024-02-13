@@ -75,7 +75,8 @@ Bs = [0.0,0.5,1.0,1.5,2.0]
 for i in range(nplots):
     B = Bs[i]
     # filename = files[i]
-    filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
+    # filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
+    filename = "C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
     S = h5py.File(filename, 'r')['S'][...]
     
     im = axs1[i].plot(np.argmax(S[::-1, :],axis=0)/10)
@@ -86,13 +87,14 @@ for i in range(nplots):
         r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
 
     # im = axs2[i].plot(S[::-1, int(2*L/3) + 1] / max(S.flatten()))
+    
     im = axs2[i].plot(S[::-1, 0] / max(S.flatten()))
     axs2[i].set_xticks(ticks = [0,10,20,30,40,50,60], labels = ['0','1','2','3','4','5','6'])
     axs2[i].set(xlabel=r'$\omega$')
     axs2[i].set(title=r'$B=${}'.format(B))
 
 
-    im = axs3[i].imshow(S / max(S.flatten()), cmap="hot", interpolation="gaussian",
+    im = axs3[i].imshow(S / max(S.flatten()), cmap="hot", interpolation="none",
             norm=colors.LogNorm(vmin=0.0005, vmax=1))
     x_left, x_right = axs3[i].get_xlim()
     y_low, y_high = axs3[i].get_ylim()
