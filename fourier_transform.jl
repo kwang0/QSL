@@ -26,6 +26,8 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     corrs = read(F, "corrs")
     psi_norms = read(F, "psi_norms")
     psi2_norms = read(F, "psi2_norms")
+    E0 = read(F, "E0")
+    Zs = read(F, "Zs")
     close(F)
 
     print(times[end])
@@ -104,6 +106,8 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     G["S"] = S
     G["psi_norms"] = psi_norms
     G["psi2_norms"] = psi2_norms
+    G["E0"] = E0
+    G["Zs"] = Zs
     close(G)
 end
 

@@ -1,7 +1,6 @@
 using MKL
 using ITensors
 using ITensorTDVP
-using ITensorGPU
 using CUDA
 using Printf
 using PyPlot
@@ -115,10 +114,13 @@ function square_model(C, L, J1=1.0)
 end
 
 function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=80, maxdim=32, component="longitudinal")
+    # cu = ITensors.cpu
+    
     tick()
     N = C * L
 
     filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
+    # filename = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
     if component == "longitudinal"
         op_string = "Sz"
     elseif component == "transverse"
@@ -129,8 +131,8 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         F = h5open(filename,"r")
         times = read(F, "times")
         corrs = read(F, "corrs")
-        ψ = cuMPS(read(F, "psi", MPS))
-        ψ2 = cuMPS(read(F, "psi2", MPS))
+        ψ = cu(read(F, "psi", MPS))
+        ψ2 = cu(read(F, "psi2", MPS))
         ψ_norms = read(F, "psi_norms")
         ψ2_norms = read(F, "psi2_norms")
         E0 = read(F, "E0")
@@ -140,15 +142,15 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
     
         sites = siteinds(ψ)
         c = div(N, 2) # center site
-        Sz_center = cuITensor(op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
-        H = cuMPO(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
+        Sz_center = cu(op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
+        H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
     else
         sites = siteinds("S=1/2", N; conserve_qns=false)
-        H = cuMPO(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
+        H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
 
         nsweeps = 10
         # state = [isodd(n) ? "Up" : "Dn" for n=1:N]
-        ψ0 = cuMPS(randomMPS(sites))
+        ψ0 = cu(randomMPS(sites))
 
         E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
         println("E0 = $E0")
@@ -159,7 +161,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         Zs .*= 2
 
         c = div(N, 2) # center site
-        Sz_center = cuITensor(op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
+        Sz_center = cu(op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
         orthogonalize!(ψ, c)
         ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
 
@@ -175,8 +177,8 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         for i in range(1,N)
             # orthogonalize!(ψ, i)
             # orthogonalize!(ψ2, i)
-            push!(corr, (exp(im * E0 * t) * inner(apply(cuITensor(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i])), ψ; cutoff, maxdim), ψ2)))
-            # push!(corr, inner(apply(cuITensor(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
+            push!(corr, (exp(im * E0 * t) * inner(apply(cu(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i])), ψ; cutoff, maxdim), ψ2)))
+            # push!(corr, inner(apply(cu(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
         # orthogonalize!(ψ2, c)
         println("Time = $t")
@@ -190,8 +192,8 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         F = h5open(filename,"w")
         F["times"] = times
         F["corrs"] = corrs
-        F["psi2"] = cpu(ψ2)
-        F["psi"] = cpu(ψ)
+        F["psi2"] = ITensors.cpu(ψ2)
+        F["psi"] = ITensors.cpu(ψ)
         F["E0"] = E0
         F["Zs"] = Zs
         F["psi_norms"] = ψ_norms
@@ -225,15 +227,14 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
           normalize=false,
           maxdim=maxdim,
           cutoff=cutoff,
-          outputlevel=1
+          outputlevel=1,
+          nsite=1
         )
         GC.gc()
     end
 
     return times, corrs
 end
-
-gpu = cu
 
 ITensors.Strided.set_num_threads(1)
 BLAS.set_num_threads(1)
