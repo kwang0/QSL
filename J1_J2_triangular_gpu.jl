@@ -137,7 +137,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         ψ2_norms = read(F, "psi2_norms")
         E0 = read(F, "E0")
         Zs = read(F, "Zs")
-        start_time = last(times)
+        start_time = last(times) + δt
         close(F)
     
         sites = siteinds(ψ)
@@ -148,11 +148,12 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         sites = siteinds("S=1/2", N; conserve_qns=false)
         H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
 
-        nsweeps = 10
+        nsweeps = 20
         # state = [isodd(n) ? "Up" : "Dn" for n=1:N]
         ψ0 = cu(randomMPS(sites))
 
         E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
+        print(ψ)
         println("E0 = $E0")
         Zs = expect(ψ, op_string)
         M = sum(Zs)
@@ -169,10 +170,28 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         corrs = []
         ψ_norms = Float64[]
         ψ2_norms = Float64[]
-        start_time = 0.0
+        start_time = δt
     end
 
     for t in start_time:δt:ttotal
+        # Stop simulations before HPC limit to ensure no corruption of data writing
+        if peektimer() > (23.5 * 60 * 60)
+            break
+        end
+
+        ψ2 = tdvp(H, -im * δt, ψ2;
+          nsweeps=1,
+          reverse_step=true,
+          normalize=false,
+          maxdim=maxdim,
+          cutoff=cutoff,
+          outputlevel=1,
+          solver_backend="applyexp",
+          nsite=1,
+        #   svd_alg="qr_algorithm"
+        )
+        GC.gc()
+
         corr = ComplexF64[]
         for i in range(1,N)
             # orthogonalize!(ψ, i)
@@ -184,7 +203,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         println("Time = $t")
         flush(stdout)
         push!(times, t)
-        t == 0.0 ? corrs = corr : corrs = hcat(corrs, corr)
+        t == δt ? corrs = corr : corrs = hcat(corrs, corr)
         push!(ψ_norms, norm(ψ))
         push!(ψ2_norms, norm(ψ2))
     
@@ -199,40 +218,10 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         F["psi_norms"] = ψ_norms
         F["psi2_norms"] = ψ2_norms
         close(F)
-    
+
         t≈ttotal && break
-
-        # Stop simulations before HPC limit to ensure no corruption of data writing
-        if peektimer() > (23.5 * 60 * 60)
-            break
-        end
-    
-        # ψ = basis_extend(ψ, H_real; cutoff, extension_krylovdim=2)
-        # if (maxlinkdim(ψ2) < 100)
-        #   ψ2 = basis_extend(ψ2, H_real; cutoff, extension_krylovdim=2)
-        # end
-    
-        # ψ = tdvp(H, -im * δt, ψ;
-        # nsweeps=1,
-        # reverse_step=true,
-        # normalize=false,
-        # maxdim=maxdim,
-        # cutoff=cutoff,
-        # outputlevel=1
-        # )
-
-        ψ2 = tdvp(H, -im * δt, ψ2;
-          nsweeps=1,
-          reverse_step=true,
-          normalize=false,
-          maxdim=maxdim,
-          cutoff=cutoff,
-          outputlevel=1,
-          nsite=1
-        )
-        GC.gc()
     end
-
+    print(ψ2)
     return times, corrs
 end
 
