@@ -7,6 +7,19 @@ using PyPlot
 using HDF5
 using LinearAlgebra
 using TickTock
+include("applyexp.jl")
+
+function solver(H, t, psi0; kwargs...)
+    tol_per_unit_time = get(kwargs, :solver_tol, 1E-8)
+    solver_kwargs = (;
+        maxiter=get(kwargs, :solver_krylovdim, 30),
+        outputlevel=get(kwargs, :solver_outputlevel, 0),
+    )
+    #applyexp tol is absolute, compute from tol_per_unit_time:
+    tol = abs(t) * tol_per_unit_time
+    psi, info = applyexp(H, t, psi0; tol, solver_kwargs..., kwargs...)
+    return psi, info
+end
 
 # Converts index into physical coordinate on triangular lattice (centers MPS site N/2 at coord (0,0))
 function coord(i, C, L)
@@ -113,7 +126,7 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=80, maxdim=32, component="longitudinal")
+function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=200, maxdim=32, component="longitudinal")
     # cu = ITensors.cpu
     
     tick()
@@ -179,15 +192,15 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
             break
         end
 
-        ψ2 = tdvp(H, -im * δt, ψ2;
+        ψ2 = tdvp(solver, H, -im * δt, ψ2;
           nsweeps=1,
           reverse_step=true,
           normalize=false,
           maxdim=maxdim,
           cutoff=cutoff,
           outputlevel=1,
-          solver_backend="applyexp",
-          nsite=1,
+        #   solver_backend="applyexp",
+        #   nsite=1,
         #   svd_alg="qr_algorithm"
         )
         GC.gc()

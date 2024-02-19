@@ -55,28 +55,28 @@ from matplotlib import colors
 
 C = 6
 L = 36
-J2 = 0.03
-B = 0.0
+J2 = 0.12
+# B = 0.0
 Delta = 1.0
 maxdim = 512
 dt = 0.1
 
-nplots = 5
+nplots = 4
 fig1, axs1 = plt.subplots(1,nplots,sharey=True)
 fig2, axs2 = plt.subplots(1,nplots,sharey=True)
 fig3, axs3 = plt.subplots(nplots,1,sharex=True)
 
-files = []
-files.append("processed_data/C4_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
-files.append("processed_data/C6_L{}_J{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,Delta,Delta,maxdim,dt))
-files.append("processed_data/C8_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
+# files = []
+# files.append("processed_data/C4_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
+# files.append("processed_data/C6_L{}_J{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,Delta,Delta,maxdim,dt))
+# files.append("processed_data/C8_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 
-Bs = [0.0,0.5,1.0,1.5,2.0]
+Bs = [0.0,0.5,1.0,1.5]
 for i in range(nplots):
     B = Bs[i]
     # filename = files[i]
-    # filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
-    filename = "C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
+    filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
+    # filename = "C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
     S = h5py.File(filename, 'r')['S'][...]
     
     im = axs1[i].plot(np.argmax(S[::-1, :],axis=0)/10)
@@ -94,7 +94,7 @@ for i in range(nplots):
     axs2[i].set(title=r'$B=${}'.format(B))
 
 
-    im = axs3[i].imshow(S / max(S.flatten()), cmap="hot", interpolation="none",
+    im = axs3[i].imshow(S / max(S.flatten()), cmap="hot", interpolation="gaussian",
             norm=colors.LogNorm(vmin=0.0005, vmax=1))
     x_left, x_right = axs3[i].get_xlim()
     y_low, y_high = axs3[i].get_ylim()

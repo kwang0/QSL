@@ -18,7 +18,8 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_disconnectfirst.h5"
     # input = "/pscratch/sd/k/kwang98/QSL/$file"
     input = "processed_data/$file"
-    output = file
+    output = "processed_data/$file"
+    # output = file
     # filename = "data_gpu/square_C$(C)_chi$(maxdim)_dt$(δt)_double_evolve.h5"
 
     F = h5open(input,"r")
@@ -30,7 +31,7 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     Zs = read(F, "Zs")
     close(F)
 
-    print(times[end])
+    # print(times[end])
 
     # corrs ./= psi2_norms' # Normalize correlation function
 
@@ -119,16 +120,16 @@ end
 
 C = 6
 L = 36
-J2 = 0.03
+J2 = 0.12
 # B = 0.0
 Δ1 = 1.0
 Δ2 = 1.0
 maxdim = 512
 δt = 0.1
-η = 0.0001
+η = 0.01
 
 process(C, L, J2, 0.0, Δ1, Δ2, maxdim, δt, η)
 process(C, L, J2, 0.5, Δ1, Δ2, maxdim, δt, η)
 process(C, L, J2, 1.0, Δ1, Δ2, maxdim, δt, η)
 process(C, L, J2, 1.5, Δ1, Δ2, maxdim, δt, η)
-process(C, L, J2, 2.0, Δ1, Δ2, maxdim, δt, η)
+# process(C, L, J2, 2.0, Δ1, Δ2, maxdim, δt, η)
