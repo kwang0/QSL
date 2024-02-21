@@ -72,6 +72,7 @@ fig3, axs3 = plt.subplots(nplots,1,sharex=True)
 # files.append("processed_data/C8_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 
 Bs = [0.0,0.5,1.0,1.5]
+Bs = Bs[::-1]
 for i in range(nplots):
     B = Bs[i]
     # filename = files[i]
@@ -89,7 +90,7 @@ for i in range(nplots):
     # im = axs2[i].plot(S[::-1, int(2*L/3) + 1] / max(S.flatten()))
     
     im = axs2[i].plot(S[::-1, 0] / max(S.flatten()))
-    axs2[i].set_xticks(ticks = [0,10,20,30,40,50,60], labels = ['0','1','2','3','4','5','6'])
+    axs2[i].set_xticks(ticks = [0,100,200,300,400,500,600], labels = ['0','1','2','3','4','5','6'])
     axs2[i].set(xlabel=r'$\omega$')
     axs2[i].set(title=r'$B=${}'.format(B))
 
@@ -100,12 +101,12 @@ for i in range(nplots):
     y_low, y_high = axs3[i].get_ylim()
     axs3[i].set_aspect(abs((x_right-x_left)/(y_low-y_high))*0.5)
 
-    if i == 0:
-        axs3[i].set(ylabel=r'$\omega$')
-    axs3[i].set(xlabel=r'$q$')
+    if i == 3:
+        axs3[i].set(xlabel=r'$q$')
+    axs3[i].set(ylabel=r'$\omega$')
     axs3[i].set_xticks(ticks = range(0,int(7*L/3),int(L/3)), labels = [r'$\Gamma$', 
         r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
-    axs3[i].set_yticks(ticks = [0,10,20,30,40,50,60], labels = reversed(['0','1','2','3','4','5','6']))
+    axs3[i].set_yticks(ticks = [0,100,200,300,400,500,600], labels = reversed(['0','1','2','3','4','5','6']))
     axs3[i].set(title=r'$B=${}'.format(B))
 
 # plt.subplots_adjust(left=0.1,

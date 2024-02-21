@@ -68,11 +68,25 @@ function graphene_model(C, L, t, U, ω_B)
             os += U, "Nup", index_A, "Ndn", index_A
             os += U, "Nup", index_B, "Ndn", index_B
 
-            # Coulomb interaction (sublattice)
+            # Internal Coulomb interaction (sublattice)
             os += U, "Nup", index_A, "Nup", index_B
             os += U, "Ndn", index_A, "Ndn", index_B
             os += U, "Nup", index_A, "Ndn", index_B
             os += U, "Ndn", index_A, "Nup", index_B
+
+            # Vertical Coulomb interaction
+            os += U, "Nup", index_A, "Nup", ind(row + 1, col, C) + 1
+            os += U, "Ndn", index_A, "Ndn", ind(row + 1, col, C) + 1
+            os += U, "Nup", index_A, "Ndn", ind(row + 1, col, C) + 1
+            os += U, "Ndn", index_A, "Nup", ind(row + 1, col, C) + 1
+
+            # Horizontal Coulomb interaction
+            if (col < L-1)
+                os += U, "Nup", ind(row, col + 1, C), "Nup", index_B
+                os += U, "Ndn", ind(row, col + 1, C), "Ndn", index_B
+                os += U, "Nup", ind(row, col + 1, C), "Ndn", index_B
+                os += U, "Ndn", ind(row, col + 1, C), "Nup", index_B
+            end
 
             # Zeeman field
             os -= ω_B, "Nup", index_A
@@ -122,7 +136,7 @@ function main(; C=4, L=6, t=2/3, U=0.1, ω_B=0.1, cutoff=1e-16, δt=0.1, ttotal=
         state = [isodd(n) ? "Up" : "Dn" for n=1:N]
         ψ0 = MPS(sites, state)
 
-        E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
+        E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff, write_when_maxdim_exceeds=maxdim-1)
         println("E0 = $E0")
         Zs = expect(ψ, op_string)
         M = sum(Zs)

@@ -15,7 +15,7 @@ function coord(i, C, L)
 end
 
 function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
-    file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_disconnectfirst.h5"
+    file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_disconnectfirst_ones.h5"
     # input = "/pscratch/sd/k/kwang98/QSL/$file"
     input = "processed_data/$file"
     output = "processed_data/$file"
@@ -84,7 +84,7 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     # dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* (times .- times').^2)
     # corrs2 = corrs * dampening
 
-    omegas = transpose(vcat(LinRange(6.0,0.0,1001)))
+    omegas = transpose(vcat(LinRange(6.0,0.0,601)))
     thetas = omegas .* times
     S = real(corrs2) * cos.(thetas) - imag(corrs2) * sin.(thetas)
 
