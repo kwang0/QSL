@@ -64,7 +64,7 @@ dt = 0.1
 nplots = 4
 fig1, axs1 = plt.subplots(1,nplots,sharey=True)
 fig2, axs2 = plt.subplots(1,nplots,sharey=True)
-fig3, axs3 = plt.subplots(nplots,1,sharex=True)
+fig3, axs3 = plt.subplots(1,nplots,sharey=True)
 
 # files = []
 # files.append("processed_data/C4_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
@@ -72,13 +72,16 @@ fig3, axs3 = plt.subplots(nplots,1,sharex=True)
 # files.append("processed_data/C8_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 
 Bs = [0.0,0.5,1.0,1.5]
-Bs = Bs[::-1]
+# Bs = Bs[::-1]
 for i in range(nplots):
     B = Bs[i]
     # filename = files[i]
-    filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
+    filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst_onesitetdvp.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
     # filename = "C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
     S = h5py.File(filename, 'r')['S'][...]
+
+    S = S / max(S.flatten()) # Normalizing
+    S = np.where(S < 0, 0.0005, S) # WARNING: SETTING NEGATIVE VALUES TO MIN
     
     im = axs1[i].plot(np.argmax(S[::-1, :],axis=0)/10)
     if i == 0:
@@ -89,24 +92,25 @@ for i in range(nplots):
 
     # im = axs2[i].plot(S[::-1, int(2*L/3) + 1] / max(S.flatten()))
     
+    ticks = np.array([0,1,2,3,4,5,6]) * S.shape[0] * 1/6
     im = axs2[i].plot(S[::-1, 0] / max(S.flatten()))
-    axs2[i].set_xticks(ticks = [0,100,200,300,400,500,600], labels = ['0','1','2','3','4','5','6'])
+    axs2[i].set_xticks(ticks = ticks, labels = ['0','1','2','3','4','5','6'])
     axs2[i].set(xlabel=r'$\omega$')
     axs2[i].set(title=r'$B=${}'.format(B))
 
 
-    im = axs3[i].imshow(S / max(S.flatten()), cmap="hot", interpolation="gaussian",
+    im = axs3[i].imshow(S, cmap="hot", interpolation="gaussian",
             norm=colors.LogNorm(vmin=0.0005, vmax=1))
     x_left, x_right = axs3[i].get_xlim()
     y_low, y_high = axs3[i].get_ylim()
     axs3[i].set_aspect(abs((x_right-x_left)/(y_low-y_high))*0.5)
 
-    if i == 3:
-        axs3[i].set(xlabel=r'$q$')
-    axs3[i].set(ylabel=r'$\omega$')
+    if i == 0:
+        axs3[i].set(ylabel=r'$\omega$')
+    axs3[i].set(xlabel=r'$q$')
     axs3[i].set_xticks(ticks = range(0,int(7*L/3),int(L/3)), labels = [r'$\Gamma$', 
         r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
-    axs3[i].set_yticks(ticks = [0,100,200,300,400,500,600], labels = reversed(['0','1','2','3','4','5','6']))
+    axs3[i].set_yticks(ticks = ticks, labels = reversed(['0','1','2','3','4','5','6']))
     axs3[i].set(title=r'$B=${}'.format(B))
 
 # plt.subplots_adjust(left=0.1,

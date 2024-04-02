@@ -15,7 +15,7 @@ function coord(i, C, L)
 end
 
 function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
-    file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_disconnectfirst_ones.h5"
+    file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_disconnectfirst_onesitetdvp.h5"
     # input = "/pscratch/sd/k/kwang98/QSL/$file"
     input = "processed_data/$file"
     output = "processed_data/$file"
@@ -76,15 +76,20 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     BZ_square_path = vcat(BZ_square_path, (1 .- interval) .* X2 .+ interval .* M)
 
     eta = sqrt(η)
+    if η == 0
+        eta = 1/2 * (2 * pi / times[end])
+    end 
     # Pointwise multiplication
     dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* times.^2)
     corrs2 = corrs .* dampening'
+
+    # corrs2 = corrs # No dampening
     
     # Convolution
     # dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* (times .- times').^2)
     # corrs2 = corrs * dampening
 
-    omegas = transpose(vcat(LinRange(6.0,0.0,601)))
+    omegas = transpose(vcat(LinRange(6.0, 0.0, round(Int64, 6 * (times[end] / (2*pi))))))
     thetas = omegas .* times
     S = real(corrs2) * cos.(thetas) - imag(corrs2) * sin.(thetas)
 
@@ -126,7 +131,7 @@ J2 = 0.12
 Δ2 = 1.0
 maxdim = 512
 δt = 0.1
-η = 0.01
+η = 0.0
 
 process(C, L, J2, 0.0, Δ1, Δ2, maxdim, δt, η)
 process(C, L, J2, 0.5, Δ1, Δ2, maxdim, δt, η)
