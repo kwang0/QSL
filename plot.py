@@ -127,7 +127,7 @@ for i in range(2):
 cbar_ax = fig3.add_axes([0.85, 0.15, 0.025, 0.7])
 fig3.subplots_adjust(right=0.8)
 fig3.colorbar(im, cax=cbar_ax)
-fig3.suptitle(r'$S(q,\omega)$ for varying external field in QSL phase $J_2/J_1=0.12$ (6$\times$36 cylinder, $\chi=512$)')
+fig3.suptitle(r'$S(q,\omega)$ for varying external field in QSL phase $J_2/J_1=0.072$ (6$\times$36 cylinder, $\chi=512$)')
 # fig1.suptitle(r'argmax$_\omega S(q,\omega)$ for isotropic $J_2=0.072$')
 # fig2.suptitle(r'$S(q=K,\omega)$/$S_\mathrm{max}$ for isotropic $J_2=0.072$')
 
