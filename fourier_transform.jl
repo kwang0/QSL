@@ -125,7 +125,7 @@ end
 
 C = 6
 L = 36
-J2 = 0.12
+J2 = 0.072
 # B = 0.0
 Δ1 = 1.0
 Δ2 = 1.0
@@ -134,7 +134,7 @@ maxdim = 512
 η = 0.0
 
 process(C, L, J2, 0.0, Δ1, Δ2, maxdim, δt, η)
-process(C, L, J2, 0.5, Δ1, Δ2, maxdim, δt, η)
-process(C, L, J2, 1.0, Δ1, Δ2, maxdim, δt, η)
-process(C, L, J2, 1.5, Δ1, Δ2, maxdim, δt, η)
+# process(C, L, J2, 0.5, Δ1, Δ2, maxdim, δt, η)
+# process(C, L, J2, 1.0, Δ1, Δ2, maxdim, δt, η)
+# process(C, L, J2, 1.5, Δ1, Δ2, maxdim, δt, η)
 # process(C, L, J2, 2.0, Δ1, Δ2, maxdim, δt, η)

@@ -138,6 +138,8 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         op_string = "Sz"
     elseif component == "transverse"
         op_string = "S-"
+    elseif component == "transversedown"
+        op_string = "S+"
     end
     # filename = "data_gpu/square_C$(C)_chi$(maxdim)_dt$(δt).h5"
     if (isfile(filename))
