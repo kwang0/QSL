@@ -86,7 +86,7 @@ for i in range(4):
         S = h5py.File(filename, 'r')['S'][...]
 
         S = S / max(S.flatten()) # Normalizing
-        # S = np.where(S < 0, 0.0005, S) # WARNING: SETTING NEGATIVE VALUES TO MIN
+        S = np.where(S < 0, 0.01, S) # WARNING: SETTING NEGATIVE VALUES TO MIN
         
         ticks = np.array([0,1,2,3,4,5,6]) * S.shape[0] * 1/6
 
@@ -106,8 +106,8 @@ for i in range(4):
         # axs2[i].set(title=r'$B=${}'.format(B))
 
 
-        im = axs3[i,j].imshow(S, cmap="hot", interpolation="gaussian",
-                norm=colors.LogNorm(vmin=0.0005, vmax=1))
+        im = axs3[i,j].imshow(S, cmap="hot", interpolation="none",
+                norm=colors.LogNorm(vmin=0.01, vmax=1))
         x_left, x_right = axs3[i,j].get_xlim()
         y_low, y_high = axs3[i,j].get_ylim()
         axs3[i,j].set_aspect(abs((x_right-x_left)/(y_low-y_high))*0.5)
