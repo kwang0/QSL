@@ -55,31 +55,32 @@ from matplotlib import colors
 
 C = 6
 L = 36
-J2 = 0.071
+J2 = 0.072
 B = 0.0
-# Delta = 1.0
+Delta = 1.0
 maxdim = 512
 dt = 0.1
+op = "transverse"
 
 nplots = 4
 # fig1, axs1 = plt.subplots(1,nplots,sharey=True)
 # fig2, axs2 = plt.subplots(1,nplots,sharey=True)
-fig3, axs3 = plt.subplots(4,4,sharey=False, sharex=True)
+fig3, axs3 = plt.subplots(2,2,sharey=False, sharex=True)
 
 # files = []
 # files.append("processed_data/C4_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 # files.append("processed_data/C6_L{}_J{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,Delta,Delta,maxdim,dt))
 # files.append("processed_data/C8_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 
-# Bs = [[0.0,0.5],[1.0,1.5]]
-Deltas = [0.75,1.0,1.25,1.5]
-ops = ["longitudinal", "transverse", "transversedown","total"]
+Bs = [[0.0,0.5],[1.0,1.5]]
+# Deltas = [0.75,1.0,1.25,1.5]
+# ops = ["longitudinal", "transverse", "transversedown","total"]
 # Bs = Bs[::-1]
-for i in range(4):
-    for j in range(4):
-        # B = Bs[i][j]
-        Delta = Deltas[i]
-        op = ops[j]
+for i in range(2):
+    for j in range(2):
+        B = Bs[i][j]
+        # Delta = Deltas[i]
+        # op = ops[j]
         # filename = files[i]
         filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_{}_disconnectfirst_onesitetdvp.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt,op)
         # filename = "C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
@@ -106,20 +107,20 @@ for i in range(4):
         # axs2[i].set(title=r'$B=${}'.format(B))
 
 
-        im = axs3[i,j].imshow(S, cmap="hot", interpolation="none",
+        im = axs3[i,j].imshow(S, cmap="hot", interpolation="gaussian",
                 norm=colors.LogNorm(vmin=0.01, vmax=1))
         x_left, x_right = axs3[i,j].get_xlim()
         y_low, y_high = axs3[i,j].get_ylim()
         axs3[i,j].set_aspect(abs((x_right-x_left)/(y_low-y_high))*0.5)
 
-        # if j == 0:
-        #     axs3[i,j].set(ylabel=r'$\omega$')
-        # if i == 1:
-        #     axs3[i,j].set(xlabel=r'$q$')
         if j == 0:
-            axs3[i,j].set(ylabel=r'$\Delta=${}'.format(Delta))
-        if i == 3:
-            axs3[i,j].set(xlabel=op)
+            axs3[i,j].set(ylabel=r'$\omega$')
+        if i == 1:
+            axs3[i,j].set(xlabel=r'$q$')
+        # if j == 0:
+        #     axs3[i,j].set(ylabel=r'$\Delta=${}'.format(Delta))
+        # if i == 3:
+        #     axs3[i,j].set(xlabel=op)
         axs3[i,j].set_xticks(ticks = range(0,int(7*L/3),int(L/3)), labels = [r'$\Gamma$', 
             r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
         axs3[i,j].set_yticks(ticks = ticks, labels = reversed(['0','1','2','3','4','5','6']))
