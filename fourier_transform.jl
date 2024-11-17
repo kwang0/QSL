@@ -79,6 +79,7 @@ function process(C, L, J2, B, Δ1, Δ2, maxdim, δt, η)
     if η == 0
         eta = 1/2 * (2 * pi / times[end])
     end 
+    println(1/2 * (2 * pi / times[end]))
     # Pointwise multiplication
     dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* times.^2)
     corrs2 = corrs .* dampening'
@@ -131,7 +132,7 @@ B = 0.0
 Δ2 = 1.0
 maxdim = 512
 δt = 0.1
-η = 0.0
+η = 0.0001
 
 process(C, L, J2, B, 0.75, 0.75, maxdim, δt, η)
 process(C, L, J2, B, 1.0, 1.0, maxdim, δt, η)

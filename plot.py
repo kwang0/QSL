@@ -55,31 +55,31 @@ from matplotlib import colors
 
 C = 6
 L = 36
-J2 = 0.072
+J2 = 0.071
 B = 0.0
 Delta = 1.0
 maxdim = 512
 dt = 0.1
-op = "transverse"
+op = "total"
 
 nplots = 4
 # fig1, axs1 = plt.subplots(1,nplots,sharey=True)
 # fig2, axs2 = plt.subplots(1,nplots,sharey=True)
-fig3, axs3 = plt.subplots(2,2,sharey=False, sharex=True)
+fig3, axs3 = plt.subplots(4,4,sharey=False, sharex=True)
 
 # files = []
 # files.append("processed_data/C4_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 # files.append("processed_data/C6_L{}_J{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,Delta,Delta,maxdim,dt))
 # files.append("processed_data/C8_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 
-Bs = [[0.0,0.5],[1.0,1.5]]
-# Deltas = [0.75,1.0,1.25,1.5]
+# Bs = [[0.0,0.5],[1.0,1.5]]
+Deltas = [0.75,1.0,1.25,1.5]
 # ops = ["longitudinal", "transverse", "transversedown","total"]
 # Bs = Bs[::-1]
-for i in range(2):
-    for j in range(2):
-        B = Bs[i][j]
-        # Delta = Deltas[i]
+for i in range(4):
+    for j in range(4):
+        # B = Bs[i][j]
+        Delta = Deltas[i]
         # op = ops[j]
         # filename = files[i]
         filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_{}_disconnectfirst_onesitetdvp.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt,op)
