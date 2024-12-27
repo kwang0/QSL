@@ -21,6 +21,17 @@ function solver(H, t, psi0; kwargs...)
     return psi, info
 end
 
+function entropy_von_neumann(ψ, b)
+  ψ = orthogonalize(ψ, b)
+  U,S,V = svd(ψ[b], (linkinds(ψ, b-1)..., siteinds(ψ, b)...))
+  SvN = 0.0
+  for n=1:dim(S, 1)
+    p = S[n,n]^2
+    SvN -= p * log(p)
+  end
+  return SvN
+end
+
 # Converts index into physical coordinate on triangular lattice (centers MPS site N/2 at coord (0,0))
 function coord(i, C, L)
     y = (i-1) % C
@@ -132,7 +143,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
     tick()
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst_onesitetdvp.h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component).h5"
     # filename = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
     if component == "longitudinal"
         op_string = "Sz"
@@ -152,6 +163,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         ψ2_norms = read(F, "psi2_norms")
         E0 = read(F, "E0")
         Zs = read(F, "Zs")
+        Ss = read(F, "Ss")
         start_time = last(times) + δt
         close(F)
     
@@ -185,6 +197,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         corrs = []
         ψ_norms = Float64[]
         ψ2_norms = Float64[]
+        Ss = []
         start_time = δt
     end
 
@@ -215,10 +228,13 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
             # push!(corr, inner(apply(cu(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
         # orthogonalize!(ψ2, c)
+        S = entropy_von_neumann(ITensors.cpu(ψ), c)
+
         println("Time = $t")
         flush(stdout)
         push!(times, t)
         t == δt ? corrs = corr : corrs = hcat(corrs, corr)
+        t == δt ? Ss = S : Ss = hcat(Ss, S)
         push!(ψ_norms, norm(ψ))
         push!(ψ2_norms, norm(ψ2))
     
@@ -230,6 +246,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         F["psi"] = ITensors.cpu(ψ)
         F["E0"] = E0
         F["Zs"] = Zs
+        F["Ss"] = Ss
         F["psi_norms"] = ψ_norms
         F["psi2_norms"] = ψ2_norms
         close(F)
