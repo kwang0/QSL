@@ -1,5 +1,6 @@
 using MKL
 using ITensors
+# using ITensorMPS
 using ITensorTDVP
 using CUDA
 using Printf
@@ -7,7 +8,7 @@ using PyPlot
 using HDF5
 using LinearAlgebra
 using TickTock
-include("applyexp.jl")
+# include("applyexp.jl")
 
 function solver(H, t, psi0; kwargs...)
     tol_per_unit_time = get(kwargs, :solver_tol, 1E-8)
@@ -207,7 +208,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
             break
         end
 
-        ψ2 = tdvp(solver, H, -im * δt, ψ2;
+        ψ2 = tdvp(H, -im * δt, ψ2;
           nsweeps=1,
           reverse_step=true,
           normalize=false,
