@@ -144,7 +144,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
     tick()
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component).h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched.h5"
     # filename = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
     if component == "longitudinal"
         op_string = "Sz"
@@ -170,29 +170,36 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
     
         sites = siteinds(ψ)
         c = div(N, 2) # center site
-        Sz_center = cu(op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
+        Sz_center = cu(2 * op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
         H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
     else
-        sites = siteinds("S=1/2", N; conserve_qns=false)
+        groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+        F = h5open(groundstate_file,"r")
+        ψ = cu(read(F, "psi0", MPS))
+        E0 = read(F, "E0")
+        close(F)
+
+        # sites = siteinds("S=1/2", N; conserve_qns=false)
+        sites = siteinds(ψ)
         H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
 
-        nsweeps = 20
+        # nsweeps = 20
         # state = [isodd(n) ? "Up" : "Dn" for n=1:N]
-        ψ0 = cu(randomMPS(sites))
+        # ψ0 = cu(randomMPS(sites))
 
-        E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
-        print(ψ)
-        println("E0 = $E0")
+        # E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
+        # print(ψ)
+        # println("E0 = $E0")
         Zs = expect(ψ, op_string)
         M = sum(Zs)
-        println("M = $M")
+        println("<op> = $M")
 
         Zs .*= 2
 
         c = div(N, 2) # center site
-        Sz_center = cu(op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
+        Sz_center = cu(2 * op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
         orthogonalize!(ψ, c)
-        ψ2 = apply(2 * Sz_center, ψ; cutoff, maxdim)
+        ψ2 = apply(Sz_center, ψ; cutoff, maxdim)
 
         times = Float64[]
         corrs = []
