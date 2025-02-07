@@ -65,14 +65,14 @@ op = "total"
 nplots = 6
 # fig1, axs1 = plt.subplots(1,nplots,sharey=True)
 # fig2, axs2 = plt.subplots(1,nplots,sharey=True)
-fig3, axs3 = plt.subplots(2,3,sharey=False, sharex=True)
+fig3, axs3 = plt.subplots(2,3,sharey=False, sharex=False)
 
 # files = []
 # files.append("processed_data/C4_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 # files.append("processed_data/C6_L{}_J{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,Delta,Delta,maxdim,dt))
 # files.append("processed_data/C8_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}.h5".format(L,J2,B,Delta,Delta,maxdim,dt))
 
-Bs = [[0.0,0.8,1.6],[2.4,3.2,3.2]]
+Bs = [[0.0,0.8,1.6],[2.4,2.4,3.2]]
 # Deltas = [0.75,1.0,1.25,1.5]
 # ops = ["longitudinal", "transverse", "transversedown","total"]
 # Bs = Bs[::-1]
@@ -124,7 +124,10 @@ for i in range(2):
         axs3[i,j].set_xticks(ticks = range(0,int(7*L/3),int(L/3)), labels = [r'$\Gamma$', 
             r'$Y_1$', r'$K$', r'$M$', r'$K$', r'$Y_1$', r'$\Gamma$'])
         axs3[i,j].set_yticks(ticks = ticks, labels = reversed(['0','1','2','3','4','5','6']))
-        # axs3[i,j].set(title=r'$B=${}'.format(B))
+        axs3[i,j].set(title=r'$B={} J_1$'.format(B))
+axs3[1,0].cla()
+axs3[1,0].axis('off')
+plt.tight_layout()
 
 # plt.subplots_adjust(left=0.1,
 #                     bottom=0.1,
@@ -136,7 +139,7 @@ for i in range(2):
 cbar_ax = fig3.add_axes([0.85, 0.15, 0.025, 0.7])
 fig3.subplots_adjust(right=0.8)
 fig3.colorbar(im, cax=cbar_ax)
-# fig3.suptitle(r'$S(q,\omega)$ for varying external field in QSL phase $J_2/J_1=0.072$ (6$\times$36 cylinder, $\chi=512$)')
+fig3.suptitle(r'Magnetic cross-section for varying $B||c$ in QSL phase $J_2/J_1=0.12,\Delta=1.35$ (6$\times$36 cylinder, $\chi=512$)')
 # fig1.suptitle(r'argmax$_\omega S(q,\omega)$ for isotropic $J_2=0.072$')
 # fig2.suptitle(r'$S(q=K,\omega)$/$S_\mathrm{max}$ for isotropic $J_2=0.072$')
 
