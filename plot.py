@@ -82,7 +82,7 @@ for i in range(2):
         # Delta = Deltas[i]
         # op = ops[j]
         # filename = files[i]
-        filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_{}_gssearched.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt,op)
+        filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_{}_gssearched_twositetdvp.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt,op)
         # filename = "C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_transverse_disconnectfirst.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt)
         S = h5py.File(filename, 'r')['S'][...]
 

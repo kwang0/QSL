@@ -138,13 +138,13 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16, δt=0.1, ttotal=200, maxdim=32, component="longitudinal")
+function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-10, δt=0.1, ttotal=200, maxdim=32, component="longitudinal")
     # cu = ITensors.cpu
     
     tick()
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched_twositetdvp.h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched.h5"
     # filename = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
     if component == "longitudinal"
         op_string = "Sz"
@@ -158,7 +158,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         F = h5open(filename,"r")
         times = read(F, "times")
         corrs = read(F, "corrs")
-        ψ = cu(read(F, "psi", MPS))
+        ψ = read(F, "psi", MPS)
         ψ2 = cu(read(F, "psi2", MPS))
         ψ_norms = read(F, "psi_norms")
         ψ2_norms = read(F, "psi2_norms")
@@ -175,7 +175,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
     else
         groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
         F = h5open(groundstate_file,"r")
-        ψ = cu(read(F, "psi0", MPS))
+        ψ = read(F, "psi0", MPS)
         E0 = read(F, "E0")
         close(F)
 
@@ -199,7 +199,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         c = div(N, 2) # center site
         Sz_center = cu(2 * op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
         orthogonalize!(ψ, c)
-        ψ2 = apply(Sz_center, ψ; cutoff, maxdim)
+        ψ2 = apply(Sz_center, cu(ψ); cutoff, maxdim)
 
         times = Float64[]
         corrs = []
@@ -207,6 +207,8 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         ψ2_norms = Float64[]
         Ss = []
         start_time = δt
+
+        GC.gc()
     end
 
     for t in start_time:δt:ttotal
@@ -216,27 +218,29 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         end
 
         ψ2 = tdvp(H, -im * δt, ψ2;
-          nsweeps=1,
-          reverse_step=true,
-          normalize=false,
-          maxdim=maxdim,
-          cutoff=cutoff,
-          outputlevel=1,
+            updater_kwargs=(; tol=1e-5, krylovdim=15), 
+            nsweeps=1,
+            reverse_step=true,
+            normalize=false,
+            maxdim=maxdim,
+            cutoff=cutoff,
+            outputlevel=1,
         #   solver_backend="applyexp",
-          nsite=2,
+            nsite=1,
         #   svd_alg="qr_algorithm"
         )
+        ψ2_cpu = ITensors.cpu(ψ2)
         GC.gc()
 
         corr = ComplexF64[]
         for i in range(1,N)
             # orthogonalize!(ψ, i)
             # orthogonalize!(ψ2, i)
-            push!(corr, (exp(im * E0 * t) * inner(apply(cu(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i])), ψ; cutoff, maxdim), ψ2)))
+            push!(corr, (exp(im * E0 * t) * inner(apply(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i]), ψ; cutoff, maxdim), ψ2_cpu)))
             # push!(corr, inner(apply(cu(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
         # orthogonalize!(ψ2, c)
-        S = entropy_von_neumann(ITensors.cpu(ψ), c)
+        S = entropy_von_neumann(ψ2_cpu, c)
 
         println("Time = $t")
         flush(stdout)
@@ -250,8 +254,8 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         F = h5open(filename,"w")
         F["times"] = times
         F["corrs"] = corrs
-        F["psi2"] = ITensors.cpu(ψ2)
-        F["psi"] = ITensors.cpu(ψ)
+        F["psi2"] = ψ2_cpu
+        F["psi"] = ψ
         F["E0"] = E0
         F["Zs"] = Zs
         F["Ss"] = Ss

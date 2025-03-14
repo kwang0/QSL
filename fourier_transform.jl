@@ -21,7 +21,7 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     # output = "processed_data/$file"
     # output = file
 
-    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal.h5"
+    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_gssearched_twositetdvp.h5"
     F = h5open(input,"r")
     long_times = read(F, "times")
     long_corrs = read(F, "corrs")
@@ -32,7 +32,7 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     long_Zs = read(F, "Zs")
     close(F)
 
-    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse.h5"
+    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_gssearched_twositetdvp.h5"
     F = h5open(input,"r")
     trans_times = read(F, "times")
     trans_corrs = read(F, "corrs")
@@ -43,7 +43,7 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     trans_Zs = read(F, "Zs")
     close(F)
 
-    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transversedown.h5"
+    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transversedown_gssearched_twositetdvp.h5"
     F = h5open(input,"r")
     transdown_times = read(F, "times")
     transdown_corrs = read(F, "corrs")
@@ -129,7 +129,7 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     # plt.savefig("plots_gpu/C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_eta2-$(η).png")
     # plt.savefig("plots_gpu/square_C$(C)_chi$(maxdim)_dt$(δt)_eta2-$(η)_double_evolve.png")
 
-    output = "processed_data/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_total.h5"
+    output = "processed_data/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_total_gssearched_twositetdvp.h5"
 
     G = h5open(output,"w")
     G["times"] = times

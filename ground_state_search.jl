@@ -123,11 +123,13 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
     nsamples = 10
 
     Emin = 1000000
+    ψ_min = randomMPS(sites)
 
     # B_sat = 4.5
     # N_spinup = ((B * N / 2) ÷ B_sat) + (N ÷ 2) # Naive guess for magnetization
     # state = [n ≤ N_spinup ? "Up" : "Dn" for n=1:N]
 
+    Ms = Float64[]
     for i in 1:nsamples
         GC.gc()
         ψ = cu(randomMPS(sites))
@@ -139,15 +141,18 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-16,
         Zs .*= 2
         M = sum(Zs)
         println("M = $M")
+        push!(Ms, M)
         
         if E0 < Emin
             Emin = E0
-
-            F = h5open(filename,"w")
-            F["psi0"] = ITensors.cpu(ψ0)
-            F["E0"] = E0
-            close(F)
+            ψ_min = ITensors.cpu(ψ0)
         end
+
+        F = h5open(filename,"w")
+        F["Ms"] = Ms
+        F["psi0"] = ψ_min
+        F["E0"] = Emin
+        close(F)
     end
 end
 
