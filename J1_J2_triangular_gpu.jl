@@ -1,7 +1,7 @@
 using MKL
 using ITensors
-# using ITensorMPS
-using ITensorTDVP
+using ITensorMPS
+# using ITensorTDVP
 using CUDA
 using Printf
 using PyPlot
@@ -10,17 +10,17 @@ using LinearAlgebra
 using TickTock
 # include("applyexp.jl")
 
-function solver(H, t, psi0; kwargs...)
-    tol_per_unit_time = get(kwargs, :solver_tol, 1E-8)
-    solver_kwargs = (;
-        maxiter=get(kwargs, :solver_krylovdim, 30),
-        outputlevel=get(kwargs, :solver_outputlevel, 0),
-    )
-    #applyexp tol is absolute, compute from tol_per_unit_time:
-    tol = abs(t) * tol_per_unit_time
-    psi, info = applyexp(H, t, psi0; tol, solver_kwargs..., kwargs...)
-    return psi, info
-end
+# function solver(H, t, psi0; kwargs...)
+#     tol_per_unit_time = get(kwargs, :solver_tol, 1E-8)
+#     solver_kwargs = (;
+#         maxiter=get(kwargs, :solver_krylovdim, 30),
+#         outputlevel=get(kwargs, :solver_outputlevel, 0),
+#     )
+#     #applyexp tol is absolute, compute from tol_per_unit_time:
+#     tol = abs(t) * tol_per_unit_time
+#     psi, info = applyexp(H, t, psi0; tol, solver_kwargs..., kwargs...)
+#     return psi, info
+# end
 
 function entropy_von_neumann(ψ, b)
   ψ = orthogonalize(ψ, b)
@@ -138,13 +138,13 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-10, δt=0.1, ttotal=200, maxdim=32, component="longitudinal")
+function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, δt=0.1, ttotal=200, maxdim=32, component="longitudinal")
     # cu = ITensors.cpu
     
     tick()
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched.h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/production/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched.h5"
     # filename = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
     if component == "longitudinal"
         op_string = "Sz"
@@ -218,15 +218,15 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1e-10,
         end
 
         ψ2 = tdvp(H, -im * δt, ψ2;
-            updater_kwargs=(; tol=1e-5, krylovdim=15), 
+            updater_kwargs=(; tol=1f-5, krylovdim=15),
+            updater_backend="applyexp", 
             nsweeps=1,
             reverse_step=true,
             normalize=false,
             maxdim=maxdim,
             cutoff=cutoff,
             outputlevel=1,
-        #   solver_backend="applyexp",
-            nsite=1,
+            nsite=2,
         #   svd_alg="qr_algorithm"
         )
         ψ2_cpu = ITensors.cpu(ψ2)
