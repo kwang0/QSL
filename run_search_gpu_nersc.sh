@@ -1,16 +1,18 @@
 #!/bin/bash
 #SBATCH -A m4863_g
 #SBATCH -C gpu&hbm80g
-#SBATCH -q shared
-#SBATCH -t 24:00:00
-#SBATCH -n 1
-#SBATCH -c 32
-#SBATCH --gpus-per-task=1
+#SBATCH -q regular
+#SBATCH -N 5
+#SBATCH -t 6:00:00
+#SBATCH --ntasks-per-node=4
+#SBATCH --licenses=scratch
 #SBATCH -o ./logs_slurm/slurm-%j.out
 
 export SLURM_CPU_BIND="cores"
 
-julia $1 $2 $3 $4 $5 $6 $7 > logs_gpu/ground_state_search_C${2}_L${3}_J${4}_B${5}_1Delta${6}_2Delta${6}_chi${7}.txt
-# julia $1 $2 $3 $4 $5 > logs_gpu/square_C${2}_chi${4}_dt${5}_double_evolve.txt
+for i in $(seq 0.4 0.4 8.0)
+do
+    srun --exact -u -n 1 --gpus-per-task 1 -c 32 --mem-per-gpu=55G julia ground_state_search.jl 6 36 0.12 $i 1.35 512 > logs_gpu/ground_state_search_C6_L36_J0.12_B0.0_Bperp${i}_1Delta1.35_2Delta1.35_chi512.txt &
+done
 
-exit 0
+wait

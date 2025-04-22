@@ -21,65 +21,66 @@ function coord(i, C, L)
 end
 
 # Convert row/col label to MPS index, with PBC in rows
-function ind(row, col, C)
+function idx(row, col, C)
     return col * C + mod(row, C) + 1
 end
 
 # Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
 # Lattice has length L and height C, with PBC along height (cylindrical).
-function triangular_model(C, L, J1, J2, B=0.0, Δ1 = 1.0, Δ2 = 1.0)
+function triangular_model(C, L, J1, J2, B=0.0, Bperp=0.0, Δ1 = 1.0, Δ2 = 1.0)
     os = OpSum()
 
     for col in range(0,L-1)
         for row in range(0,C-1)
-            index = ind(row, col, C)
+            index = idx(row, col, C)
 
             # Applied field
             os += -B, "Sz", index
+            os += -Bperp, "Sx", index
             
             # NN couplings
-            os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col, C)
-            os += 0.5*J1, "S+", index, "S-", ind(row + 1, col, C)
-            os += 0.5*J1, "S-", index, "S+", ind(row + 1, col, C)
+            os += Δ1*J1, "Sz", index, "Sz", idx(row + 1, col, C)
+            os += 0.5*J1, "S+", index, "S-", idx(row + 1, col, C)
+            os += 0.5*J1, "S-", index, "S+", idx(row + 1, col, C)
 
             if (col < L-1)
-                os += Δ1*J1, "Sz", index, "Sz", ind(row, col + 1, C)
-                os += 0.5*J1, "S+", index, "S-", ind(row, col + 1, C)
-                os += 0.5*J1, "S-", index, "S+", ind(row, col + 1, C)
+                os += Δ1*J1, "Sz", index, "Sz", idx(row, col + 1, C)
+                os += 0.5*J1, "S+", index, "S-", idx(row, col + 1, C)
+                os += 0.5*J1, "S-", index, "S+", idx(row, col + 1, C)
 
                 # Odd rows
                 if (row % 2 == 1)
-                    os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col + 1, C)
-                    os += 0.5*J1, "S+", index, "S-", ind(row + 1, col + 1, C)
-                    os += 0.5*J1, "S-", index, "S+", ind(row + 1, col + 1, C)
+                    os += Δ1*J1, "Sz", index, "Sz", idx(row + 1, col + 1, C)
+                    os += 0.5*J1, "S+", index, "S-", idx(row + 1, col + 1, C)
+                    os += 0.5*J1, "S-", index, "S+", idx(row + 1, col + 1, C)
 
-                    os += Δ1*J1, "Sz", index, "Sz", ind(row - 1, col + 1, C)
-                    os += 0.5*J1, "S+", index, "S-", ind(row - 1, col + 1, C)
-                    os += 0.5*J1, "S-", index, "S+", ind(row - 1, col + 1, C)
+                    os += Δ1*J1, "Sz", index, "Sz", idx(row - 1, col + 1, C)
+                    os += 0.5*J1, "S+", index, "S-", idx(row - 1, col + 1, C)
+                    os += 0.5*J1, "S-", index, "S+", idx(row - 1, col + 1, C)
                 end
             end
 
             # NNN couplings
-            os += Δ2*J2, "Sz", index, "Sz", ind(row + 2, col, C)
-            os += 0.5*J2, "S+", index, "S-", ind(row + 2, col, C)
-            os += 0.5*J2, "S-", index, "S+", ind(row + 2, col, C)
+            os += Δ2*J2, "Sz", index, "Sz", idx(row + 2, col, C)
+            os += 0.5*J2, "S+", index, "S-", idx(row + 2, col, C)
+            os += 0.5*J2, "S-", index, "S+", idx(row + 2, col, C)
 
             if ((col < L-1) && (row % 2 == 0))
-                os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 1, C)
-                os += 0.5*J2, "S+", index, "S-", ind(row + 1, col + 1, C)
-                os += 0.5*J2, "S-", index, "S+", ind(row + 1, col + 1, C)
+                os += Δ2*J2, "Sz", index, "Sz", idx(row + 1, col + 1, C)
+                os += 0.5*J2, "S+", index, "S-", idx(row + 1, col + 1, C)
+                os += 0.5*J2, "S-", index, "S+", idx(row + 1, col + 1, C)
 
-                os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 1, C)
-                os += 0.5*J2, "S+", index, "S-", ind(row - 1, col + 1, C)
-                os += 0.5*J2, "S-", index, "S+", ind(row - 1, col + 1, C)
+                os += Δ2*J2, "Sz", index, "Sz", idx(row - 1, col + 1, C)
+                os += 0.5*J2, "S+", index, "S-", idx(row - 1, col + 1, C)
+                os += 0.5*J2, "S-", index, "S+", idx(row - 1, col + 1, C)
             elseif ((col < L-2) && (row % 2 == 1))
-                os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 2, C)
-                os += 0.5*J2, "S+", index, "S-", ind(row + 1, col + 2, C)
-                os += 0.5*J2, "S-", index, "S+", ind(row + 1, col + 2, C)
+                os += Δ2*J2, "Sz", index, "Sz", idx(row + 1, col + 2, C)
+                os += 0.5*J2, "S+", index, "S-", idx(row + 1, col + 2, C)
+                os += 0.5*J2, "S-", index, "S+", idx(row + 1, col + 2, C)
 
-                os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 2, C)
-                os += 0.5*J2, "S+", index, "S-", ind(row - 1, col + 2, C)
-                os += 0.5*J2, "S-", index, "S+", ind(row - 1, col + 2, C)
+                os += Δ2*J2, "Sz", index, "Sz", idx(row - 1, col + 2, C)
+                os += 0.5*J2, "S+", index, "S-", idx(row - 1, col + 2, C)
+                os += 0.5*J2, "S-", index, "S+", idx(row - 1, col + 2, C)
             end
         end
     end
@@ -94,17 +95,17 @@ function square_model(C, L, J1=1.0)
 
     for col in range(0,L-1)
         for row in range(0,C-1)
-            index = ind(row, col, C)
+            index = idx(row, col, C)
             
             # NN couplings
-            os += J1, "Sz", index, "Sz", ind(row + 1, col, C)
-            os += 0.5*J1, "S+", index, "S-", ind(row + 1, col, C)
-            os += 0.5*J1, "S-", index, "S+", ind(row + 1, col, C)
+            os += J1, "Sz", index, "Sz", idx(row + 1, col, C)
+            os += 0.5*J1, "S+", index, "S-", idx(row + 1, col, C)
+            os += 0.5*J1, "S-", index, "S+", idx(row + 1, col, C)
 
             if (col < L-1)
-                os += J1, "Sz", index, "Sz", ind(row, col + 1, C)
-                os += 0.5*J1, "S+", index, "S-", ind(row, col + 1, C)
-                os += 0.5*J1, "S-", index, "S+", ind(row, col + 1, C)
+                os += J1, "Sz", index, "Sz", idx(row, col + 1, C)
+                os += 0.5*J1, "S+", index, "S-", idx(row, col + 1, C)
+                os += 0.5*J1, "S-", index, "S+", idx(row, col + 1, C)
             end
         end
     end
@@ -112,12 +113,12 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, maxdim=32)
+function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, maxdim=32)
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_Bperp$(Bperp)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
     sites = siteinds("S=1/2", N; conserve_qns=false)
-    H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
+    H = cu(MPO(triangular_model(C, L, J1, J2, B, Bperp, Δ1, Δ2), sites))
 
     nsweeps = 20
     nsamples = 10
@@ -163,8 +164,8 @@ BLAS.set_num_threads(1)
 C = parse(Int64, ARGS[1])
 L = parse(Int64, ARGS[2])
 J2 = parse(Float64, ARGS[3])
-B = parse(Float64, ARGS[4])
+Bperp = parse(Float64, ARGS[4])
 Δ = parse(Float64, ARGS[5])
 maxdim = parse(Int64, ARGS[6])
 
-main(C=C, L=L, J2=J2, B=B, Δ1=Δ, Δ2=Δ, maxdim=maxdim)
+main(C=C, L=L, J2=J2, Bperp=Bperp, Δ1=Δ, Δ2=Δ, maxdim=maxdim)
