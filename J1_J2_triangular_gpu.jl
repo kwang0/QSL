@@ -158,7 +158,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
         F = h5open(filename,"r")
         times = read(F, "times")
         corrs = read(F, "corrs")
-        ψ = read(F, "psi", MPS)
+        ψ = cu(read(F, "psi", MPS))
         ψ2 = cu(read(F, "psi2", MPS))
         ψ_norms = read(F, "psi_norms")
         ψ2_norms = read(F, "psi2_norms")
@@ -173,7 +173,8 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
         Sz_center = cu(2 * op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
         H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
     else
-        groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+        groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+        # groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
         F = h5open(groundstate_file,"r")
         ψ = read(F, "psi0", MPS)
         E0 = read(F, "E0")
@@ -218,7 +219,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
         end
 
         ψ2 = tdvp(H, -im * δt, ψ2;
-            updater_kwargs=(; tol=1f-5, krylovdim=15),
+            # updater_kwargs=(; tol=1f-5, krylovdim=15),
             updater_backend="applyexp", 
             nsweeps=1,
             reverse_step=true,
@@ -236,7 +237,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
         for i in range(1,N)
             # orthogonalize!(ψ, i)
             # orthogonalize!(ψ2, i)
-            push!(corr, (exp(im * E0 * t) * inner(apply(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i]), ψ; cutoff, maxdim), ψ2_cpu)))
+            push!(corr, (exp(im * E0 * t) * inner(apply(cu(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i])), ψ; cutoff, maxdim), ψ2)))
             # push!(corr, inner(apply(cu(2 * op("Sz",sites[i])), ψ; cutoff, maxdim), ψ2))
         end
         # orthogonalize!(ψ2, c)
@@ -255,7 +256,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
         F["times"] = times
         F["corrs"] = corrs
         F["psi2"] = ψ2_cpu
-        F["psi"] = ψ
+        F["psi"] = ITensors.cpu(ψ)
         F["E0"] = E0
         F["Zs"] = Zs
         F["Ss"] = Ss
@@ -276,10 +277,10 @@ BLAS.set_num_threads(1)
 C = parse(Int64, ARGS[1])
 L = parse(Int64, ARGS[2])
 J2 = parse(Float64, ARGS[3])
-B = parse(Float64, ARGS[4])
-Δ = parse(Float64, ARGS[5])
-maxdim = parse(Int64, ARGS[6])
-δt = parse(Float64, ARGS[7])
-component = ARGS[8]
+# B = parse(Float64, ARGS[4])
+Δ = parse(Float64, ARGS[4])
+maxdim = parse(Int64, ARGS[5])
+δt = parse(Float64, ARGS[6])
+component = ARGS[7]
 
-main(C=C, L=L, J2=J2, B=B, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt, component=component)
+main(C=C, L=L, J2=J2, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt, component=component)

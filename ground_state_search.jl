@@ -116,7 +116,8 @@ end
 function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, maxdim=32)
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_Bperp$(Bperp)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+    # filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_Bperp$(Bperp)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
     sites = siteinds("S=1/2", N; conserve_qns=false)
     H = cu(MPO(triangular_model(C, L, J1, J2, B, Bperp, Δ1, Δ2), sites))
 
@@ -164,8 +165,8 @@ BLAS.set_num_threads(1)
 C = parse(Int64, ARGS[1])
 L = parse(Int64, ARGS[2])
 J2 = parse(Float64, ARGS[3])
-Bperp = parse(Float64, ARGS[4])
-Δ = parse(Float64, ARGS[5])
-maxdim = parse(Int64, ARGS[6])
+# Bperp = parse(Float64, ARGS[4])
+Δ = parse(Float64, ARGS[4])
+maxdim = parse(Int64, ARGS[5])
 
-main(C=C, L=L, J2=J2, Bperp=Bperp, Δ1=Δ, Δ2=Δ, maxdim=maxdim)
+main(C=C, L=L, J2=J2, Δ1=Δ, Δ2=Δ, maxdim=maxdim)
