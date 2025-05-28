@@ -26,6 +26,9 @@ NN_inds = 6:6:216
 NN_corrs = corrs[NN_inds, :]
 L = size(NN_corrs,1)
 
+cbar_min = -0.1
+cbar_max = 0.1
+
 # create a 2×2 grid for NN and NNN correlations
 fig, axes = subplots(2, 2, sharey=true, constrained_layout=true)
 # unpack axes array
@@ -37,7 +40,7 @@ ax4 = axes[2, 2]
 im = ax1.imshow(
     real.(NN_corrs)', interpolation="nearest", origin="lower",
     extent=(1, L, 0, times[end]), aspect="auto",
-    cmap="RdBu_r", vmin=-0.2, vmax=0.2
+    cmap="RdBu_r", vmin=cbar_min, vmax=cbar_max
 )
 # axis labels
 ax1.set_ylabel(L"t")
@@ -46,7 +49,7 @@ ax1.set_ylabel(L"t")
 im2 = ax2.imshow(
     imag.(NN_corrs)', interpolation="nearest", origin="lower",
     extent=(1, L, 0, times[end]), aspect="auto",
-    cmap="RdBu_r", vmin=-0.2, vmax=0.2
+    cmap="RdBu_r", vmin=cbar_min, vmax=cbar_max
 )
 
 # compute NNN indices with explicit globals to avoid soft-scope warnings
@@ -71,7 +74,7 @@ L = size(NNN_corrs,1)
 im3 = ax3.imshow(
     real.(NNN_corrs)', interpolation="nearest", origin="lower",
     extent=(1, L, 0, times[end]), aspect="auto",
-    cmap="RdBu_r", vmin=-0.2, vmax=0.2
+    cmap="RdBu_r", vmin=cbar_min, vmax=cbar_max
 )
 ax3.set_ylabel(L"t")
 ax3.set_xlabel(L"r")
@@ -80,7 +83,7 @@ ax3.set_xlabel(L"r")
 im4 = ax4.imshow(
     imag.(NNN_corrs)', interpolation="nearest", origin="lower",
     extent=(1, L, 0, times[end]), aspect="auto",
-    cmap="RdBu_r", vmin=-0.2, vmax=0.2
+    cmap="RdBu_r", vmin=cbar_min, vmax=cbar_max
 )
 ax4.set_xlabel(L"r")
 
@@ -88,9 +91,9 @@ ax4.set_xlabel(L"r")
 # Shared colorbars above columns
 cbar1 = fig.colorbar(im, ax=[ax1, ax3], orientation="horizontal", pad=0.05, location="top")
 cbar1.set_label("Re[G(r,t)]")
-cbar1.set_ticks([-0.2, 0.0, 0.2])
+cbar1.set_ticks([cbar_min, 0.0, cbar_max])
 cbar2 = fig.colorbar(im2, ax=[ax2, ax4], orientation="horizontal", pad=0.05, location="top")
 cbar2.set_label("Im[G(r,t)]")
-cbar2.set_ticks([-0.2, 0.0, 0.2])
+cbar2.set_ticks([cbar_min, 0.0, cbar_max])
 
 # fig.tight_layout()  # Not needed with constrained_layout

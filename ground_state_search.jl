@@ -27,6 +27,7 @@ end
 
 # Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
 # Lattice has length L and height C, with PBC along height (cylindrical).
+# XC geometry.
 function triangular_model(C, L, J1, J2, B=0.0, Bperp=0.0, Δ1 = 1.0, Δ2 = 1.0)
     os = OpSum()
 
@@ -88,6 +89,74 @@ function triangular_model(C, L, J1, J2, B=0.0, Bperp=0.0, Δ1 = 1.0, Δ2 = 1.0)
     return os
 end
 
+# Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
+# Lattice has length L and height C, with PBC along height (cylindrical).
+# YC geometry.
+function triangular_model_YC(C, L, J1, J2, B=0.0, Bperp=0.0, Δ1 = 1.0, Δ2 = 1.0)
+    os = OpSum()
+
+    for col in range(0,L-1)
+        for row in range(0,C-1)
+            index = idx(row, col, C)
+
+            # Applied field
+            os += -B, "Sz", index
+            os += -Bperp, "Sx", index
+            
+            # NN couplings
+            os += Δ1*J1, "Sz", index, "Sz", idx(row + 1, col, C)
+            os += 0.5*J1, "S+", index, "S-", idx(row + 1, col, C)
+            os += 0.5*J1, "S-", index, "S+", idx(row + 1, col, C)
+
+            if (col < L-1)
+                os += Δ1*J1, "Sz", index, "Sz", idx(row, col + 1, C)
+                os += 0.5*J1, "S+", index, "S-", idx(row, col + 1, C)
+                os += 0.5*J1, "S-", index, "S+", idx(row, col + 1, C)
+
+                # Even/odd columns
+                if (col % 2 == 0)
+                    os += Δ1*J1, "Sz", index, "Sz", idx(row - 1, col + 1, C)
+                    os += 0.5*J1, "S+", index, "S-", idx(row - 1, col + 1, C)
+                    os += 0.5*J1, "S-", index, "S+", idx(row - 1, col + 1, C)
+                else
+                    os += Δ1*J1, "Sz", index, "Sz", idx(row + 1, col + 1, C)
+                    os += 0.5*J1, "S+", index, "S-", idx(row + 1, col + 1, C)
+                    os += 0.5*J1, "S-", index, "S+", idx(row + 1, col + 1, C)
+                end
+            end
+
+            # NNN couplings
+            if (col < L-1)
+                # Even/odd columns
+                if (col % 2 == 0)
+                    os += Δ2*J2, "Sz", index, "Sz", idx(row + 1, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", idx(row + 1, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", idx(row + 1, col + 1, C)
+
+                    os += Δ2*J2, "Sz", index, "Sz", idx(row - 2, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", idx(row - 2, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", idx(row - 2, col + 1, C)
+                else
+                    os += Δ2*J2, "Sz", index, "Sz", idx(row + 2, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", idx(row + 2, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", idx(row + 2, col + 1, C)
+
+                    os += Δ2*J2, "Sz", index, "Sz", idx(row - 1, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", idx(row - 1, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", idx(row - 1, col + 1, C)
+                end
+            end
+            if (col < L-2)
+                os += Δ2*J2, "Sz", index, "Sz", idx(row, col + 2, C)
+                os += 0.5*J2, "S+", index, "S-", idx(row, col + 2, C)
+                os += 0.5*J2, "S-", index, "S+", idx(row, col + 2, C)
+            end
+        end
+    end
+
+    return os
+end
+
 # Generate Hamiltonian of J1-J2 Heisenberg model on square lattice
 # Lattice has length L and height C, with PBC along height (cylindrical).
 function square_model(C, L, J1=1.0)
@@ -116,10 +185,10 @@ end
 function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, maxdim=32)
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_YC_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
     # filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_Bperp$(Bperp)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
     sites = siteinds("S=1/2", N; conserve_qns=false)
-    H = cu(MPO(triangular_model(C, L, J1, J2, B, Bperp, Δ1, Δ2), sites))
+    H = cu(MPO(triangular_model_YC(C, L, J1, J2, B, Bperp, Δ1, Δ2), sites))
 
     nsweeps = 20
     nsamples = 10

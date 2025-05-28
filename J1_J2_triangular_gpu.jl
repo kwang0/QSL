@@ -53,6 +53,7 @@ end
 
 # Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
 # Lattice has length L and height C, with PBC along height (cylindrical).
+# XC geometry.
 function triangular_model(C, L, J1, J2, B=0.0, Δ1 = 1.0, Δ2 = 1.0)
     os = OpSum()
 
@@ -113,6 +114,74 @@ function triangular_model(C, L, J1, J2, B=0.0, Δ1 = 1.0, Δ2 = 1.0)
     return os
 end
 
+# Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
+# Lattice has length L and height C, with PBC along height (cylindrical).
+# YC geometry.
+function triangular_model_YC(C, L, J1, J2, B=0.0, Bperp=0.0, Δ1 = 1.0, Δ2 = 1.0)
+    os = OpSum()
+
+    for col in range(0,L-1)
+        for row in range(0,C-1)
+            index = ind(row, col, C)
+
+            # Applied field
+            os += -B, "Sz", index
+            os += -Bperp, "Sx", index
+            
+            # NN couplings
+            os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col, C)
+            os += 0.5*J1, "S+", index, "S-", ind(row + 1, col, C)
+            os += 0.5*J1, "S-", index, "S+", ind(row + 1, col, C)
+
+            if (col < L-1)
+                os += Δ1*J1, "Sz", index, "Sz", ind(row, col + 1, C)
+                os += 0.5*J1, "S+", index, "S-", ind(row, col + 1, C)
+                os += 0.5*J1, "S-", index, "S+", ind(row, col + 1, C)
+
+                # Even/odd columns
+                if (col % 2 == 0)
+                    os += Δ1*J1, "Sz", index, "Sz", ind(row - 1, col + 1, C)
+                    os += 0.5*J1, "S+", index, "S-", ind(row - 1, col + 1, C)
+                    os += 0.5*J1, "S-", index, "S+", ind(row - 1, col + 1, C)
+                else
+                    os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col + 1, C)
+                    os += 0.5*J1, "S+", index, "S-", ind(row + 1, col + 1, C)
+                    os += 0.5*J1, "S-", index, "S+", ind(row + 1, col + 1, C)
+                end
+            end
+
+            # NNN couplings
+            if (col < L-1)
+                # Even/odd columns
+                if (col % 2 == 0)
+                    os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", ind(row + 1, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", ind(row + 1, col + 1, C)
+
+                    os += Δ2*J2, "Sz", index, "Sz", ind(row - 2, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", ind(row - 2, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", ind(row - 2, col + 1, C)
+                else
+                    os += Δ2*J2, "Sz", index, "Sz", ind(row + 2, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", ind(row + 2, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", ind(row + 2, col + 1, C)
+
+                    os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", ind(row - 1, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", ind(row - 1, col + 1, C)
+                end
+            end
+            if (col < L-2)
+                os += Δ2*J2, "Sz", index, "Sz", ind(row, col + 2, C)
+                os += 0.5*J2, "S+", index, "S-", ind(row, col + 2, C)
+                os += 0.5*J2, "S-", index, "S+", ind(row, col + 2, C)
+            end
+        end
+    end
+
+    return os
+end
+
 # Generate Hamiltonian of J1-J2 Heisenberg model on square lattice
 # Lattice has length L and height C, with PBC along height (cylindrical).
 function square_model(C, L, J1=1.0)
@@ -144,7 +213,7 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
     tick()
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/production/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched.h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/production/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched_YC.h5"
     # filename = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
     if component == "longitudinal"
         op_string = "Sz"
@@ -171,18 +240,18 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
         sites = siteinds(ψ)
         c = div(N, 2) # center site
         Sz_center = cu(2 * op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
-        H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
+        H = cu(MPO(triangular_model_YC(C, L, J1, J2, B, Δ1, Δ2), sites))
     else
-        groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+        groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_YC_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
         # groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
         F = h5open(groundstate_file,"r")
-        ψ = read(F, "psi0", MPS)
+        ψ = cu(read(F, "psi0", MPS))
         E0 = read(F, "E0")
         close(F)
 
         # sites = siteinds("S=1/2", N; conserve_qns=false)
         sites = siteinds(ψ)
-        H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
+        H = cu(MPO(triangular_model_YC(C, L, J1, J2, B, Δ1, Δ2), sites))
 
         # nsweeps = 20
         # state = [isodd(n) ? "Up" : "Dn" for n=1:N]
