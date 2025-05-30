@@ -19,10 +19,10 @@ c = div(C*L, 2) # center site
 
 # corrs .+= Zs[c] .* Zs # Disconected correlation
 
-corrs .*= 3/4
+corrs .*= 3/4 # Correct normalization of Paulis and sum over three directions
 corrs = conj.(corrs) # Match correlation function to the one in the paper
 
-NN_inds = 6:6:216
+NN_inds = 6:6:215
 NN_corrs = corrs[NN_inds, :]
 L = size(NN_corrs,1)
 
@@ -52,11 +52,15 @@ im2 = ax2.imshow(
     cmap="RdBu_r", vmin=cbar_min, vmax=cbar_max
 )
 
+
+############################### NNN correlations ##################################
+
+
 # compute NNN indices with explicit globals to avoid soft-scope warnings
 row = 0
 col = 1
 NNN_inds = Int[]
-while col < 36
+while col < 35
     push!(NNN_inds, ind(row, col, C))
     if row % 2 == 0
         global row += 1
@@ -68,7 +72,30 @@ while col < 36
 end
 
 NNN_corrs = corrs[NNN_inds, :]
+NNN_corrs += NNN_corrs[end:-1:1, :] # Symmetrize NNN correlations
+NNN_corrs ./= 2
 L = size(NNN_corrs,1)
+
+# filename = "processed_data/C6_L36_J0.043_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1_longitudinal_gssearched_YC.h5"
+
+# F = h5open(filename,"r")
+# times = read(F, "times")
+# corrs = read(F, "corrs")
+# Zs = read(F, "Zs")
+# close(F)
+
+# # corrs .+= Zs[c] .* Zs # Disconected correlation
+
+# corrs .*= 3/4
+# corrs = conj.(corrs) # Match correlation function to the one in the paper
+
+# # NNN_inds = 12:12:216
+# NNN_inds = 103:1:108
+# NNN_corrs = corrs[NNN_inds, :]
+# L = size(NNN_corrs,1)
+
+# cbar_min = -0.01
+# cbar_max = 0.01
 
 # NNN real-part heat map
 im3 = ax3.imshow(
