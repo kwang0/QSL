@@ -7,11 +7,16 @@ end
 
 filename = "processed_data/C6_L36_J0.043_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1_longitudinal_gssearched.h5"
 
+newfile = "processed_data/KYbSe2_lightcone_data.h5"
+
 F = h5open(filename,"r")
 times = read(F, "times")
 corrs = read(F, "corrs")
 Zs = read(F, "Zs")
 close(F)
+
+G = h5open(newfile, "w")
+G["times"] = times
 
 C = 6
 L = 36
@@ -25,6 +30,7 @@ corrs = conj.(corrs) # Match correlation function to the one in the paper
 NN_inds = 6:6:215
 NN_corrs = corrs[NN_inds, :]
 L = size(NN_corrs,1)
+G["NN_corrs"] = NN_corrs
 
 cbar_min = -0.1
 cbar_max = 0.1
@@ -75,6 +81,8 @@ NNN_corrs = corrs[NNN_inds, :]
 NNN_corrs += NNN_corrs[end:-1:1, :] # Symmetrize NNN correlations
 NNN_corrs ./= 2
 L = size(NNN_corrs,1)
+G["NNN_corrs"] = NNN_corrs
+close(G)
 
 # filename = "processed_data/C6_L36_J0.043_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1_longitudinal_gssearched_YC.h5"
 
