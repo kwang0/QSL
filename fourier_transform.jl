@@ -15,48 +15,58 @@ function coord(i, C, L)
 end
 
 function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
-    # file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal.h5"
+    file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_gssearched.h5"
     # input = "/pscratch/sd/k/kwang98/QSL/$file"
-    # input = "processed_data/$file"
-    # output = "processed_data/$file"
+    input = "processed_data/$file"
+    output = "processed_data/$file"
     # output = file
 
-    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_gssearched_twositetdvp.h5"
     F = h5open(input,"r")
-    long_times = read(F, "times")
-    long_corrs = read(F, "corrs")
-    long_Ss = read(F, "Ss")
-    long_psi_norms = read(F, "psi_norms")
-    long_psi2_norms = read(F, "psi2_norms")
-    long_E0 = read(F, "E0")
-    long_Zs = read(F, "Zs")
+    times = read(F, "times")
+    corrs = read(F, "corrs")
+    Ss = read(F, "Ss")
+    psi_norms = read(F, "psi_norms")
+    psi2_norms = read(F, "psi2_norms")
+    E0 = read(F, "E0")
+    Zs = read(F, "Zs")
     close(F)
 
-    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_gssearched_twositetdvp.h5"
-    F = h5open(input,"r")
-    trans_times = read(F, "times")
-    trans_corrs = read(F, "corrs")
-    trans_Ss = read(F, "Ss")
-    trans_psi_norms = read(F, "psi_norms")
-    trans_psi2_norms = read(F, "psi2_norms")
-    trans_E0 = read(F, "E0")
-    trans_Zs = read(F, "Zs")
-    close(F)
+    # input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_gssearched_twositetdvp.h5"
+    # F = h5open(input,"r")
+    # long_times = read(F, "times")
+    # long_corrs = read(F, "corrs")
+    # long_Ss = read(F, "Ss")
+    # long_psi_norms = read(F, "psi_norms")
+    # long_psi2_norms = read(F, "psi2_norms")
+    # long_E0 = read(F, "E0")
+    # long_Zs = read(F, "Zs")
+    # close(F)
 
-    input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transversedown_gssearched_twositetdvp.h5"
-    F = h5open(input,"r")
-    transdown_times = read(F, "times")
-    transdown_corrs = read(F, "corrs")
-    transdown_Ss = read(F, "Ss")
-    transdown_psi_norms = read(F, "psi_norms")
-    transdown_psi2_norms = read(F, "psi2_norms")
-    transdown_E0 = read(F, "E0")
-    transdown_Zs = read(F, "Zs")
-    close(F)
+    # input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transverse_gssearched_twositetdvp.h5"
+    # F = h5open(input,"r")
+    # trans_times = read(F, "times")
+    # trans_corrs = read(F, "corrs")
+    # trans_Ss = read(F, "Ss")
+    # trans_psi_norms = read(F, "psi_norms")
+    # trans_psi2_norms = read(F, "psi2_norms")
+    # trans_E0 = read(F, "E0")
+    # trans_Zs = read(F, "Zs")
+    # close(F)
 
-    min_length = minimum(length, [long_times, trans_times, transdown_times])
-    times = long_times[1:min_length]
-    corrs = (g_perp^2 .* long_corrs[:,1:min_length]) .+ (0.25 * g_parallel^2 .* (trans_corrs[:,1:min_length] .+ transdown_corrs[:,1:min_length]))
+    # input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_transversedown_gssearched_twositetdvp.h5"
+    # F = h5open(input,"r")
+    # transdown_times = read(F, "times")
+    # transdown_corrs = read(F, "corrs")
+    # transdown_Ss = read(F, "Ss")
+    # transdown_psi_norms = read(F, "psi_norms")
+    # transdown_psi2_norms = read(F, "psi2_norms")
+    # transdown_E0 = read(F, "E0")
+    # transdown_Zs = read(F, "Zs")
+    # close(F)
+
+    # min_length = minimum(length, [long_times, trans_times, transdown_times])
+    # times = long_times[1:min_length]
+    # corrs = (g_perp^2 .* long_corrs[:,1:min_length]) .+ (0.25 * g_parallel^2 .* (trans_corrs[:,1:min_length] .+ transdown_corrs[:,1:min_length]))
 
     N = C * L
     xs = zeros(2,N)
@@ -85,25 +95,26 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     BZ_path2 = (1 .- interval) .* Γ .+ interval .* Y1
     BZ_path2 = vcat(BZ_path2, (1 .- interval) .* Y1 .+ interval .* K1)
     BZ_path2 = vcat(BZ_path2, (1 .- interval) .* K2 .+ interval .* M1)
-    BZ_path2 = vcat(BZ_path2, (1 .- interval) .* M1 .+ interval .* K3)
-    BZ_path2 = vcat(BZ_path2, (1 .- interval) .* K4 .+ interval .* Y2)
-    BZ_path2 = vcat(BZ_path2, (1 .- interval) .* Y2 .+ interval .* Γ)
+    BZ_path2 = vcat(BZ_path2, M1)
+    # BZ_path2 = vcat(BZ_path2, (1 .- interval) .* M1 .+ interval .* K3)
+    # BZ_path2 = vcat(BZ_path2, (1 .- interval) .* K4 .+ interval .* Y2)
+    # BZ_path2 = vcat(BZ_path2, (1 .- interval) .* Y2 .+ interval .* Γ)
 
 
     # Square lattice BZ points
-    X1 = transpose([pi,0.0])
-    X2 = transpose([0.0,pi])
-    M = transpose([pi,pi])
+    # X1 = transpose([pi,0.0])
+    # X2 = transpose([0.0,pi])
+    # M = transpose([pi,pi])
 
-    BZ_square_path = (1 .- interval) .* Γ .+ interval .* X1
-    BZ_square_path = vcat(BZ_square_path, (1 .- interval) .* X2 .+ interval .* M)
+    # BZ_square_path = (1 .- interval) .* Γ .+ interval .* X1
+    # BZ_square_path = vcat(BZ_square_path, (1 .- interval) .* X2 .+ interval .* M)
 
-    eta = sqrt(η)
+    # eta = sqrt(η)
     if η == 0
-        eta = 1/2 * (2 * pi / times[end])
+        η = 1/2 * (2 * pi / times[end])
     end 
     # Pointwise multiplication
-    dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* times.^2)
+    dampening = (η / sqrt(pi)) .* exp.(-η^2 .* times.^2)
     corrs2 = corrs .* dampening'
 
     # corrs2 = corrs # No dampening
@@ -112,7 +123,7 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     # dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* (times .- times').^2)
     # corrs2 = corrs * dampening
 
-    omegas = transpose(vcat(LinRange(6.0, 0.0, round(Int64, 6 * (times[end] / (2*pi))))))
+    omegas = transpose(vcat(LinRange(3.0, 0.0, round(Int64, 3 * (times[end] / (2*pi))))))
     thetas = omegas .* times
     S = real(corrs2) * cos.(thetas) - imag(corrs2) * sin.(thetas)
 
@@ -129,34 +140,45 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     # plt.savefig("plots_gpu/C$(C)_J$(J2)_chi$(maxdim)_dt$(δt)_eta2-$(η).png")
     # plt.savefig("plots_gpu/square_C$(C)_chi$(maxdim)_dt$(δt)_eta2-$(η)_double_evolve.png")
 
-    output = "processed_data/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_total_gssearched_twositetdvp.h5"
+    # output = "processed_data/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_total_gssearched_twositetdvp.h5"
 
     G = h5open(output,"w")
     G["times"] = times
     G["corrs"] = corrs
     G["S"] = S
-    G["long_times"] = long_times
-    G["long_corrs"] = long_corrs
-    G["long_Ss"] = long_Ss
-    G["long_psi_norms"] = long_psi_norms
-    G["long_psi2_norms"] = long_psi2_norms
-    G["long_E0"] = long_E0
-    G["long_Zs"] = long_Zs
-    G["trans_times"] = trans_times
-    G["trans_corrs"] = trans_corrs
-    G["trans_Ss"] = trans_Ss
-    G["trans_psi_norms"] = trans_psi_norms
-    G["trans_psi2_norms"] = trans_psi2_norms
-    G["trans_E0"] = trans_E0
-    G["trans_Zs"] = trans_Zs
-    G["transdown_times"] = transdown_times
-    G["transdown_corrs"] = transdown_corrs
-    G["transdown_Ss"] = transdown_Ss
-    G["transdown_psi_norms"] = transdown_psi_norms
-    G["transdown_psi2_norms"] = transdown_psi2_norms
-    G["transdown_E0"] = transdown_E0
-    G["transdown_Zs"] = transdown_Zs
+    G["Ss"] = Ss
+    G["psi_norms"] = psi_norms
+    G["psi2_norms"] = psi2_norms
+    G["E0"] = E0
+    G["Zs"] = Zs
     close(G)
+
+    # G = h5open(output,"w")
+    # G["times"] = times
+    # G["corrs"] = corrs
+    # G["S"] = S
+    # G["long_times"] = long_times
+    # G["long_corrs"] = long_corrs
+    # G["long_Ss"] = long_Ss
+    # G["long_psi_norms"] = long_psi_norms
+    # G["long_psi2_norms"] = long_psi2_norms
+    # G["long_E0"] = long_E0
+    # G["long_Zs"] = long_Zs
+    # G["trans_times"] = trans_times
+    # G["trans_corrs"] = trans_corrs
+    # G["trans_Ss"] = trans_Ss
+    # G["trans_psi_norms"] = trans_psi_norms
+    # G["trans_psi2_norms"] = trans_psi2_norms
+    # G["trans_E0"] = trans_E0
+    # G["trans_Zs"] = trans_Zs
+    # G["transdown_times"] = transdown_times
+    # G["transdown_corrs"] = transdown_corrs
+    # G["transdown_Ss"] = transdown_Ss
+    # G["transdown_psi_norms"] = transdown_psi_norms
+    # G["transdown_psi2_norms"] = transdown_psi2_norms
+    # G["transdown_E0"] = transdown_E0
+    # G["transdown_Zs"] = transdown_Zs
+    # close(G)
 end
 
 # C = parse(Int64, ARGS[1])
@@ -167,9 +189,9 @@ end
 
 C = 6
 L = 36
-J2 = 0.12
+J2 = 0.043
 B = 0.0
-Δ = 1.35
+Δ = 1.0
 maxdim = 512
 δt = 0.1
 η = 0.0
@@ -177,7 +199,7 @@ g_perp = 3.04
 g_parallel = 3.44
 
 process(C, L, J2, 0.0, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
-process(C, L, J2, 0.8, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
-process(C, L, J2, 1.6, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
-process(C, L, J2, 2.4, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
-process(C, L, J2, 3.2, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
+# process(C, L, J2, 0.8, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
+# process(C, L, J2, 1.6, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
+# process(C, L, J2, 2.4, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
+# process(C, L, J2, 3.2, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
