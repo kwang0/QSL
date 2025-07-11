@@ -14,8 +14,22 @@ function coord(i, C, L)
     return [x, y]
 end
 
-function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
+# Converts index into physical coordinate on YC triangular lattice (centers MPS site N/2 at coord (0,0))
+function coord_YC(i, C, L)
+    y = (i-1) % C
+    x = (i-1) ÷ C
+    if (x % 2 == 1)
+        y += 0.5
+    end
+    x -= (L/2 - 1)
+    y -= (C-1+0.5)
+    x *= sqrt(3)/2
+    return [x, y]
+end
+
+function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η, T_cutoff=Inf64)
     file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_gssearched.h5"
+    # file = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_gssearched_YC.h5"
     # input = "/pscratch/sd/k/kwang98/QSL/$file"
     input = "processed_data/$file"
     output = "processed_data/$file"
@@ -30,6 +44,16 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     E0 = read(F, "E0")
     Zs = read(F, "Zs")
     close(F)
+
+    corrs2 = corrs[:, times .< T_cutoff]
+    times2 = times[times .< T_cutoff]
+
+    # c = size(corrs2, 1) ÷ 2 # Center site
+    # corrs2 .+= Zs[c] .* Zs # Disconnected correlation
+
+    if T_cutoff == Inf64
+        T_cutoff = times2[end]
+    end
 
     # input = "/pscratch/sd/k/kwang98/QSL/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_longitudinal_gssearched_twositetdvp.h5"
     # F = h5open(input,"r")
@@ -72,6 +96,7 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     xs = zeros(2,N)
     for i in range(1,N)
         x, y = coord(i, C, L)
+        # x, y = coord_YC(i, C, L)
         xs[1,i] = x
         xs[2,i] = y
         # xs[1,i] = (i-1) ÷ C
@@ -79,8 +104,8 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     end
 
     # L = C^2
-    interval = vcat(LinRange(0,1 - 3/L,div(L,3)))
-    # interval = vcat(LinRange(0,1 - 2/L,div(L,2)))
+    interval = vcat(LinRange(0,1 - 3/L,div(L,3))) # XC
+    interval2 = vcat(LinRange(0,2/3,3))
 
     # Triangular lattice BZ points
     Γ = transpose([0.0,0.0])
@@ -95,11 +120,14 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     BZ_path2 = (1 .- interval) .* Γ .+ interval .* Y1
     BZ_path2 = vcat(BZ_path2, (1 .- interval) .* Y1 .+ interval .* K1)
     BZ_path2 = vcat(BZ_path2, (1 .- interval) .* K2 .+ interval .* M1)
+    # BZ_path2 = vcat(BZ_path2, (1 .- interval) .* M1 .+ interval .* Γ)
     BZ_path2 = vcat(BZ_path2, M1)
+
     # BZ_path2 = vcat(BZ_path2, (1 .- interval) .* M1 .+ interval .* K3)
     # BZ_path2 = vcat(BZ_path2, (1 .- interval) .* K4 .+ interval .* Y2)
     # BZ_path2 = vcat(BZ_path2, (1 .- interval) .* Y2 .+ interval .* Γ)
 
+    # BZ_path2 = vcat(LinRange(0,1 - 2/L,div(L,2))) .* transpose([2*pi/sqrt(3),0]) # YC L=36
 
     # Square lattice BZ points
     # X1 = transpose([pi,0.0])
@@ -110,12 +138,12 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     # BZ_square_path = vcat(BZ_square_path, (1 .- interval) .* X2 .+ interval .* M)
 
     # eta = sqrt(η)
-    if η == 0
-        η = 1/2 * (2 * pi / times[end])
+    if η == 0.0
+        η = 1/2 * (2 * pi / T_cutoff)
     end 
     # Pointwise multiplication
-    dampening = (η / sqrt(pi)) .* exp.(-η^2 .* times.^2)
-    corrs2 = corrs .* dampening'
+    dampening = (η / sqrt(pi)) .* exp.(-η^2 .* times2.^2)
+    corrs2 = corrs2 .* dampening'
 
     # corrs2 = corrs # No dampening
     
@@ -123,11 +151,16 @@ function process(C, L, J2, B, Δ1, Δ2, g_perp, g_parallel, maxdim, δt, η)
     # dampening = (eta / sqrt(pi)) .* exp.(-eta^2 .* (times .- times').^2)
     # corrs2 = corrs * dampening
 
-    omegas = transpose(vcat(LinRange(3.0, 0.0, round(Int64, 3 * (times[end] / (2*pi))))))
-    thetas = omegas .* times
+    # omegas = transpose(vcat(LinRange(3.0, 0.0, round(Int64, 3 * (T_cutoff / (2*pi))))))
+    # omegas = transpose(vcat(LinRange(3, 0.0, round(Int64,T_cutoff/2+1))))
+    omegas = transpose(vcat(LinRange(3, 0.0, 31)))
+    thetas = omegas .* times2
     S = real(corrs2) * cos.(thetas) - imag(corrs2) * sin.(thetas)
 
     S = (δt / (pi * N)) .* cos.(BZ_path2 * xs) * S
+
+    S ./= maximum(S)
+    S[S .< 0] .= 0.01
 
     # pos = axs[i,j].imshow(S' ./ maximum(S), cmap="hot", interpolation="gaussian",
     #     norm=matplotlib[:colors][:LogNorm](vmin=0.0005, vmax=1))
@@ -194,11 +227,12 @@ B = 0.0
 Δ = 1.0
 maxdim = 512
 δt = 0.1
-η = 0.0
+η = 0.1
 g_perp = 3.04
 g_parallel = 3.44
+T_cutoff = Inf64
 
-process(C, L, J2, 0.0, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
+process(C, L, J2, 0.0, Δ, Δ, g_perp, g_parallel, maxdim, δt, η, T_cutoff)
 # process(C, L, J2, 0.8, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
 # process(C, L, J2, 1.6, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)
 # process(C, L, J2, 2.4, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)

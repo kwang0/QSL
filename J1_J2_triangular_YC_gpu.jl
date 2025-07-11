@@ -33,16 +33,16 @@ function entropy_von_neumann(ψ, b)
   return SvN
 end
 
-# Converts index into physical coordinate on triangular lattice (centers MPS site N/2 at coord (0,0))
-function coord(i, C, L)
+# Converts index into physical coordinate on YC triangular lattice (centers MPS site N/2 at coord (0,0))
+function coord_YC(i, C, L)
     y = (i-1) % C
     x = (i-1) ÷ C
-    if (y % 2 == 1)
-        x += 0.5
+    if (x % 2 == 1)
+        y += 0.5
     end
-    x -= (L/2 - 0.5)
-    y -= (C-1)
-    y *= sqrt(3)/2
+    x -= (L/2 - 1)
+    y -= (C-1+0.5)
+    x *= sqrt(3)/2
     return [x, y]
 end
 
