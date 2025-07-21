@@ -182,10 +182,10 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, maxdim=32)
+function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-10, maxdim=32)
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_YC_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_YC_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_1f10.h5"
     # filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_Bperp$(Bperp)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
     sites = siteinds("S=1/2", N; conserve_qns=false)
     H = cu(MPO(triangular_model_YC(C, L, J1, J2, B, Bperp, Δ1, Δ2), sites))

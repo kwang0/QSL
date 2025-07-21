@@ -16,12 +16,12 @@ op = "longitudinal"
 fig, axs = plt.subplots()
 
 filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_{}_gssearched.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt,op)
-S = h5py.File(filename, 'r')['S'][...]
+S_XC = h5py.File(filename, 'r')['S'][...]
 filename = "processed_data/C{}_L{}_J{}_B{}_1Delta{}_2Delta{}_chi{}_dt{}_{}_gssearched_YC.h5".format(C,L,J2,B,Delta,Delta,maxdim,dt,op)
 S_YC = h5py.File(filename, 'r')['S'][...]
 # S = S[20:,0:36]
 
-# S = np.concatenate((S_XC, S_YC[:,-1::-1]), axis=1)
+S = np.concatenate((S_XC, S_YC[:,-1::-1]), axis=1)
 
 S = S / max(S.flatten()) # Normalizing
 # S = np.where(S < 0, 0.01, S) # WARNING: SETTING NEGATIVE VALUES TO MIN
