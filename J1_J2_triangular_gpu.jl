@@ -54,8 +54,9 @@ end
 # Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
 # Lattice has length L and height C, with PBC along height (cylindrical).
 # XC geometry.
-function triangular_model(C, L, J1, J2, B=0.0, Δ1 = 1.0, Δ2 = 1.0)
+function triangular_model(C, L, J1, J2, B=0.0, Bperp=0.0, Δ1 = 1.0, Δ2 = 1.0, θ=0.0)
     os = OpSum()
+    θ = θ * 2 * pi
 
     for col in range(0,L-1)
         for row in range(0,C-1)
@@ -63,11 +64,12 @@ function triangular_model(C, L, J1, J2, B=0.0, Δ1 = 1.0, Δ2 = 1.0)
 
             # Applied field
             os += -B, "Sz", index
+            os += -Bperp, "Sx", index
             
             # NN couplings
             os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col, C)
-            os += 0.5*J1, "S+", index, "S-", ind(row + 1, col, C)
-            os += 0.5*J1, "S-", index, "S+", ind(row + 1, col, C)
+            os += 0.5*J1*cis(-θ/C), "S+", index, "S-", ind(row + 1, col, C)
+            os += 0.5*J1*cis(θ/C), "S-", index, "S+", ind(row + 1, col, C)
 
             if (col < L-1)
                 os += Δ1*J1, "Sz", index, "Sz", ind(row, col + 1, C)
@@ -77,36 +79,36 @@ function triangular_model(C, L, J1, J2, B=0.0, Δ1 = 1.0, Δ2 = 1.0)
                 # Odd rows
                 if (row % 2 == 1)
                     os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col + 1, C)
-                    os += 0.5*J1, "S+", index, "S-", ind(row + 1, col + 1, C)
-                    os += 0.5*J1, "S-", index, "S+", ind(row + 1, col + 1, C)
+                    os += 0.5*J1*cis(-θ/C),  "S+", index, "S-", ind(row + 1, col + 1, C)
+                    os += 0.5*J1*cis(θ/C), "S-", index, "S+", ind(row + 1, col + 1, C)
 
                     os += Δ1*J1, "Sz", index, "Sz", ind(row - 1, col + 1, C)
-                    os += 0.5*J1, "S+", index, "S-", ind(row - 1, col + 1, C)
-                    os += 0.5*J1, "S-", index, "S+", ind(row - 1, col + 1, C)
+                    os += 0.5*J1*cis(θ/C),  "S+", index, "S-", ind(row - 1, col + 1, C)
+                    os += 0.5*J1*cis(-θ/C), "S-", index, "S+", ind(row - 1, col + 1, C)
                 end
             end
 
             # NNN couplings
             os += Δ2*J2, "Sz", index, "Sz", ind(row + 2, col, C)
-            os += 0.5*J2, "S+", index, "S-", ind(row + 2, col, C)
-            os += 0.5*J2, "S-", index, "S+", ind(row + 2, col, C)
+            os += 0.5*J2*cis(-2*θ/C), "S+", index, "S-", ind(row + 2, col, C)
+            os += 0.5*J2*cis(2*θ/C), "S-", index, "S+", ind(row + 2, col, C)
 
             if ((col < L-1) && (row % 2 == 0))
                 os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 1, C)
-                os += 0.5*J2, "S+", index, "S-", ind(row + 1, col + 1, C)
-                os += 0.5*J2, "S-", index, "S+", ind(row + 1, col + 1, C)
+                os += 0.5*J2*cis(-θ/C), "S+", index, "S-", ind(row + 1, col + 1, C)
+                os += 0.5*J2*cis(θ/C), "S-", index, "S+", ind(row + 1, col + 1, C)
 
                 os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 1, C)
-                os += 0.5*J2, "S+", index, "S-", ind(row - 1, col + 1, C)
-                os += 0.5*J2, "S-", index, "S+", ind(row - 1, col + 1, C)
+                os += 0.5*J2*cis(θ/C), "S+", index, "S-", ind(row - 1, col + 1, C)
+                os += 0.5*J2*cis(-θ/C), "S-", index, "S+", ind(row - 1, col + 1, C)
             elseif ((col < L-2) && (row % 2 == 1))
                 os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 2, C)
-                os += 0.5*J2, "S+", index, "S-", ind(row + 1, col + 2, C)
-                os += 0.5*J2, "S-", index, "S+", ind(row + 1, col + 2, C)
+                os += 0.5*J2*cis(-θ/C), "S+", index, "S-", ind(row + 1, col + 2, C)
+                os += 0.5*J2*cis(θ/C), "S-", index, "S+", ind(row + 1, col + 2, C)
 
                 os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 2, C)
-                os += 0.5*J2, "S+", index, "S-", ind(row - 1, col + 2, C)
-                os += 0.5*J2, "S-", index, "S+", ind(row - 1, col + 2, C)
+                os += 0.5*J2*cis(θ/C), "S+", index, "S-", ind(row - 1, col + 2, C)
+                os += 0.5*J2*cis(-θ/C), "S-", index, "S+", ind(row - 1, col + 2, C)
             end
         end
     end
@@ -207,13 +209,13 @@ function square_model(C, L, J1=1.0)
     return os
 end
 
-function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, δt=0.1, ttotal=200, maxdim=32, component="longitudinal")
+function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, θ=0.0, cutoff=1f-10, δt=0.1, ttotal=200, maxdim=32, component="longitudinal")
     # cu = ITensors.cpu
     
     tick()
     N = C * L
 
-    filename = "/pscratch/sd/k/kwang98/QSL/production/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched.h5"
+    filename = "/pscratch/sd/k/kwang98/QSL/production/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_theta$(θ)_chi$(maxdim)_dt$(δt)_$(component)_gssearched.h5"
     # filename = "/pscratch/sd/k/kwang98/QSL/production/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched_YC.h5"
     # filename = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
     if component == "longitudinal"
@@ -241,10 +243,11 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
         sites = siteinds(ψ)
         c = div(N, 2) # center site
         Sz_center = cu(2 * op(op_string, sites[c]) - Zs[c] * op("Id", sites[c]))
-        H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
-        # H = cu(MPO(triangular_model_YC(C, L, J1, J2, B, Δ1, Δ2), sites))
+        H = cu(MPO(triangular_model(C, L, J1, J2, B, B, Δ1, Δ2, θ), sites))
+        # H = cu(MPO(triangular_model_YC(C, L, J1, J2, B, B, Δ1, Δ2), sites))
     else
-        groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+        groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_theta$(θ)_chi$(maxdim).h5"
+        # groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
         # groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_YC_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
         # groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
         F = h5open(groundstate_file,"r")
@@ -254,8 +257,8 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-6, 
 
         # sites = siteinds("S=1/2", N; conserve_qns=false)
         sites = siteinds(ψ)
-        H = cu(MPO(triangular_model(C, L, J1, J2, B, Δ1, Δ2), sites))
-        # H = cu(MPO(triangular_model_YC(C, L, J1, J2, B, Δ1, Δ2), sites))
+        H = cu(MPO(triangular_model(C, L, J1, J2, B, B, Δ1, Δ2, θ), sites))
+        # H = cu(MPO(triangular_model_YC(C, L, J1, J2, B, B, Δ1, Δ2), sites))
 
         # nsweeps = 20
         # state = [isodd(n) ? "Up" : "Dn" for n=1:N]
@@ -352,8 +355,9 @@ L = parse(Int64, ARGS[2])
 J2 = parse(Float64, ARGS[3])
 # B = parse(Float64, ARGS[4])
 Δ = parse(Float64, ARGS[4])
-maxdim = parse(Int64, ARGS[5])
-δt = parse(Float64, ARGS[6])
-component = ARGS[7]
+θ = parse(Float64, ARGS[5])
+maxdim = parse(Int64, ARGS[6])
+δt = parse(Float64, ARGS[7])
+component = ARGS[8]
 
-main(C=C, L=L, J2=J2, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt, component=component)
+main(C=C, L=L, J2=J2, θ=θ, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt, component=component)

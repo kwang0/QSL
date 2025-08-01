@@ -11,6 +11,6 @@
 
 export SLURM_CPU_BIND="cores"
 
-julia ground_state_search.jl 7 36 0.043 1.0 512 > logs_gpu/ground_state_search_YC_C7_L36_J0.043_1Delta1.0_2Delta1.0_chi512_1f10.txt
+julia ground_state_search_flux.jl 6 36 0.043 1.0 0.25 512 > logs_gpu/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_theta0.25_chi512.txt
 
 exit 0
