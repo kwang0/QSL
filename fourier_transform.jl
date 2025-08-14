@@ -230,7 +230,7 @@ maxdim = 512
 η = 0.1
 g_perp = 3.04
 g_parallel = 3.44
-T_cutoff = 20.0
+T_cutoff = 70.0
 
 process(C, L, J2, 0.0, Δ, Δ, g_perp, g_parallel, maxdim, δt, η, T_cutoff)
 # process(C, L, J2, 0.8, Δ, Δ, g_perp, g_parallel, maxdim, δt, η)

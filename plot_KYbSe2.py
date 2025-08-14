@@ -24,7 +24,8 @@ S_YC = h5py.File(filename, 'r')['S'][...]
 S = np.concatenate((S_XC, S_YC[:,-1::-1]), axis=1)
 
 S = S / max(S.flatten()) # Normalizing
-S = np.where(S < 0, 0.01, S) # WARNING: SETTING NEGATIVE VALUES TO MIN
+minimum = np.min(S[S > 0])
+S = np.where(S < 0, minimum, S) # WARNING: SETTING NEGATIVE VALUES TO MIN
 
 ticks = np.array([0,1,2,3]) * (S.shape[0]-1) * 1/3
 
