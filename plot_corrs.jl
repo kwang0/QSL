@@ -7,8 +7,8 @@ function ind(row, col, C)
     return col * C + mod(row, C) + 1
 end
 
-filename = "processed_data/C6_L36_J0.043_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1_longitudinal_gssearched_YC_1f10.h5"
-# filename = "processed_data/C6_L36_J0.043_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1_longitudinal_gssearched.h5"
+# filename = "processed_data/C6_L36_J0.043_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1_longitudinal_gssearched_YC_1f10.h5"
+filename = "processed_data/C6_L36_J0.043_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1_longitudinal_gssearched.h5"
 
 F = h5open(filename,"r")
 times = read(F, "times")
@@ -21,7 +21,9 @@ L = 36
 c = size(corrs, 1) ÷ 2 # Center site
 num_times = size(corrs, 2)
 
-corrs = reshape(real.(corrs), C, L, num_times)
+# corrs = reshape(real.(corrs), C, L, num_times)
+corrs = reshape(imag.(corrs), C, L, num_times)
+# corrs = abs.(corrs) .> 0.05
 
 # initial slice index
 idx0 = 1

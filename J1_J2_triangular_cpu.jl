@@ -1,0 +1,362 @@
+using MKL
+using ITensors
+using ITensorMPS
+using Printf
+using PyPlot
+using HDF5
+using LinearAlgebra
+using TickTock
+# include("applyexp.jl")
+
+# function solver(H, t, psi0; kwargs...)
+#     tol_per_unit_time = get(kwargs, :solver_tol, 1E-8)
+#     solver_kwargs = (;
+#         maxiter=get(kwargs, :solver_krylovdim, 30),
+#         outputlevel=get(kwargs, :solver_outputlevel, 0),
+#     )
+#     #applyexp tol is absolute, compute from tol_per_unit_time:
+#     tol = abs(t) * tol_per_unit_time
+#     psi, info = applyexp(H, t, psi0; tol, solver_kwargs..., kwargs...)
+#     return psi, info
+# end
+
+function entropy_von_neumann(ψ, b)
+  ψ = orthogonalize(ψ, b)
+  U,S,V = svd(ψ[b], (linkinds(ψ, b-1)..., siteinds(ψ, b)...))
+  SvN = 0.0
+  for n=1:dim(S, 1)
+    p = S[n,n]^2
+    SvN -= p * log(p)
+  end
+  return SvN
+end
+
+# Converts index into physical coordinate on triangular lattice (centers MPS site N/2 at coord (0,0))
+function coord(i, C, L)
+    y = (i-1) % C
+    x = (i-1) ÷ C
+    if (y % 2 == 1)
+        x += 0.5
+    end
+    x -= (L/2 - 0.5)
+    y -= (C-1)
+    y *= sqrt(3)/2
+    return [x, y]
+end
+
+# Convert row/col label to MPS index, with PBC in rows
+function ind(row, col, C)
+    return col * C + mod(row, C) + 1
+end
+
+# Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
+# Lattice has length L and height C, with PBC along height (cylindrical).
+# XC geometry.
+function triangular_model(C, L, J1, J2, B=0.0, Bperp=0.0, Δ1 = 1.0, Δ2 = 1.0, θ=0.0)
+    os = OpSum()
+    θ = θ * 2 * pi
+
+    for col in range(0,L-1)
+        for row in range(0,C-1)
+            index = ind(row, col, C)
+
+            # Applied field
+            if (B != 0.0 || Bperp != 0.0)
+                os += -B, "Sz", index
+                os += -Bperp, "Sx", index
+            end
+            
+            # NN couplings
+            os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col, C)
+            os += 0.5*J1*cis(-θ/C), "S+", index, "S-", ind(row + 1, col, C)
+            os += 0.5*J1*cis(θ/C), "S-", index, "S+", ind(row + 1, col, C)
+
+            if (col < L-1)
+                os += Δ1*J1, "Sz", index, "Sz", ind(row, col + 1, C)
+                os += 0.5*J1, "S+", index, "S-", ind(row, col + 1, C)
+                os += 0.5*J1, "S-", index, "S+", ind(row, col + 1, C)
+
+                # Odd rows
+                if (row % 2 == 1)
+                    os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col + 1, C)
+                    os += 0.5*J1*cis(-θ/C),  "S+", index, "S-", ind(row + 1, col + 1, C)
+                    os += 0.5*J1*cis(θ/C), "S-", index, "S+", ind(row + 1, col + 1, C)
+
+                    os += Δ1*J1, "Sz", index, "Sz", ind(row - 1, col + 1, C)
+                    os += 0.5*J1*cis(θ/C),  "S+", index, "S-", ind(row - 1, col + 1, C)
+                    os += 0.5*J1*cis(-θ/C), "S-", index, "S+", ind(row - 1, col + 1, C)
+                end
+            end
+
+            # NNN couplings
+            os += Δ2*J2, "Sz", index, "Sz", ind(row + 2, col, C)
+            os += 0.5*J2*cis(-2*θ/C), "S+", index, "S-", ind(row + 2, col, C)
+            os += 0.5*J2*cis(2*θ/C), "S-", index, "S+", ind(row + 2, col, C)
+
+            if ((col < L-1) && (row % 2 == 0))
+                os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 1, C)
+                os += 0.5*J2*cis(-θ/C), "S+", index, "S-", ind(row + 1, col + 1, C)
+                os += 0.5*J2*cis(θ/C), "S-", index, "S+", ind(row + 1, col + 1, C)
+
+                os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 1, C)
+                os += 0.5*J2*cis(θ/C), "S+", index, "S-", ind(row - 1, col + 1, C)
+                os += 0.5*J2*cis(-θ/C), "S-", index, "S+", ind(row - 1, col + 1, C)
+            elseif ((col < L-2) && (row % 2 == 1))
+                os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 2, C)
+                os += 0.5*J2*cis(-θ/C), "S+", index, "S-", ind(row + 1, col + 2, C)
+                os += 0.5*J2*cis(θ/C), "S-", index, "S+", ind(row + 1, col + 2, C)
+
+                os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 2, C)
+                os += 0.5*J2*cis(θ/C), "S+", index, "S-", ind(row - 1, col + 2, C)
+                os += 0.5*J2*cis(-θ/C), "S-", index, "S+", ind(row - 1, col + 2, C)
+            end
+        end
+    end
+
+    return os
+end
+
+# Generate Hamiltonian of J1-J2 Heisenberg model on triangular lattice
+# Lattice has length L and height C, with PBC along height (cylindrical).
+# YC geometry.
+function triangular_model_YC(C, L, J1, J2, B=0.0, Bperp=0.0, Δ1 = 1.0, Δ2 = 1.0)
+    os = OpSum()
+
+    for col in range(0,L-1)
+        for row in range(0,C-1)
+            index = ind(row, col, C)
+
+            # Applied field
+            if (B != 0.0 || Bperp != 0.0)
+                os += -B, "Sz", index
+                os += -Bperp, "Sx", index
+            end
+            
+            # NN couplings
+            os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col, C)
+            os += 0.5*J1, "S+", index, "S-", ind(row + 1, col, C)
+            os += 0.5*J1, "S-", index, "S+", ind(row + 1, col, C)
+
+            if (col < L-1)
+                os += Δ1*J1, "Sz", index, "Sz", ind(row, col + 1, C)
+                os += 0.5*J1, "S+", index, "S-", ind(row, col + 1, C)
+                os += 0.5*J1, "S-", index, "S+", ind(row, col + 1, C)
+
+                # Even/odd columns
+                if (col % 2 == 0)
+                    os += Δ1*J1, "Sz", index, "Sz", ind(row - 1, col + 1, C)
+                    os += 0.5*J1, "S+", index, "S-", ind(row - 1, col + 1, C)
+                    os += 0.5*J1, "S-", index, "S+", ind(row - 1, col + 1, C)
+                else
+                    os += Δ1*J1, "Sz", index, "Sz", ind(row + 1, col + 1, C)
+                    os += 0.5*J1, "S+", index, "S-", ind(row + 1, col + 1, C)
+                    os += 0.5*J1, "S-", index, "S+", ind(row + 1, col + 1, C)
+                end
+            end
+
+            # NNN couplings
+            if (col < L-1)
+                # Even/odd columns
+                if (col % 2 == 0)
+                    os += Δ2*J2, "Sz", index, "Sz", ind(row + 1, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", ind(row + 1, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", ind(row + 1, col + 1, C)
+
+                    os += Δ2*J2, "Sz", index, "Sz", ind(row - 2, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", ind(row - 2, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", ind(row - 2, col + 1, C)
+                else
+                    os += Δ2*J2, "Sz", index, "Sz", ind(row + 2, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", ind(row + 2, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", ind(row + 2, col + 1, C)
+
+                    os += Δ2*J2, "Sz", index, "Sz", ind(row - 1, col + 1, C)
+                    os += 0.5*J2, "S+", index, "S-", ind(row - 1, col + 1, C)
+                    os += 0.5*J2, "S-", index, "S+", ind(row - 1, col + 1, C)
+                end
+            end
+            if (col < L-2)
+                os += Δ2*J2, "Sz", index, "Sz", ind(row, col + 2, C)
+                os += 0.5*J2, "S+", index, "S-", ind(row, col + 2, C)
+                os += 0.5*J2, "S-", index, "S+", ind(row, col + 2, C)
+            end
+        end
+    end
+
+    return os
+end
+
+# Generate Hamiltonian of J1-J2 Heisenberg model on square lattice
+# Lattice has length L and height C, with PBC along height (cylindrical).
+function square_model(C, L, J1=1.0)
+    os = OpSum()
+
+    for col in range(0,L-1)
+        for row in range(0,C-1)
+            index = ind(row, col, C)
+            
+            # NN couplings
+            os += J1, "Sz", index, "Sz", ind(row + 1, col, C)
+            os += 0.5*J1, "S+", index, "S-", ind(row + 1, col, C)
+            os += 0.5*J1, "S-", index, "S+", ind(row + 1, col, C)
+
+            if (col < L-1)
+                os += J1, "Sz", index, "Sz", ind(row, col + 1, C)
+                os += 0.5*J1, "S+", index, "S-", ind(row, col + 1, C)
+                os += 0.5*J1, "S-", index, "S+", ind(row, col + 1, C)
+            end
+        end
+    end
+
+    return os
+end
+
+function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Δ1=1.0, Δ2=1.0, θ=0.0, cutoff=1f-10, δt=0.1, ttotal=200, maxdim=32, component="longitudinal")
+    tick()
+    N = C * L
+
+    filename = "/pscratch/sd/k/kwang98/QSL/production/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_theta$(θ)_chi$(maxdim)_dt$(δt)_$(component)_gssearched.h5"
+    # filename = "/pscratch/sd/k/kwang98/QSL/production/C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_gssearched_YC.h5"
+    # filename = "C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim)_dt$(δt)_$(component)_disconnectfirst.h5"
+    if component == "longitudinal"
+        op_string = "Sz"
+    elseif component == "transverse"
+        op_string = "S-"
+    elseif component == "transversedown"
+        op_string = "S+"
+    end
+    # filename = "data_gpu/square_C$(C)_chi$(maxdim)_dt$(δt).h5"
+    if (isfile(filename))
+        F = h5open(filename,"r")
+        times = read(F, "times")
+        corrs = read(F, "corrs")
+        ψ = read(F, "psi", MPS)
+        ψ2 = read(F, "psi2", MPS)
+        ψ_norms = read(F, "psi_norms")
+        ψ2_norms = read(F, "psi2_norms")
+        E0 = read(F, "E0")
+        Zs = read(F, "Zs")
+        Ss = read(F, "Ss")
+        start_time = last(times) + δt
+        close(F)
+    
+        sites = siteinds(ψ)
+        c = div(N, 2) # center site
+        Sz_center = 2 * op(op_string, sites[c]) - Zs[c] * op("Id", sites[c])
+        H = MPO(triangular_model(C, L, J1, J2, B, B, Δ1, Δ2, θ), sites)
+        # H = MPO(triangular_model_YC(C, L, J1, J2, B, B, Δ1, Δ2), sites)
+    else
+        # groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_theta$(θ)_chi$(maxdim).h5"
+        groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+        # groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_YC_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+        # groundstate_file = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
+        F = h5open(groundstate_file,"r")
+        ψ = read(F, "psi0", MPS)
+        E0 = read(F, "E0")
+        close(F)
+
+        # sites = siteinds("S=1/2", N; conserve_qns=false)
+        sites = siteinds(ψ)
+        H = MPO(triangular_model(C, L, J1, J2, B, B, Δ1, Δ2, θ), sites)
+        # H = MPO(triangular_model_YC(C, L, J1, J2, B, B, Δ1, Δ2), sites)
+
+        # nsweeps = 20
+        # state = [isodd(n) ? "Up" : "Dn" for n=1:N]
+        # ψ0 = randomMPS(sites)
+
+        # E0, ψ = dmrg(H, ψ0; nsweeps, maxdim, cutoff)
+        # print(ψ)
+        # println("E0 = $E0")
+        Zs = expect(ψ, op_string)
+        M = sum(Zs)
+        println("<op> = $M")
+
+        Zs .*= 2
+
+        c = div(N, 2) # center site
+        Sz_center = 2 * op(op_string, sites[c]) - Zs[c] * op("Id", sites[c])
+        orthogonalize!(ψ, c)
+        ψ2 = apply(Sz_center, ψ; cutoff, maxdim)
+
+        times = Float64[]
+        corrs = []
+        ψ_norms = Float64[]
+        ψ2_norms = Float64[]
+        Ss = []
+        start_time = δt
+
+        GC.gc()
+    end
+
+    for t in start_time:δt:ttotal
+        # Stop simulations before HPC limit to ensure no corruption of data writing
+        if peektimer() > (23.5 * 60 * 60)
+            break
+        end
+
+        ψ2 = tdvp(H, -im * δt, ψ2;
+            # updater_kwargs=(; tol=1f-5, krylovdim=15),
+            updater_backend="applyexp", 
+            nsweeps=1,
+            reverse_step=true,
+            normalize=false,
+            maxdim=maxdim,
+            cutoff=cutoff,
+            outputlevel=1,
+            nsite=2,
+        #   svd_alg="qr_algorithm"
+        )
+        GC.gc()
+
+        corr = ComplexF64[]
+        for i in range(1,N)
+            # orthogonalize!(ψ, i)
+            # orthogonalize!(ψ2, i)
+            push!(corr, (exp(im * E0 * t) * inner(apply(2 * op(op_string,sites[i]) - Zs[i] * op("Id", sites[i]), ψ; cutoff, maxdim), ψ2)))
+            # push!(corr, inner(apply(2 * op("Sz",sites[i]), ψ; cutoff, maxdim), ψ2))
+        end
+        # orthogonalize!(ψ2, c)
+        S = entropy_von_neumann(ψ2, c)
+
+        println("Time = $t")
+        flush(stdout)
+        push!(times, t)
+        t == δt ? corrs = corr : corrs = hcat(corrs, corr)
+        t == δt ? Ss = S : Ss = hcat(Ss, S)
+        push!(ψ_norms, norm(ψ))
+        push!(ψ2_norms, norm(ψ2))
+    
+        # Writing to data file
+        F = h5open(filename,"w")
+        F["times"] = times
+        F["corrs"] = corrs
+        F["psi2"] = ψ2
+        F["psi"] = ψ
+        F["E0"] = E0
+        F["Zs"] = Zs
+        F["Ss"] = Ss
+        F["psi_norms"] = ψ_norms
+        F["psi2_norms"] = ψ2_norms
+        close(F)
+
+        t≈ttotal && break
+    end
+    print(ψ2)
+    return times, corrs
+end
+
+ITensors.Strided.set_num_threads(1)
+BLAS.set_num_threads(256)
+# ITensors.enable_threaded_blocksparse(true)
+
+C = parse(Int64, ARGS[1])
+L = parse(Int64, ARGS[2])
+J2 = parse(Float64, ARGS[3])
+# B = parse(Float64, ARGS[4])
+Δ = parse(Float64, ARGS[4])
+# θ = parse(Float64, ARGS[5])
+maxdim = parse(Int64, ARGS[5])
+δt = parse(Float64, ARGS[6])
+component = ARGS[7]
+
+main(C=C, L=L, J2=J2, θ=0.0, Δ1=Δ, Δ2=Δ, maxdim=maxdim, δt=δt, component=component)
