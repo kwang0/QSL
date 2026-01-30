@@ -453,10 +453,13 @@ function compute_S_on_path_gpu(path::Vector{<:Tuple}, omegas::AbstractVector,
         
         s1 = shift_from_q(q1, Nk)
         s2 = shift_from_q(q2, Nk)
+
+        q1s = q_from_shift(s1, Nk)
+        q2s = q_from_shift(s2, Nk)
         
         chi0_w = bubble_func(s1, s2, omegas, eps_gpu, vec_gpu, Nk; eta=eta)
         
-        Jq = J_matrix(q1, q2, J1, J2)
+        Jq = J_matrix(q1s, q2s, J1, J2)
         R = R_vec(q1)
         
         # S0 and RPA for all omegas
@@ -598,26 +601,26 @@ function main(; use_gpu::Bool=true, use_batched::Bool=false)
     @time kvals, eps, vec = precompute_bands(Nk, t)
     
     # High-symmetry path (M-Y-Γ-X-K-M'-X-Y)
-    pts = [
-        (0.0, π),              # M
-        (0.0, π / 2.0),        # Y
-        (0.0, 0.0),            # Γ
-        (4π/3, π/3),           # X
-        (8π/3, 2π/3),          # K
-        (2π, π),               # M'
-        (4π/3, π/3),           # X
-        (π, 0.0),              # Y
-    ]
     # pts = [
     #     (0.0, π),              # M
     #     (0.0, π / 2.0),        # Y
     #     (0.0, 0.0),            # Γ
-    #     (2π/3, 2π/3),          # X
-    #     (4π/3, 4π/3),          # K
+    #     (4π/3, π/3),           # X
+    #     (8π/3, 2π/3),          # K
     #     (2π, π),               # M'
-    #     (2π/3, 2π/3),          # X
-    #     (0.0, π/2.0),          # Y
+    #     (4π/3, π/3),           # X
+    #     (π, 0.0),              # Y
     # ]
+    pts = [
+        (0.0, π),              # M
+        (0.0, π / 2.0),        # Y
+        (0.0, 0.0),            # Γ
+        (2π/3, 2π/3),          # X
+        (4π/3, 4π/3),          # K
+        (2π, π),               # M'
+        (2π/3, 2π/3),          # X
+        (0.0, π/2.0),          # Y
+    ]
     labels = ["M", "Y", "Γ", "X", "K", "M'", "X", "Y"]
     path, ticks = build_path(pts, 100)
     
@@ -643,8 +646,8 @@ function main(; use_gpu::Bool=true, use_batched::Bool=false)
     display(fig2)
     
     # Save to files
-    fig1.savefig("S0_free_fermion.png", dpi=150)
-    fig2.savefig("S_rpa.png", dpi=150)
+    fig1.savefig("S0_free_fermion_wrong.png", dpi=150)
+    fig2.savefig("S_rpa_wrong.png", dpi=150)
     @info "Plots saved to S0_free_fermion.png and S_rpa.png"
     
     return S0, S_rpa
