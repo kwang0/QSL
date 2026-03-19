@@ -1,0 +1,10 @@
+[ Info:  started timer at: 2024-05-24T16:08:04.357
+[ Info:  started timer at: 2024-05-24T16:08:08.103
+[ Info:  started timer at: 2024-05-24T16:08:12.245
+[ Info:  started timer at: 2024-05-24T16:08:25.226
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** STEP 26010237.3 ON nid008272 CANCELLED AT 2024-05-24T23:22:01 ***
+slurmstepd: error: *** STEP 26010237.2 ON nid008272 CANCELLED AT 2024-05-24T23:22:01 ***
+slurmstepd: error: *** STEP 26010237.1 ON nid008272 CANCELLED AT 2024-05-24T23:22:01 ***
+slurmstepd: error: *** STEP 26010237.0 ON nid008272 CANCELLED AT 2024-05-24T23:22:01 ***
+slurmstepd: error: *** JOB 26010237 ON nid008272 CANCELLED AT 2024-05-24T23:22:01 ***

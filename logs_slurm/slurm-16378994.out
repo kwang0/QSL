@@ -1,0 +1,1 @@
+/var/spool/slurmd/job16378994/slurm_script: line 12: 2247985 Killed                  julia $1 $2 $3 $4 $5 $6 > logs_gpu/ground_state_search_C${2}_L${3}_J${4}_1Delta${5}_2Delta${5}_chi${6}.txt

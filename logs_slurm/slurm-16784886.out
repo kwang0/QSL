@@ -1,0 +1,90 @@
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+ERROR: ERROR: ERROR: ERROR: ERROR: LoadError: LoadError: LoadError: LoadError: LoadError: MethodError: no method matching parse(::Type{String}, ::String)MethodError: no method matching parse(::Type{String}, ::String)MethodError: no method matching parse(::Type{String}, ::String)MethodError: no method matching parse(::Type{String}, ::String)MethodError: no method matching parse(::Type{String}, ::String)
+
+Closest candidates are:
+  parse(!Matched::Type{C}, ::AbstractString) where C<:ColorTypes.Colorant
+   @ Colors ~/.julia/packages/Colors/mIuXl/src/parse.jl:206
+  parse(!Matched::Type{T}, ::AbstractString; base) where T<:Integer
+   @ Base parse.jl:245
+  parse(!Matched::Type{T}, ::AbstractString) where T<:Complex
+   @ Base parse.jl:386
+  ...
+
+Stacktrace:
+ [1] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+
+
+Closest candidates are:
+  parse(!Matched::Type{C}, ::AbstractString) where C<:ColorTypes.Colorant
+   @ Colors ~/.julia/packages/Colors/mIuXl/src/parse.jl:206
+  parse(!Matched::Type{T}, ::AbstractString; base) where T<:Integer
+   @ Base parse.jl:245
+  parse(!Matched::Type{T}, ::AbstractString) where T<:Complex
+   @ Base parse.jl:386
+  ...
+
+Stacktrace:
+ [1] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+
+
+Closest candidates are:
+  parse(!Matched::Type{C}, ::AbstractString) where C<:ColorTypes.Colorant
+   @ Colors ~/.julia/packages/Colors/mIuXl/src/parse.jl:206
+  parse(!Matched::Type{T}, ::AbstractString; base) where T<:Integer
+   @ Base parse.jl:245
+  parse(!Matched::Type{T}, ::AbstractString) where T<:Complex
+   @ Base parse.jl:386
+  ...
+
+Stacktrace:
+ [1] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+
+
+Closest candidates are:
+  parse(!Matched::Type{C}, ::AbstractString) where C<:ColorTypes.Colorant
+   @ Colors ~/.julia/packages/Colors/mIuXl/src/parse.jl:206
+  parse(!Matched::Type{T}, ::AbstractString; base) where T<:Integer
+   @ Base parse.jl:245
+  parse(!Matched::Type{T}, ::AbstractString) where T<:Complex
+   @ Base parse.jl:386
+  ...
+
+Stacktrace:
+ [1] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+
+
+Closest candidates are:
+  parse(!Matched::Type{C}, ::AbstractString) where C<:ColorTypes.Colorant
+   @ Colors ~/.julia/packages/Colors/mIuXl/src/parse.jl:206
+  parse(!Matched::Type{T}, ::AbstractString; base) where T<:Integer
+   @ Base parse.jl:245
+  parse(!Matched::Type{T}, ::AbstractString) where T<:Complex
+   @ Base parse.jl:386
+  ...
+
+Stacktrace:
+ [1] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:243
+srun: error: nid008244: task 0: Exited with exit code 1
+srun: Terminating StepId=16784886.1
+srun: error: nid008241: task 0: Exited with exit code 1
+srun: Terminating StepId=16784886.0
+srun: error: nid008241: task 0: Exited with exit code 1
+srun: Terminating StepId=16784886.3
+srun: error: nid008241: task 0: Exited with exit code 1
+srun: Terminating StepId=16784886.2
+srun: error: nid008241: task 0: Exited with exit code 1
+srun: Terminating StepId=16784886.4

@@ -1,0 +1,65 @@
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+ERROR: ERROR: ERROR: ERROR: ERROR: LoadError: LoadError: LoadError: LoadError: LoadError: ArgumentError: Package ITensorGPU not found in current path.
+- Run `import Pkg; Pkg.add("ITensorGPU")` to install the ITensorGPU package.
+Stacktrace:
+ [1] macro expansion
+   @ ./loading.jl:1630 [inlined]
+ [2] macro expansion
+   @ ./lock.jl:267 [inlined]
+ [3] require(into::ArgumentError: Package ITensorGPU not found in current path.
+- Run `import Pkg; Pkg.add("ITensorGPU")` to install the ITensorGPU package.
+Stacktrace:
+ [1] macro expansion
+   @ ./ArgumentError: loading.jl:1630 [inlined]
+ArgumentError: Package ITensorGPU not found in current path.
+- Run `import Pkg; Pkg.add("ITensorGPU")` to install the ITensorGPU package. [2]Package ITensorGPU not found in current path.
+- Run `import Pkg; Pkg.add("ITensorGPU")` to install the ITensorGPU package.
+Stacktrace:
+ macro expansion
+   @ArgumentError: Package ITensorGPU not found in current path.
+- Run `import Pkg; Pkg.add("ITensorGPU")` to install the ITensorGPU package.
+Stacktrace:
+ [1] ./lock.jl:267 [inlined]
+
+Stacktrace:
+ [1]  [3]  [1] macro expansion macro expansion
+require(
+macro expansion   @ ./into::   @ ./
+loading.jl:1630 [inlined]
+loading.jl:1630 [inlined]
+   @ [2]  [2] macro expansion macro expansion
+   @ 
+   @ ./././lock.jl:267lock.jl:267 [inlined]
+loading.jl:1630 [inlined] [inlined]
+ [3] 
+ [3] require(require [2]into::( macro expansion
+   @ into::./lock.jl:267 [inlined]
+ [3] require(into::Module, mod::Symbol)
+   @ Base ./loading.jl:1611
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:4
+Module, mod::Symbol)
+   @ Base ./loading.jl:1611
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:4
+Module, mod::Symbol)
+   @ Base Module, Module./loading.jl:1611mod::, 
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:4
+Symbol)
+mod::   @ BaseSymbol) ./
+loading.jl:1611
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:4   @ 
+Base ./loading.jl:1611
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:4
+srun: error: nid008312: task 0: Exited with exit code 1
+srun: Terminating StepId=21673139.2
+srun: error: nid008484: task 0: Exited with exit code 1
+srun: Terminating StepId=21673139.1
+srun: error: nid008312: task 0: Exited with exit code 1
+srun: Terminating StepId=21673139.4
+srun: error: nid008312: task 0: Exited with exit code 1
+srun: Terminating StepId=21673139.3
+srun: error: nid008312: task 0: Exited with exit code 1
+srun: Terminating StepId=21673139.0

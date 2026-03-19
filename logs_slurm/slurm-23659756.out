@@ -1,0 +1,2 @@
+/var/spool/slurmd/job23659756/slurm_script: line 11: 1928676 Killed                  julia --heap-size-hint=400G $1 $2 $3 $4 $5 $6 $7 $8 $9 > logs_cpu/C${2}_L${3}_J${4}_B${5}_1Delta${6}_2Delta${6}_chi${7}_dt${8}_${9}_disconnectfirst_onesitetdvp.txt
+slurmstepd: error: Detected 1 oom_kill event in StepId=23659756.batch. Some of the step tasks have been OOM Killed.

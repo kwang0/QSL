@@ -1,0 +1,48 @@
+[ Info:  started timer at: 2025-05-27T10:48:32.334
+ERROR: LoadError: MethodError: no method matching DenseMatrix{Float32}(::UndefInitializer, ::Tuple{Int64, Int64})
+The type `DenseMatrix{Float32}` exists, but no method is defined for this combination of argument types when trying to construct it.
+
+Closest candidates are:
+  (::Type{<:AbstractArray})(!Matched::NDTensors.AllowAlias, !Matched::AbstractArray)
+   @ ITensors ~/.julia/packages/ITensors/Zs2nC/src/itensor.jl:678
+  (::Type{<:AbstractArray})(!Matched::NDTensors.NeverAlias, !Matched::AbstractArray)
+   @ ITensors ~/.julia/packages/ITensors/Zs2nC/src/itensor.jl:674
+
+Stacktrace:
+  [1] similar(arraytype::Type{DenseVector{Float32}}, dims::Tuple{Index{Int64}, Index{Int64}})
+    @ NDTensors ~/.julia/packages/NDTensors/zHdA1/src/abstractarray/similar.jl:11
+  [2] similar(storagetype::Type{NDTensors.Dense{Float32, DenseVector{Float32}}}, dims::Tuple{Index{Int64}, Index{Int64}})
+    @ NDTensors ~/.julia/packages/NDTensors/zHdA1/src/tensorstorage/similar.jl:42
+  [3] similar(tensortype::Type{NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, DenseVector{Float32}}}}, dims::Tuple{Index{Int64}, Index{Int64}})
+    @ NDTensors ~/.julia/packages/NDTensors/zHdA1/src/tensor/similar.jl:24
+  [4] contraction_output(tensor1::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, tensor2::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, Vector{Float32}}}, indsR::Tuple{Index{Int64}, Index{Int64}})
+    @ NDTensors ~/.julia/packages/NDTensors/zHdA1/src/dense/tensoralgebra/contract.jl:5
+  [5] contraction_output(tensor1::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labelstensor1::Tuple{Int64, Int64}, tensor2::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, Vector{Float32}}}, labelstensor2::Tuple{Int64, Int64}, labelsoutput_tensor::Tuple{Int64, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/zHdA1/src/tensoroperations/generic_tensor_operations.jl:62
+  [6] contract(tensor1::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labelstensor1::Tuple{Int64, Int64}, tensor2::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, Vector{Float32}}}, labelstensor2::Tuple{Int64, Int64}, labelsoutput_tensor::Tuple{Int64, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/zHdA1/src/tensoroperations/generic_tensor_operations.jl:108
+  [7] contract(::Type{NDTensors.CanContract{NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, Vector{Float32}}}}}, tensor1::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labels_tensor1::Tuple{Int64, Int64}, tensor2::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, Vector{Float32}}}, labels_tensor2::Tuple{Int64, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/zHdA1/src/tensoroperations/generic_tensor_operations.jl:91
+  [8] contract
+    @ ~/.julia/packages/SimpleTraits/l1ZsK/src/SimpleTraits.jl:331 [inlined]
+  [9] _contract(A::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, B::NDTensors.DenseTensor{Float32, 2, Tuple{Index{Int64}, Index{Int64}}, NDTensors.Dense{Float32, Vector{Float32}}})
+    @ ITensors ~/.julia/packages/ITensors/Zs2nC/src/tensor_operations/tensor_algebra.jl:3
+ [10] _contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/Zs2nC/src/tensor_operations/tensor_algebra.jl:9
+ [11] contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/Zs2nC/src/tensor_operations/tensor_algebra.jl:74
+ [12] *
+    @ ~/.julia/packages/ITensors/Zs2nC/src/tensor_operations/tensor_algebra.jl:61 [inlined]
+ [13] product(A::ITensor, B::ITensor; apply_dag::Bool)
+    @ ITensors ~/.julia/packages/ITensors/Zs2nC/src/tensor_operations/tensor_algebra.jl:620
+ [14] product
+    @ ~/.julia/packages/ITensors/Zs2nC/src/tensor_operations/tensor_algebra.jl:580 [inlined]
+ [15] product(o::ITensor, ψ::MPS, ns::Vector{Int64}; move_sites_back::Bool, apply_dag::Bool, kwargs::@Kwargs{cutoff::Float32, maxdim::Int64})
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/DPGqJ/src/abstractmps.jl:2147
+ [16] product
+    @ ~/.julia/packages/ITensorMPS/DPGqJ/src/abstractmps.jl:2121 [inlined]
+ [17] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float32, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:240
+ [18] top-level scope
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:286
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:286

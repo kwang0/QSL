@@ -1,0 +1,10 @@
+After sweep 1 energy=-1212.4448171806084  maxlinkdim=11 maxerr=2.20E-20 time=49.584
+After sweep 2 energy=-1592.4966628009954  maxlinkdim=176 maxerr=9.81E-17 time=238.810
+After sweep 3 energy=-1975.7241617202399  maxlinkdim=256 maxerr=1.43E-03 time=3006.290
+After sweep 4 energy=-2055.607793965307  maxlinkdim=256 maxerr=4.34E-03 time=3701.730
+After sweep 5 energy=-2092.498326434353  maxlinkdim=256 maxerr=3.43E-03 time=3659.791
+After sweep 6 energy=-2107.3322508153683  maxlinkdim=256 maxerr=2.43E-03 time=3590.122
+After sweep 7 energy=-2113.1811971554  maxlinkdim=256 maxerr=2.45E-03 time=3695.165
+After sweep 8 energy=-2116.0678486828288  maxlinkdim=256 maxerr=2.27E-03 time=3802.258
+After sweep 9 energy=-2117.7909030684737  maxlinkdim=256 maxerr=2.07E-03 time=3647.567
+After sweep 10 energy=-2118.9496801509454  maxlinkdim=256 maxerr=1.96E-03 time=3599.063

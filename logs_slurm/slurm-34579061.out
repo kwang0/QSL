@@ -1,0 +1,10 @@
+ERROR: LoadError: ArgumentError: Package ITensorGPU not found in current path.
+- Run `import Pkg; Pkg.add("ITensorGPU")` to install the ITensorGPU package.
+Stacktrace:
+ [1] macro expansion
+   @ ./loading.jl:1630 [inlined]
+ [2] macro expansion
+   @ ./lock.jl:267 [inlined]
+ [3] require(into::Module, mod::Symbol)
+   @ Base ./loading.jl:1611
+in expression starting at /global/u2/k/kwang98/QSL/ground_state_search.jl:4

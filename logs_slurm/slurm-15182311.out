@@ -1,0 +1,120 @@
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 7 nodes, setting nnodes to 1
+slurmstepd: error: *** STEP 15182311.9 ON nid008221 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.8 ON nid008221 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.7 ON nid008221 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.0 ON nid008221 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 15182311 ON nid008221 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.12 ON nid008224 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.6 ON nid008481 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.15 ON nid008253 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.21 ON nid008416 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.11 ON nid008224 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.10 ON nid008224 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.20 ON nid008416 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.1 ON nid008224 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.14 ON nid008253 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.19 ON nid008416 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.4 ON nid008416 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.13 ON nid008253 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.24 ON nid008429 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.2 ON nid008253 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+
+[1066035] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+slurmstepd: error: *** STEP 15182311.23 ON nid008429 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+
+[2332289] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+
+[1240895] signal (15): Terminated
+slurmstepd: error: *** STEP 15182311.22 ON nid008429 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.5 ON nid008429 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+
+[1240734] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+
+[2332594] signal (15): Terminated
+
+[2332511] signal (15): Terminated
+
+[1886930] signal (15): Terminated
+
+[1240631] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+
+[2235042] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+
+[2226552] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+
+[2332428] signal (15): Terminated
+clock_gettime at linux-vdso.so.1 (unknown line)
+epoll_wait at /lib64/libc.so.6 (unknown line)
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+slurmstepd: error: *** STEP 15182311.18 ON nid008400 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+
+[2044720] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+__clock_gettime at /lib64/libc.so.6 (unknown line)
+
+[2233922] signal (15): Terminated
+slurmstepd: error: *** STEP 15182311.17 ON nid008400 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 15182311.16 ON nid008400 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+clock_gettime at linux-vdso.so.1 (unknown line)
+__clock_gettime at /lib64/libc.so.6 (unknown line)
+
+[2044719] signal (15): Terminated
+slurmstepd: error: *** STEP 15182311.3 ON nid008400 CANCELLED AT 2023-09-09T23:56:42 DUE TO TIME LIMIT ***
+
+[2236316] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+
+[1875047] signal (15): Terminated
+
+[1240812] signal (15): Terminated
+
+[2037738] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+clock_gettime at linux-vdso.so.1 (unknown line)
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+
+[2012940] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+
+[2044726] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+__clock_gettime at /lib64/libc.so.6 (unknown line)
+clock_gettime at linux-vdso.so.1 (unknown line)
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:226
+clock_gettime at linux-vdso.so.1 (unknown line)

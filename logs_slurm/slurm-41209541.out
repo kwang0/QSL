@@ -1,0 +1,10 @@
+[ Info:  started timer at: 2025-07-31T09:11:47.703
+ERROR: LoadError: UndefVarError: `idx` not defined in `Main`
+Stacktrace:
+ [1] triangular_model(C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Bperp::Float64, Δ1::Float64, Δ2::Float64, θ::Float64)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:63
+ [2] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, θ::Float64, cutoff::Float32, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:260
+ [3] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:363
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:363

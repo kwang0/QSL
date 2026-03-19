@@ -1,0 +1,86 @@
+ERROR: LoadError: SystemError: opening file "/global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSetsSmallVectorsExt/smallset.jl": Not a directory
+Stacktrace:
+  [1] systemerror(p::String, errno::Int32; extrainfo::Nothing)
+    @ Base ./error.jl:176
+  [2] #systemerror#82
+    @ ./error.jl:175 [inlined]
+  [3] systemerror
+    @ ./error.jl:175 [inlined]
+  [4] open(fname::String; lock::Bool, read::Nothing, write::Nothing, create::Nothing, truncate::Nothing, append::Nothing)
+    @ Base ./iostream.jl:293
+  [5] open
+    @ ./iostream.jl:275 [inlined]
+  [6] open(f::Base.var"#418#419"{String}, args::String; kwargs::Base.Pairs{Symbol, Union{}, Tuple{}, NamedTuple{(), Tuple{}}})
+    @ Base ./io.jl:393
+  [7] open
+    @ ./io.jl:392 [inlined]
+  [8] read
+    @ ./io.jl:473 [inlined]
+  [9] _include(mapexpr::Function, mod::Module, _path::String)
+    @ Base ./loading.jl:1959
+ [10] include(mod::Module, _path::String)
+    @ Base ./Base.jl:457
+ [11] include(x::String)
+    @ NDTensors.SortedSets ~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSets.jl:1
+ [12] top-level scope
+    @ ~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSets.jl:19
+ [13] include(mod::Module, _path::String)
+    @ Base ./Base.jl:457
+ [14] include
+    @ ~/.julia/packages/NDTensors/9WMtv/src/NDTensors.jl:1 [inlined]
+ [15] top-level scope
+    @ ~/.julia/packages/NDTensors/9WMtv/src/NDTensors.jl:44
+ [16] include
+    @ ./Base.jl:457 [inlined]
+ [17] include_package_for_output(pkg::Base.PkgId, input::String, depot_path::Vector{String}, dl_load_path::Vector{String}, load_path::Vector{String}, concrete_deps::Vector{Pair{Base.PkgId, UInt128}}, source::String)
+    @ Base ./loading.jl:2049
+ [18] top-level scope
+    @ stdin:3
+in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSets.jl:1
+in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/NDTensors.jl:1
+in expression starting at stdin:3
+ERROR: LoadError: Failed to precompile NDTensors [23ae76d9-e61a-49c4-8f12-3f1a16adf9cf] to "/global/homes/k/kwang98/.julia/compiled/v1.9/NDTensors/jl_uzSlG9".
+Stacktrace:
+  [1] error(s::String)
+    @ Base ./error.jl:35
+  [2] compilecache(pkg::Base.PkgId, path::String, internal_stderr::IO, internal_stdout::IO, keep_loaded_modules::Bool)
+    @ Base ./loading.jl:2300
+  [3] compilecache
+    @ ./loading.jl:2167 [inlined]
+  [4] _require(pkg::Base.PkgId, env::String)
+    @ Base ./loading.jl:1805
+  [5] _require_prelocked(uuidkey::Base.PkgId, env::String)
+    @ Base ./loading.jl:1660
+  [6] macro expansion
+    @ ./loading.jl:1648 [inlined]
+  [7] macro expansion
+    @ ./lock.jl:267 [inlined]
+  [8] require(into::Module, mod::Symbol)
+    @ Base ./loading.jl:1611
+  [9] include
+    @ ./Base.jl:457 [inlined]
+ [10] include_package_for_output(pkg::Base.PkgId, input::String, depot_path::Vector{String}, dl_load_path::Vector{String}, load_path::Vector{String}, concrete_deps::Vector{Pair{Base.PkgId, UInt128}}, source::String)
+    @ Base ./loading.jl:2049
+ [11] top-level scope
+    @ stdin:3
+in expression starting at /global/homes/k/kwang98/.julia/packages/ITensors/7KqSL/src/ITensors.jl:1
+in expression starting at stdin:3
+ERROR: LoadError: Failed to precompile ITensors [9136182c-28ba-11e9-034c-db9fb085ebd5] to "/global/homes/k/kwang98/.julia/compiled/v1.9/ITensors/jl_EU63ji".
+Stacktrace:
+ [1] error(s::String)
+   @ Base ./error.jl:35
+ [2] compilecache(pkg::Base.PkgId, path::String, internal_stderr::IO, internal_stdout::IO, keep_loaded_modules::Bool)
+   @ Base ./loading.jl:2300
+ [3] compilecache
+   @ ./loading.jl:2167 [inlined]
+ [4] _require(pkg::Base.PkgId, env::String)
+   @ Base ./loading.jl:1805
+ [5] _require_prelocked(uuidkey::Base.PkgId, env::String)
+   @ Base ./loading.jl:1660
+ [6] macro expansion
+   @ ./loading.jl:1648 [inlined]
+ [7] macro expansion
+   @ ./lock.jl:267 [inlined]
+ [8] require(into::Module, mod::Symbol)
+   @ Base ./loading.jl:1611
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:2

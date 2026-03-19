@@ -1,0 +1,352 @@
+ERROR: ERROR: ERROR: ERROR: LoadError: LoadError: LoadError: LoadError: SystemError: opening file "/global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSetsSmallVectorsExt/smallset.jl": Not a directory
+Stacktrace:
+  [1] systemerror(p::SystemError: opening file "/global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSetsSmallVectorsExt/smallset.jl": Not a directory
+Stacktrace:
+  [1] systemerror(p::SystemError: opening file "/global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSetsSmallVectorsExt/smallset.jl": Not a directory
+Stacktrace:
+  [1] SystemError: opening file "/global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSetsSmallVectorsExt/smallset.jl": Not a directorysystemerror(p::
+Stacktrace:
+  [1] systemerror(p::String, errno::Int32; extrainfo::Nothing)
+    @ Base ./error.jl:176
+  [2] #systemerror#82
+    @ ./error.jl:175 [inlined]
+  [3] systemerror
+    @ ./error.jl:175 [inlined]
+  [4] open(fname::String; lock::StringBool, , errno::read::NothingInt32; extrainfo::, writeNothing)
+::    @ Nothing, Base create./::error.jl:176
+Nothing,   [2]truncate:: String, errno::Nothing, append#systemerror#82
+    @ Int32; ::Nothing)String, errno::./error.jl:175 [inlined]
+extrainfo::Nothing)
+    @
+    @ Int32; extrainfo  [3] BaseBase ::Nothing)
+    @  systemerror
+ ././Base     @error.jl:176iostream.jl:293
+./error.jl:176 
+  [5] open
+./  [2] #systemerror#82
+    @  [2]error.jl:175 [inlined]
+  #systemerror#82
+    @ 
+    @ ./././error.jl:175 [inlined]
+  [3]  [4] open(fnameerror.jl:175 [inlined]
+iostream.jl:275 [inlined] systemerror
+    @ :: 
+  [6] ./error.jl:175 [inlined]
+String [3] systemerror
+open(  [4];     @ ./f:: lock::error.jl:175Base.var"#418#419"{String}, open(Bool, read [inlined]
+args::fname::::Nothing  [4] openString; String, (fname::String; kwargs; write::Nothinglock::lock::, ::Base.PairsBoolcreate::Bool, {Symbol, Union{}, Tuple{}, NamedTuple{(), Tuple{}}}, read::Nothingread::)
+Nothing, , Nothing, write    @ write::truncate::::BaseNothing, Nothing, Nothing,  ./create::appendcreate::io.jl:393
+Nothing::Nothing,   [7], truncateNothingtruncate:: ::)NothingopenNothing, 
+, 
+    @append::    @ append:: ./NothingBase Nothingio.jl:392)
+./) [inlined]
+  [8]    @iostream.jl:293
+    @  read
+ Base
+Base    @   [5]   ././open
+./io.jl:473 [inlined]iostream.jl:293    @iostream.jl:293
+  [9]
+ 
+ _include(  [5] open./iostream.jl:275 [inlined]  [5] open
+mapexpr
+
+    @::    @   [6]  Function, ./open(./modiostream.jl:275 [inlined]
+f::Base.var"#418#419"{String}iostream.jl:275::  [6] open(,  [inlined]
+Modulef::args::  [6], Base.var"#418#419"{String}String;  _path::String), argskwargsopen
+::::(f::    @ BaseString; kwargsBase.PairsBase.var"#418#419"{String} ::{Symbol, Union{}, Tuple{}, NamedTuple{(), Tuple{}}}), args./Base.Pairs{Symbol, Union{}, Tuple{}, NamedTuple{(), Tuple{}}})
+
+::loading.jl:1959    @ Base     @String; 
+ [10]./io.jl:393 Basekwargs include(mod::
+ ./::Module, _path::  [7] io.jl:393Base.PairsString)open
+  [7]{Symbol, Union{}, Tuple{}, NamedTuple{(), Tuple{}}})
+    @
+    @ open
+  
+    @    @ Base./ Base ./io.jl:392 [inlined]
+./io.jl:392 Base.jl:457  [8] read
+ [inlined]
+./
+    @  [8] io.jl:393 [11] read
+    @
+ include./io.jl:473   [7]( [inlined]./ x::
+io.jl:473 [inlined]
+open
+String   [9]     @) [9]_include( 
+ mapexpr./    @ _include(::io.jl:392NDTensors.SortedSets mapexpr::Function,  [inlined]~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/Function, mod::mod
+SortedSets.jl:1Module::  [8]
+, _pathModule, _path read ::::String)
+[12] String
+    @top-level scope
+)
+    @      @     @ BaseBase./~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/ ./ io.jl:473 [inlined]
+SortedSets.jl:19loading.jl:1959
+./  [9]
+ [10] loading.jl:1959
+  [13]include(mod [10]_include( ::Module mapexprinclude(, include::mod_path::String(mod::Function, ::)
+Modulemod::Module    @ , Module, , _pathBase ./Base.jl:457
+_path_path:: [11] ::String::String)include)
+String
+    @(    @ ) x::Base 
+    @Base String)./ Base./
+Base.jl:457 ./loading.jl:1959Base.jl:457    @ 
+
+
+NDTensors.SortedSets [11] [10] [14]    include~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/include(include(
+    @SortedSets.jl:1
+xmod  [12] ::::~/.julia/packages/NDTensors/9WMtv/src/top-level scopeString)Module, NDTensors.jl:1 [inlined]
+    @ 
+    @_path
+~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/ :: [15]SortedSets.jl:19NDTensors.SortedSets String top-level scope
+~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/)
+
+    @ [13]SortedSets.jl:1    @  include
+ Base~/.julia/packages/NDTensors/9WMtv/src/(mod [12] top-level scope NDTensors.jl:44::
+    @./
+Module Base.jl:457 [16] , _path~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/
+include
+::SortedSets.jl:19
+ [11]    @String [13] include ./)
+ (xBase.jl:457    @ include(:: [inlined]
+Base ./modString) [17]Base.jl:457::
+ 
+Module, _path::    @ include_package_for_output( [14]StringNDTensors.SortedSets pkg:: )
+~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/Base.PkgId, include
+    @SortedSets.jl:1input    @  Base 
+::~/.julia/packages/NDTensors/9WMtv/src/./Base.jl:457 [12]String, depot_path::NDTensors.jl:1 [inlined]
+
+ top-level scopeVector [15] top-level scope 
+    @{String}, 
+    @[14]  dl_load_path:: ~/.julia/packages/NDTensors/9WMtv/src/include~/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/Vector{String}NDTensors.jl:44
+
+SortedSets.jl:19,  [16]     @ 
+ [13]load_path::Vector{String}include
+~/.julia/packages/NDTensors/9WMtv/src/ ,     @ NDTensors.jl:1include(mod::concrete_deps::./Base.jl:457 [inlined] [inlined]
+Module, _pathVector{Pair{Base.PkgId, UInt128}}
+ [17] [15]::String),  include_package_for_output( top-level scope
+    @ source::pkg::
+Base ./String)
+Base.PkgId, input::    @ Base.jl:457    @ String, depot_path~/.julia/packages/NDTensors/9WMtv/src/
+ [14]Base::NDTensors.jl:44 include
+ Vector{String}, 
+    @ ./dl_load_path:: [16]~/.julia/packages/NDTensors/9WMtv/src/loading.jl:2049Vector{String} NDTensors.jl:1
+, include
+ [inlined]
+ [18]load_path::    @ [15] top-level scope top-level scopeVector{String} ./
+
+    @, Base.jl:457 [inlined]    @  concrete_deps::
+~/.julia/packages/NDTensors/9WMtv/src/stdin:3Vector{Pair{Base.PkgId, UInt128}} NDTensors.jl:44
+in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSets.jl:1
+, [17] 
+ [16]in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/NDTensors.jl:1source::include_package_for_output( 
+in expression starting at stdin:3
+String)pkginclude
+
+    @::    @ Base.PkgId,  ./Base ./input::Base.jl:457loading.jl:2049String [inlined]
+ [17]
+ [18], depot_path  top-level scope::include_package_for_output(
+    @Vectorpkg {String}, ::stdin:3dl_load_path::Base.PkgId, input
+in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSets.jl:1
+Vector{String}::in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/NDTensors.jl:1, String, depot_path
+in expression starting at stdin:3
+load_path::::VectorVector{String}{String}, , dl_load_path::concrete_deps::Vector{String}, Vector{Pair{Base.PkgId, UInt128}}load_path::Vector{String}, source, concrete_deps::::Vector{Pair{Base.PkgId, UInt128}}, Stringsource::String))
+
+    @    @  BaseBase  ././loading.jl:2049loading.jl:2049
+ [18]
+ top-level scope [18]
+    @ top-level scope stdin:3
+    @
+in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSets.jl:1
+ in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/NDTensors.jl:1stdin:3
+in expression starting at stdin:3
+in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/lib/SortedSets/src/SortedSets.jl:1
+
+in expression starting at /global/homes/k/kwang98/.julia/packages/NDTensors/9WMtv/src/NDTensors.jl:1
+in expression starting at stdin:3
+ERROR: ERROR: LoadError: ERROR: ERROR: LoadError: LoadError: LoadError: Failed to precompile NDTensors [23ae76d9-e61a-49c4-8f12-3f1a16adf9cf] to "/global/homes/k/kwang98/.julia/compiled/v1.9/NDTensors/jl_92WDAa".
+Stacktrace:
+  [1] error(s::Failed to precompile NDTensors [23ae76d9-e61a-49c4-8f12-3f1a16adf9cf] to "/global/homes/k/kwang98/.julia/compiled/v1.9/NDTensors/jl_K0vy6i".
+Stacktrace:
+  [1] error(s::String)
+    @ Base ./error.jl:35
+  [2] compilecache(pkg::Base.PkgId, path::String, internal_stderr::IO, internal_stdout::IO, keep_loaded_modules::Bool)
+    @ Base ./loading.jl:2300
+  [3] compilecache
+    @ ./loading.jl:2167 [inlined]
+  [4] _require(pkg::Base.PkgId, env::String)Failed to precompile NDTensors [23ae76d9-e61a-49c4-8f12-3f1a16adf9cf] to "/global/homes/k/kwang98/.julia/compiled/v1.9/NDTensors/jl_t0NQge".
+    @
+Stacktrace:
+ Base ./Failed to precompile NDTensors [23ae76d9-e61a-49c4-8f12-3f1a16adf9cf] to "/global/homes/k/kwang98/.julia/compiled/v1.9/NDTensors/jl_HkgxEy".  [1]loading.jl:1805
+
+Stacktrace:   [5] 
+  [1] String)
+    @ error(_require_prelocked(uuidkey::error(s::Base s::Base.PkgId, env::./error.jl:35
+String)  [2] 
+    @compilecache( Basepkg:: Base.PkgId, ./loading.jl:1660path::
+String,  internal_stderr:: [6] IO, macro expansion
+internal_stdout::    @ IO, ./keep_loaded_modules::loading.jl:1648 [inlined]
+Bool)  [7]
+    @  macro expansion
+Base    @  ././loading.jl:2300lock.jl:267 [inlined]
+
+   [8] [3] compilecache
+     @ ./loading.jl:2167require( [inlined]
+into:: Module,  [4] mod::_require(Symbol)pkg::
+    @Base.PkgId Base, env:: ./String)
+Stringloading.jl:1611
+    @ Base)
+String)
+    @   [9] ./loading.jl:1805    @ Base Base  include
+./error.jl:35
+./error.jl:35
+
+    @   [5]  [2]   [2] ./Base.jl:457 _require_prelockedcompilecache(compilecache(pkg [inlined]
+ [10](uuidkey::pkg:::: include_package_for_output(Base.PkgId, env::Base.PkgIdBase.PkgId, path::pkg::String)
+, pathString, Base.PkgId    @ Base::internal_stderr::, input:: ./String, internal_stderrIO, String, loading.jl:1660
+::internal_stdout::depot_path::  [6] macro expansionIO, internal_stdoutIO, Vector
+    @::keep_loaded_modules::{String} ./loading.jl:1648 [inlined]IO, keep_loaded_modulesBool)
+, dl_load_path
+ ::    @:: [7] macro expansion
+Bool) BaseVector    @ 
+    @  {String}, ./lock.jl:267 [inlined]
+Base ././loading.jl:2300load_path::  [8] loading.jl:2300
+Vector{String}require(into::
+ , Module, mod::  [3] [3] concrete_deps::Symbol compilecachecompilecache
+Vector{Pair{Base.PkgId, UInt128}}, )
+    @
+    @    @ source:: Base ././loading.jl:2167String ./loading.jl:1611loading.jl:2167 [inlined] [inlined]
+)
+
+ 
+  [4]    @  [9] include
+  [4] Base    @ _require(pkg ./ ./Base.jl:457_require(::loading.jl:2049 [inlined]
+ pkg::Base.PkgId, 
+[10] include_package_for_output(Base.PkgId, env:: [11]pkg::env::String) top-level scopeBase.PkgId, input::String)
+    @ 
+    @String, 
+    @ Base  depot_path::Base ./stdin:3Vector./loading.jl:1805loading.jl:1805
+in expression starting at /global/homes/k/kwang98/.julia/packages/ITensors/7KqSL/src/ITensors.jl:1{String}, 
+
+
+in expression starting at stdin:3
+dl_load_path::  Vector{String},  [5]  [5] load_path::_require_prelocked(_require_prelockedVector{String}uuidkey::(uuidkey::, Base.PkgIdBase.PkgId, concrete_deps::, env::env::VectorStringString{Pair{Base.PkgId, UInt128}}, )
+    @)
+source:: Base ./    @ Stringloading.jl:1660Base)
+
+     @   [6]./Base macro expansionloading.jl:1660 
+    @
+./ ./  [6] loading.jl:2049loading.jl:1648 [inlined]macro expansion
+
+
+    @  [11]  [7]./ top-level scope macro expansionloading.jl:1648 [inlined]
+    @
+    @
+ stdin:3 ./ 
+in expression starting at /global/homes/k/kwang98/.julia/packages/ITensors/7KqSL/src/ITensors.jl:1lock.jl:267 [inlined]
+ [7] macro expansion
+in expression starting at stdin:3
+  [8] 
+    @require( ./into::lock.jl:267 [inlined]Module
+, mod :: [8] Symbol)
+    @ require(Base into::./Module, loading.jl:1611mod::
+Symbol)  [9]
+    @ include Base
+    @ ./ loading.jl:1611./
+Base.jl:457 [inlined]  [9]
+ include [10]
+    @  ./include_package_for_output(Base.jl:457 [inlined]pkg::Base.PkgId
+, input ::[10] String, include_package_for_output(depot_path::pkg::Vector{String}Base.PkgId, , input::dl_load_path::String, Vector{String}depot_path::, Vector{String}load_path::, dl_load_pathVector{String}::, concrete_depsVector{String}::, Vector{Pair{Base.PkgId, UInt128}}load_path::, Vector{String}source::, concrete_depsString)
+::    @ Vector{Pair{Base.PkgId, UInt128}}, sourceBase:: String)./
+loading.jl:2049    @ 
+Base  [11]./ top-level scopeloading.jl:2049
+    @
+  [11]stdin:3 top-level scope
+in expression starting at /global/homes/k/kwang98/.julia/packages/ITensors/7KqSL/src/ITensors.jl:1
+
+    @in expression starting at stdin:3 
+stdin:3
+in expression starting at /global/homes/k/kwang98/.julia/packages/ITensors/7KqSL/src/ITensors.jl:1
+in expression starting at stdin:3
+ERROR: ERROR: ERROR: ERROR: LoadError: LoadError: LoadError: LoadError: Failed to precompile ITensors [9136182c-28ba-11e9-034c-db9fb085ebd5] to "/global/homes/k/kwang98/.julia/compiled/v1.9/ITensors/jl_yRbxzH".
+Stacktrace:
+ [1] error(s::Failed to precompile ITensors [9136182c-28ba-11e9-034c-db9fb085ebd5] to "/global/homes/k/kwang98/.julia/compiled/v1.9/ITensors/jl_kgvX5T".
+Stacktrace:
+ [1] error(s::Failed to precompile ITensors [9136182c-28ba-11e9-034c-db9fb085ebd5] to "/global/homes/k/kwang98/.julia/compiled/v1.9/ITensors/jl_i33df4".
+Stacktrace:
+ [1] error(s::String)
+   @ Base ./error.jl:35
+ [2] compilecache(pkg::Base.PkgId, pathFailed to precompile ITensors [9136182c-28ba-11e9-034c-db9fb085ebd5] to "/global/homes/k/kwang98/.julia/compiled/v1.9/ITensors/jl_0E7yvd".::String, internal_stderr
+Stacktrace:
+:: [1] IO, error(s::String)
+   @internal_stdout:: BaseIO,  ./error.jl:35keep_loaded_modules::
+Bool) [2] 
+   @ compilecache(pkg::BaseBase.PkgId,  ./path::loading.jl:2300String
+, internal_stderr:: IO, [3] internal_stdout::compilecache
+IO   @, keep_loaded_modules:: ./Bool)loading.jl:2167
+   @ [inlined]
+ Base [4]  _require(./pkgloading.jl:2300::
+Base.PkgId [3] , envcompilecache
+::   @ String)./
+   @loading.jl:2167 [inlined]
+ Base [4]  _require(./pkg::loading.jl:1805Base.PkgId, env
+:: String)[5] 
+   @_require_prelocked( Baseuuidkey:: Base.PkgId, ./envloading.jl:1805::String)
+
+   @ [5] Base  _require_prelocked(./uuidkey::loading.jl:1660Base.PkgId, envString
+::)
+ [6] String)
+   @ Base macro expansion
+   @   @./ ./loading.jl:1648 Base Stringerror.jl:35
+ [2] [inlined]
+ ./loading.jl:1660
+)
+ [7]  [6]    @ Base compilecache(macro expansionmacro expansion
+   @ ./error.jl:35pkg::
+   @./loading.jl:1648
+Base.PkgId,  ./lock.jl:267 [inlined]
+ [2] compilecache(path:: [inlined]
+ [7]pkg::Base.PkgId, String,   macro expansionpath::internal_stderr[8] require(
+   @String, ::into:: internal_stderr::IOIO, Module, ./lock.jl:267, internal_stdoutinternal_stdout::mod [inlined]
+::IOIO, keep_loaded_modules:: [8], keep_loaded_modules::Symbol) ::BoolBool)
+   @require()
+   @ 
+   @ Baseinto::Base  Base Module./ ./, modloading.jl:2300./loading.jl:1611::
+loading.jl:2300
+
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:2Symbol) [3] [3] 
+
+ compilecachecompilecache
+   @ 
+   @   @ Base ./ ./loading.jl:1611./loading.jl:2167 [inlined]
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:2loading.jl:2167 [inlined]
+
+
+ [4]  [4]_require( pkg::_require(Base.PkgId, pkgenv::::StringBase.PkgId, )
+env::   @ String)Base
+   @  ./Baseloading.jl:1805 ./
+loading.jl:1805 [5]
+  [5]_require_prelocked( _require_prelockeduuidkey(uuidkey::::Base.PkgId, Base.PkgIdenv::, envString)::String
+   @)
+ Base   @  Base./loading.jl:1660 
+./loading.jl:1660 
+[6]  [6]macro expansion
+ macro expansion   @
+ ./   @ loading.jl:1648 [inlined]./
+loading.jl:1648 [inlined] 
+[7]  macro expansion
+[7]    @ macro expansion
+./   @lock.jl:267 [inlined]
+ ./ [8]lock.jl:267 [inlined] 
+require (into[8] ::require(Module, intomod::::Symbol)Module, 
+mod::   @ SymbolBase )
+./   @ loading.jl:1611Base
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:2
+ ./loading.jl:1611
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:2
+srun: error: nid008452: task 0: Exited with exit code 1
+srun: Terminating StepId=21729700.1
+srun: error: nid008452: task 0: Exited with exit code 1
+srun: error: nid008452: task 0: Exited with exit code 1
+srun: error: nid008452: task 0: Exited with exit code 1
+srun: Terminating StepId=21729700.2
+srun: Terminating StepId=21729700.3
+srun: Terminating StepId=21729700.0

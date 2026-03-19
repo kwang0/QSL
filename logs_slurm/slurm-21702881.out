@@ -1,0 +1,290 @@
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+┌ Warning: CUDA runtime library libcublasLt.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libnvJitLink.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcusparse.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcublasLt.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libnvJitLink.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcusparse.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcublasLt.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libnvJitLink.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcusparse.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcublasLt.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libnvJitLink.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcusparse.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcublasLt.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libnvJitLink.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+┌ Warning: CUDA runtime library libcusparse.so.12 was loaded from a system path. This may cause errors.
+│ Ensure that you have not set the LD_LIBRARY_PATH environment variable, or that it does not contain paths to CUDA libraries.
+└ @ CUDA ~/.julia/packages/CUDA/rXson/src/initialization.jl:189
+[ Info:  started timer at: 2024-02-13T13:24:12.654
+[ Info:  started timer at: 2024-02-13T13:24:12.980
+[ Info:  started timer at: 2024-02-13T13:24:13.264
+[ Info:  started timer at: 2024-02-13T13:24:13.474
+[ Info:  started timer at: 2024-02-13T13:24:14.081
+ERROR: ERROR: ERROR: ERROR: LoadError: LoadError: LoadError: LoadError: MethodError: MethodError: no method matching iterate(::Nothing)no method matching iterate(::Nothing)MethodError: MethodError: no method matching iterate(::Nothing)no method matching iterate(::Nothing)
+
+Closest candidates are:
+  iterate(!Matched::Union{LinRange, StepRangeLen})
+   @ Base range.jl:880
+  iterate(!Matched::Union{LinRange, StepRangeLen}, !Matched::Integer)
+   @ Base range.jl:880
+  iterate(!Matched::T) where T<:Union{Base.KeySet{<:Any, <:Dict}, Base.ValueIterator{<:Dict}}
+   @ Base dict.jl:698
+  ...
+
+Stacktrace:
+  [1] indexed_iterate(I::
+
+Closest candidates are:
+  iterate(!Matched::Union{LinRange, StepRangeLen})
+   @ Base range.jl:880
+  iterate(!Matched::Union{LinRange, StepRangeLen}, !Matched::Integer)
+   @ Base range.jl:880
+  iterate(!Matched::T) where T<:Union{Base.KeySet{<:Any, <:Dict}, Base.ValueIterator{<:Dict}}
+   @ Base dict.jl:698
+  ...
+
+Stacktrace:
+  [1] indexed_iterate(I::Nothing, i::Int64)
+    @ Base ./tuple.jl:91
+  [2] replacebond!(M::MPS, b::Int64, phi::ITensor; normalize::Bool, swapsites::Nothing, ortho::String, which_decomp::Nothing, mindim::Int64, maxdim::Int64, cutoff::Float64, eigen_perturbation::Nothing, svd_alg::Nothing, use_absolute_cutoff::Nothing, use_relative_cutoff::Nothing, min_blockdim::Nothing)
+    @ ITensors ~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:559
+  [3] replacebond!
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:530 [inlined]
+  [4] #replacebond!#956
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:606 [inlined]
+  [5] macro expansion
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:277 [inlined]
+  [6] macro expansion
+    @ ~/.julia/packages/TimerOutputs/RsWnF/src/TimerOutput.jl:253 [inlined]
+  [7] macro expansion
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:276 [inlined]
+  [8] macro expansion
+    @ ./timing.jl:393 [inlined]
+  [9] dmrg(PH::ProjMPO, psi0::MPS, sweeps::Sweeps; which_decomp::Nothing, svd_alg::Nothing, observer::NoObserver, outputlevel::Int64, write_when_maxdim_exceeds::Nothing, write_path::String, eigsolve_tol::Float64, eigsolve_krylovdim::Int64, eigsolve_maxiter::Int64, eigsolve_verbosity::Int64, eigsolve_which_eigenvalue::Symbol, Nothingishermitian::, iBool)::Int64)
+    @
+ Base ./    @ ITensors tuple.jl:91
+~/.julia/packages/ITensors/a61iW/src/mps/  [2]dmrg.jl:204 
+replacebond!(M:: [10]MPS,  dmrgb::Int64
+    @, phi::ITensor ; normalize::~/.julia/packages/ITensors/a61iW/src/mps/Bool, swapsites::dmrg.jl:156 [inlined]Nothing, ortho::
+String, which_decomp:: [11]Nothing, mindim:: Int64, #dmrg#1053
+    @ maxdim::~/.julia/packages/ITensors/a61iW/src/mps/Int64dmrg.jl:27, cutoff [inlined]
+:: [12]Float64,  dmrgeigen_perturbation
+    @:: Nothing~/.julia/packages/ITensors/a61iW/src/mps/, svd_algdmrg.jl:20 [inlined]::
+Nothing [13], use_absolute_cutoff #dmrg#1059::
+    @Nothing , use_relative_cutoff
+~/.julia/packages/ITensors/a61iW/src/mps/::Nothing
+Closest candidates are:
+dmrg.jl:391 [inlined], min_blockdim::  iterate(!Matched::Union{LinRange, StepRangeLen})
+   @ Base range.jl:880
+
+Nothing  iterate(!Matched::Union{LinRange, StepRangeLen}, !Matched::Integer)
+   @ Base range.jl:880
+ [14] dmrg)
+  iterate(!Matched::T) where T<:Union{Base.KeySet{<:Any, <:Dict}, Base.ValueIterator{<:Dict}}
+   @ Base dict.jl:698
+
+    @    @   ...
+ 
+ITensors
+Stacktrace:
+~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:381 [inlined]
+Closest candidates are:
+   [1] indexed_iterate(
+  iterate(!Matched::Union{LinRange, StepRangeLen})
+   @ Base range.jl:880
+~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:559I   iterate(!Matched::Union{LinRange, StepRangeLen}, !Matched::Integer)
+   @ Base range.jl:880
+
+  [3] ::[15]   iterate(!Matched::T) where T<:Union{Base.KeySet{<:Any, <:Dict}, Base.ValueIterator{<:Dict}}
+   @ Base dict.jl:698
+replacebond!main(  ...
+
+    @
+Stacktrace:
+   [1] indexed_iterate(I::~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:530 [inlined]
+  [4] #replacebond!#956
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:606 [inlined]
+  [5] macro expansion
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:277 [inlined]
+  [6] macro expansion
+    @ ~/.julia/packages/TimerOutputs/RsWnF/src/TimerOutput.jl:253 [inlined]
+  [7] macro expansion
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:276 [inlined]
+  [8] macro expansion
+    @ ./timing.jl:393 [inlined]
+  [9] dmrg(PH::ProjMPO, psi0::MPS, sweeps::Sweeps; which_decomp::Nothing, svd_alg::Nothing, observer::NoObserver, outputlevel::Int64, write_when_maxdim_exceeds::Nothing, write_path::String, eigsolve_tol::Float64, eigsolve_krylovdim::Int64, eigsolve_maxiter::Int64, eigsolve_verbosity::Int64, eigsolve_which_eigenvalue::Symbol, ishermitian::Bool)
+    @ ITensors ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:204
+ [10] dmrg
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:156 [inlined]
+ [11] #dmrg#1053
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:27 [inlined]
+ [12] dmrg
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:20 [inlined]
+ [13] #dmrg#1059
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:391 [inlined]
+Nothing,  [14] i::dmrg
+Int64)
+    @     @ ~/.julia/packages/ITensors/a61iW/src/mps/Base ./dmrg.jl:381 [inlined]tuple.jl:91
+
+ [15]  [2]  replacebond!(main(M::; MPS, C::b::Int64, phi::Nothing, Int64, ITensor; normalize::i::L::Int64, Bool, swapsites::Int64)
+    @ J1::Float64NothingBase ./, , ortho::tuple.jl:91
+J2::Float64String  [2], B, which_decomp:: ::Nothing, replacebond!Float64, Δ1mindim::(::Int64, maxdim::M::Float64, Int64MPS, b::Δ2::Float64, Int64, phi::, cutoff::ITensor; normalize::cutoff::Float64Bool, swapsitesFloat64, , ::Nothing, ortho::Stringδt::eigen_perturbation::, which_decompFloat64, Nothing, ::ttotal::svd_algNothingInt64::, mindim, Nothing::maxdim::, use_absolute_cutoffInt64Int64, component::, maxdim::StringNothing, ; ::)
+use_relative_cutoff::Nothing, C::Int64, cutoff    @ min_blockdimInt64, ::Main ::LFloat64/global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:155Nothing::, 
+)Int64, eigen_perturbation [16]
+    @ J1::::Nothing,  top-level scopeITensors Float64svd_alg
+~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:559, J2::    @ 
+::Nothing/global/u2/k/kwang98/QSL/  [3]Float64, , use_absolute_cutoffJ1_J2_triangular_gpu.jl:252 replacebond!
+B::
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:252
+    @ ::Nothing~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:530Float64, use_relative_cutoff [inlined]
+, Δ1::  [4] ::Nothing, #replacebond!#956
+Float64, min_blockdim    @Δ2:::: Float64Nothing~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:606 [inlined], cutoff)
+
+::    @  [5]Float64,  ITensors δt macro expansion
+    @::Float64, ~/.julia/packages/ITensors/a61iW/src/mps/ ttotal::mps.jl:559~/.julia/packages/ITensors/a61iW/src/mps/Int64
+dmrg.jl:277, maxdim::  [3]  [inlined]
+Int64, replacebond!  [6] macro expansioncomponent::String
+    @
+) ~/.julia/packages/ITensors/a61iW/src/mps/    @
+    @mps.jl:530 [inlined]  Main
+~/.julia/packages/TimerOutputs/RsWnF/src/   [4]TimerOutput.jl:253/global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:155  [inlined]
+#replacebond!#956
+    @
+ [16]   [7]  top-level scope~/.julia/packages/ITensors/a61iW/src/mps/macro expansion
+    @
+    @mps.jl:606   [inlined]
+~/.julia/packages/ITensors/a61iW/src/mps//global/u2/k/kwang98/QSL/  [5] dmrg.jl:276J1_J2_triangular_gpu.jl:252macro expansion
+ [inlined]
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:252    @
+  [8]
+ ~/.julia/packages/ITensors/a61iW/src/mps/ macro expansion
+    @ dmrg.jl:277 [inlined]./
+timing.jl:393  [6]  [inlined]macro expansion
+
+    @  [9] ~/.julia/packages/TimerOutputs/RsWnF/src/ TimerOutput.jl:253 [inlined]dmrg(
+PH::  [7]ProjMPO,  macro expansionpsi0
+::    @ MPS~/.julia/packages/ITensors/a61iW/src/mps/, dmrg.jl:276sweeps:: [inlined]
+Sweeps;   [8] which_decompmacro expansion
+::    @Nothing ./, svd_alg::timing.jl:393Nothing [inlined]
+, observer  [9]:: NoObserver, dmrgoutputlevel(::PHInt64, ::write_when_maxdim_exceeds::ProjMPO, psi0Nothing::, MPS, write_path::sweeps::StringSweeps; which_decomp, eigsolve_tol::::NothingFloat64, , svd_algeigsolve_krylovdim::::Nothing, Int64observer, eigsolve_maxiter::::NoObserver, Int64, outputlevel::eigsolve_verbosity::Int64, write_when_maxdim_exceedsInt64::, Nothing, eigsolve_which_eigenvalue::write_path::SymbolString, , eigsolve_tol::ishermitian::Float64, Booleigsolve_krylovdim::)
+Int64,     @ eigsolve_maxiter::ITensorsInt64,  eigsolve_verbosity::~/.julia/packages/ITensors/a61iW/src/mps/Int64dmrg.jl:204, eigsolve_which_eigenvalue
+:: [10]Symbol , ishermitiandmrg
+::    @ Bool)~/.julia/packages/ITensors/a61iW/src/mps/
+dmrg.jl:156    @  [inlined]
+ITensors [11]  #dmrg#1053~/.julia/packages/ITensors/a61iW/src/mps/
+dmrg.jl:204    @ 
+~/.julia/packages/ITensors/a61iW/src/mps/ [10]dmrg.jl:27 [inlined] 
+dmrg
+ [12]    @  dmrg~/.julia/packages/ITensors/a61iW/src/mps/
+dmrg.jl:156    @  [inlined]
+~/.julia/packages/ITensors/a61iW/src/mps/ [11]dmrg.jl:20 [inlined] #dmrg#1053
+
+    @ [13]  ~/.julia/packages/ITensors/a61iW/src/mps/#dmrg#1059
+dmrg.jl:27 [inlined]    @ 
+~/.julia/packages/ITensors/a61iW/src/mps/ [12]dmrg.jl:391 [inlined] dmrg
+
+    @ [14]  dmrg~/.julia/packages/ITensors/a61iW/src/mps/
+    @dmrg.jl:20 [inlined] 
+~/.julia/packages/ITensors/a61iW/src/mps/ [13]dmrg.jl:381 [inlined] #dmrg#1059
+
+ [15]    @  ~/.julia/packages/ITensors/a61iW/src/mps/main(dmrg.jl:391 [inlined]; 
+C:: Int64, [14] L::dmrgInt64, 
+    @J1 ::~/.julia/packages/ITensors/a61iW/src/mps/Float64dmrg.jl:381 [inlined], 
+J2:: [15]Float64 , Bmain(::; Float64, C::Δ1::Int64, Float64L::, Int64, Δ2::J1::Float64, Float64, cutoffJ2::::Float64, Float64, δt::B::Float64Float64, , ttotalΔ1::::Float64, Int64, Δ2::maxdim::Float64Int64, cutoff, component::::Float64, String)δt::
+Float64    @ , Mainttotal:: /global/u2/k/kwang98/QSL/Int64, J1_J2_triangular_gpu.jl:155maxdim
+:: [16]Int64,  top-level scopecomponent::
+    @String )/global/u2/k/kwang98/QSL/
+    @J1_J2_triangular_gpu.jl:252 Main
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:252 
+/global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:155
+ [16] top-level scope
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:252
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:252
+ERROR: LoadError: srun: error: nid008536: task 0: Exited with exit code 1
+srun: Terminating StepId=21702881.0
+srun: error: nid008536: task 0: Exited with exit code 1
+srun: Terminating StepId=21702881.4
+srun: error: nid008536: task 0: Exited with exit code 1
+srun: error: nid008536: task 0: Exited with exit code 1
+srun: Terminating StepId=21702881.2
+srun: Terminating StepId=21702881.3
+MethodError: no method matching iterate(::Nothing)
+
+Closest candidates are:
+  iterate(!Matched::Union{LinRange, StepRangeLen})
+   @ Base range.jl:880
+  iterate(!Matched::Union{LinRange, StepRangeLen}, !Matched::Integer)
+   @ Base range.jl:880
+  iterate(!Matched::T) where T<:Union{Base.KeySet{<:Any, <:Dict}, Base.ValueIterator{<:Dict}}
+   @ Base dict.jl:698
+  ...
+
+Stacktrace:
+  [1] indexed_iterate(I::Nothing, i::Int64)
+    @ Base ./tuple.jl:91
+  [2] replacebond!(M::MPS, b::Int64, phi::ITensor; normalize::Bool, swapsites::Nothing, ortho::String, which_decomp::Nothing, mindim::Int64, maxdim::Int64, cutoff::Float64, eigen_perturbation::Nothing, svd_alg::Nothing, use_absolute_cutoff::Nothing, use_relative_cutoff::Nothing, min_blockdim::Nothing)
+    @ ITensors ~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:559
+  [3] replacebond!
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:530 [inlined]
+  [4] #replacebond!#956
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/mps.jl:606 [inlined]
+  [5] macro expansion
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:277 [inlined]
+  [6] macro expansion
+    @ ~/.julia/packages/TimerOutputs/RsWnF/src/TimerOutput.jl:253 [inlined]
+  [7] macro expansion
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:276 [inlined]
+  [8] macro expansion
+    @ ./timing.jl:393 [inlined]
+  [9] dmrg(PH::ProjMPO, psi0::MPS, sweeps::Sweeps; which_decomp::Nothing, svd_alg::Nothing, observer::NoObserver, outputlevel::Int64, write_when_maxdim_exceeds::Nothing, write_path::String, eigsolve_tol::Float64, eigsolve_krylovdim::Int64, eigsolve_maxiter::Int64, eigsolve_verbosity::Int64, eigsolve_which_eigenvalue::Symbol, ishermitian::Bool)
+    @ ITensors ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:204
+ [10] dmrg
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:156 [inlined]
+ [11] #dmrg#1053
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:27 [inlined]
+ [12] dmrg
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:20 [inlined]
+ [13] #dmrg#1059
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:391 [inlined]
+ [14] dmrg
+    @ ~/.julia/packages/ITensors/a61iW/src/mps/dmrg.jl:381 [inlined]
+ [15] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:155
+ [16] top-level scope
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:252
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:252
+srun: error: nid008677: task 0: Exited with exit code 1
+srun: Terminating StepId=21702881.1

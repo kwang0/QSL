@@ -1,0 +1,14 @@
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+slurmstepd: error: *** STEP 16932168.4 ON nid008277 CANCELLED AT 2023-10-14T08:19:02 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16932168.3 ON nid008277 CANCELLED AT 2023-10-14T08:19:02 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16932168.0 ON nid008277 CANCELLED AT 2023-10-14T08:19:02 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16932168.1 ON nid008280 CANCELLED AT 2023-10-14T08:19:02 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16932168.2 ON nid008277 CANCELLED AT 2023-10-14T08:19:02 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 16932168 ON nid008277 CANCELLED AT 2023-10-14T08:19:02 DUE TO TIME LIMIT ***
+
+[1081469] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245

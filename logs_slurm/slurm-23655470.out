@@ -1,0 +1,8 @@
+[ Info:  started timer at: 2024-03-29T14:13:10.597
+ERROR: LoadError: UndefVarError: `H` not defined
+Stacktrace:
+ [1] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular.jl:140
+ [2] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular.jl:225
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular.jl:225

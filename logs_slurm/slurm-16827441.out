@@ -1,0 +1,23 @@
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+slurmstepd: error: *** STEP 16827441.4 ON nid008336 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16827441.3 ON nid008336 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16827441.2 ON nid008336 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16827441.1 ON nid008337 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16827441.0 ON nid008336 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 16827441 ON nid008336 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+
+[491027] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245
+
+[490761] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245
+
+[490603] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245
+
+[490604] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245

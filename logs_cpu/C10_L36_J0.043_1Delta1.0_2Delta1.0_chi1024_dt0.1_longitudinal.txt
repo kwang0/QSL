@@ -1,0 +1,11 @@
+<op> = -3.885780586188048e-16
+After sweep 1: maxlinkdim=1024 maxerr=1.93E-05 current_time=0.0 - 0.1im time=13442.704
+Time = 0.1
+After sweep 1: maxlinkdim=1024 maxerr=1.89E-05 current_time=0.0 - 0.1im time=13228.231
+Time = 0.2
+After sweep 1: maxlinkdim=1024 maxerr=1.87E-05 current_time=0.0 - 0.1im time=10613.195
+Time = 0.3
+After sweep 1: maxlinkdim=1024 maxerr=1.88E-05 current_time=0.0 - 0.1im time=11619.227
+Time = 0.4
+After sweep 1: maxlinkdim=1024 maxerr=1.93E-05 current_time=0.0 - 0.1im time=12756.986
+Time = 0.5

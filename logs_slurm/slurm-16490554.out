@@ -1,0 +1,109 @@
+ERROR: LoadError: HDF5.API.H5Error: Error creating file /pscratch/sd/k/kwang98/QSL/C6_L36_J0.03_B0.0_1Delta1.0_2Delta1.0_chi512_dt0.1.h5
+libhdf5 Stacktrace:
+ [1] H5F__super_read: File accessibility/Not an HDF5 file
+     file signature not found
+  ⋮
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/packages/HDF5/MIuzl/src/api/error.jl:18 [inlined]
+ [2] h5f_create(pathname::String, flags::UInt16, fcpl_id::HDF5.FileCreateProperties, fapl_id::HDF5.FileAccessProperties)
+   @ HDF5.API ~/.julia/packages/HDF5/MIuzl/src/api/functions.jl:1088
+ [3] h5open(filename::String, mode::String, fapl::HDF5.FileAccessProperties, fcpl::HDF5.FileCreateProperties; swmr::Bool)
+   @ HDF5 ~/.julia/packages/HDF5/MIuzl/src/file.jl:43
+ [4] h5open
+   @ ~/.julia/packages/HDF5/MIuzl/src/file.jl:20 [inlined]
+ [5] h5open(filename::String, mode::String; swmr::Bool, fapl::HDF5.FileAccessProperties, fcpl::HDF5.FileCreateProperties, pv::Base.Pairs{Symbol, Union{}, Tuple{}, NamedTuple{(), Tuple{}}})
+   @ HDF5 ~/.julia/packages/HDF5/MIuzl/src/file.jl:72
+ [6] h5open(filename::String, mode::String)
+   @ HDF5 ~/.julia/packages/HDF5/MIuzl/src/file.jl:60
+ [7] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:184
+ [8] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239
+srun: error: nid008476: task 0: Exited with exit code 1
+srun: Terminating StepId=16490554.0
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** STEP 16490554.2 ON nid008476 CANCELLED AT 2023-10-03T18:37:20 ***
+slurmstepd: error: *** STEP 16490554.3 ON nid008476 CANCELLED AT 2023-10-03T18:37:20 ***
+slurmstepd: error: *** STEP 16490554.1 ON nid008476 CANCELLED AT 2023-10-03T18:37:20 ***
+slurmstepd: error: *** JOB 16490554 ON nid008476 CANCELLED AT 2023-10-03T18:37:20 ***
+
+[100112] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239
+
+[100115] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239
+unknown function (ip: 0x7f05ee5797e2)
+unknown function (ip: 0x69bab7f)
+unknown function (ip: (nil))
+unknown function (ip: 0x7efe9b8817e2)
+
+[100114] signal (15): Terminated
+Allocations: 254308694 (Pool: 253494626; Big: 814068); GC: 778
+unknown function (ip: 0x6b9a3bf)
+unknown function (ip: (nil))
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239
+Allocations: 254284498 (Pool: 253470409; Big: 814089); GC: 777
+clock_gettime at linux-vdso.so.1 (unknown line)
+__clock_gettime at /lib64/libc.so.6 (unknown line)
+unknown function (ip: 0x7fc4850c250e)
+unknown function (ip: 0x7fc484f9eaf5)
+unknown function (ip: 0x7fc4851c55bb)
+unknown function (ip: 0x7fc4851c5e80)
+unknown function (ip: 0x7fc4852ee465)
+unknown function (ip: 0x7fc484f5e4b2)
+unknown function (ip: 0x7fc484f5e940)
+unknown function (ip: 0x7fc484f5f7c7)
+unknown function (ip: 0x7fc4851326e0)
+unknown function (ip: 0x7fc4259856a8)
+unknown function (ip: 0x7fc425953d0c)
+unknown function (ip: 0x7fc4259aa634)
+unknown function (ip: 0x7fc4257527f0)
+cusolverDnZgesvdj at /global/homes/k/kwang98/.julia/artifacts/f288b361e32abb4319c281cc9cffb1e91d698eb8/lib/libcusolver.so (unknown line)
+macro expansion at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/libcusolver.jl:3616 [inlined]
+#665 at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/utils/call.jl:27
+#1 at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/libcusolver.jl:17 [inlined]
+retry_reclaim at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/src/pool.jl:348
+check at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/libcusolver.jl:16 [inlined]
+cusolverDnZgesvdj at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/utils/call.jl:26 [inlined]
+#1328 at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/dense.jl:482 [inlined]
+#with_workspace#4 at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/utils/call.jl:79
+with_workspace at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/utils/call.jl:58 [inlined]
+with_workspace at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/utils/call.jl:58 [inlined]
+#gesvdj!#1327 at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/dense.jl:481
+gesvdj! at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/dense.jl:442 [inlined]
+_svd! at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/linalg.jl:383 [inlined]
+#svd!#1403 at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/linalg.jl:371 [inlined]
+svd! at /global/homes/k/kwang98/.julia/packages/CUDA/35NC6/lib/cusolver/linalg.jl:371 [inlined]
+macro expansion at /global/homes/k/kwang98/.julia/packages/ITensorGPU/CqqEK/src/tensor/culinearalgebra.jl:44 [inlined]
+macro expansion at /global/homes/k/kwang98/.julia/packages/TimerOutputs/RsWnF/src/TimerOutput.jl:237 [inlined]
+#svd#49 at /global/homes/k/kwang98/.julia/packages/ITensorGPU/CqqEK/src/tensor/culinearalgebra.jl:43
+svd at /global/homes/k/kwang98/.julia/packages/ITensorGPU/CqqEK/src/tensor/culinearalgebra.jl:32
+unknown function (ip: 0x7fc624c73fab)
+_jl_invoke at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2758 [inlined]
+ijl_apply_generic at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2940
+#svd#299 at /global/homes/k/kwang98/.julia/packages/ITensors/HjjU3/src/tensor_operations/matrix_decomposition.jl:147
+svd at /global/homes/k/kwang98/.julia/packages/ITensors/HjjU3/src/tensor_operations/matrix_decomposition.jl:109 [inlined]
+#factorize_svd#324 at /global/homes/k/kwang98/.julia/packages/ITensors/HjjU3/src/tensor_operations/matrix_decomposition.jl:527
+factorize_svd at /global/homes/k/kwang98/.julia/packages/ITensors/HjjU3/src/tensor_operations/matrix_decomposition.jl:524 [inlined]
+#factorize#327 at /global/homes/k/kwang98/.julia/packages/ITensors/HjjU3/src/tensor_operations/matrix_decomposition.jl:670
+factorize at /global/homes/k/kwang98/.julia/packages/ITensors/HjjU3/src/tensor_operations/matrix_decomposition.jl:623
+unknown function (ip: 0x7fc624cd082d)
+_jl_invoke at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2758 [inlined]
+ijl_apply_generic at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2940
+#replacebond!#936 at /global/homes/k/kwang98/.julia/packages/ITensors/HjjU3/src/mps/mps.jl:551
+replacebond! at /global/homes/k/kwang98/.julia/packages/ITensors/HjjU3/src/mps/mps.jl:530
+unknown function (ip: 0x7fc624c35c85)
+_jl_invoke at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2758 [inlined]
+ijl_apply_generic at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2940
+#tdvp_site_update!#23 at /global/homes/k/kwang98/.julia/packages/ITensorTDVP/c3OYY/src/tdvp_step.jl:366
+unknown function (ip: 0x7fc624c8ea81)
+_jl_invoke at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2758 [inlined]
+ijl_apply_generic at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2940
+tdvp_site_update! at /global/homes/k/kwang98/.julia/packages/ITensorTDVP/c3OYY/src/tdvp_step.jl:331
+unknown function (ip: 0x7fc624c8de99)
+_jl_invoke at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2758 [inlined]
+ijl_apply_generic at /cache/build/default-amdci5-5/julialang/julia-release-1-dot-9/src/gf.c:2940

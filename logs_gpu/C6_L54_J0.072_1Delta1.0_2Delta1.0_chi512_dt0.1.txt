@@ -1,0 +1,6 @@
+After sweep 1 energy=-148.1783548890735  maxlinkdim=4 maxerr=0.00E+00 time=19.936
+After sweep 2 energy=-161.43502609855508  maxlinkdim=16 maxerr=0.00E+00 time=2.707
+After sweep 3 energy=-169.09362362572273  maxlinkdim=64 maxerr=0.00E+00 time=3.756
+After sweep 4 energy=-171.00765700166662  maxlinkdim=256 maxerr=0.00E+00 time=10.672
+After sweep 5 energy=-171.25821736513885  maxlinkdim=512 maxerr=6.30E-06 time=87.825
+Time = 0.0

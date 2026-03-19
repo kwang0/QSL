@@ -1,0 +1,36 @@
+[ Info:  started timer at: 2025-05-21T20:44:34.065
+ERROR: LoadError: MethodError: no method matching applyexp(::ProjMPO, ::ComplexF64, ::ITensor; tol::Float32, krylovdim::Int64)
+This error has been manually thrown, explicitly, so the method may exist but be intentionally marked as unimplemented.
+
+Closest candidates are:
+  applyexp(::Any, ::Number, ::Any; maxiter, tol, outputlevel, normcutoff) got unsupported keyword argument "krylovdim"
+   @ ITensorMPS ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/applyexp.jl:27
+
+Stacktrace:
+  [1] kwerr(::@NamedTuple{tol::Float32, krylovdim::Int64}, ::Function, ::ProjMPO, ::ComplexF64, ::ITensor)
+    @ Base ./error.jl:165
+  [2] applyexp_updater(operator::ProjMPO, init::ITensor; internal_kwargs::@NamedTuple{current_time::ComplexF64, time_step::ComplexF64, outputlevel::Int64}, kwargs::@Kwargs{tol::Float32, krylovdim::Int64})
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/tdvp.jl:10
+  [3] region_update!(nsite_val::Val{2}, reverse_step_val::Val{true}, reduced_operator::ProjMPO, state::MPS, b::Int64; updater::typeof(ITensorMPS.applyexp_updater), updater_kwargs::@NamedTuple{tol::Float32, krylovdim::Int64}, current_time::ComplexF64, time_step::ComplexF64, outputlevel::Int64, normalize::Bool, direction::Base.Order.ForwardOrdering, noise::Bool, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float32, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/sweep_update.jl:408
+  [4] region_update!(reduced_operator::ProjMPO, state::MPS, b::Int64; updater::Function, updater_kwargs::@NamedTuple{tol::Float32, krylovdim::Int64}, nsite::Int64, reverse_step::Bool, current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ForwardOrdering, noise::Bool, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float32, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/sweep_update.jl:187
+  [5] sub_sweep_update(direction::Base.Order.ForwardOrdering, reduced_operator::ProjMPO, state::MPS; updater::Function, updater_kwargs::@NamedTuple{tol::Float32, krylovdim::Int64}, which_decomp::Nothing, svd_alg::Nothing, sweep::Int64, current_time::ComplexF64, time_step::ComplexF64, nsite::Int64, reverse_step::Bool, normalize::Bool, observer!::ITensorMPS.EmptyObserver, outputlevel::Int64, maxdim::Int64, mindim::Int64, cutoff::Float32, noise::Bool)
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/sweep_update.jl:107
+  [6] sweep_update(order::ITensorMPS.TDVPOrder{2, Base.Order.ForwardOrdering()}, reduced_operator::ProjMPO, state::MPS; current_time::ComplexF64, time_step::ComplexF64, kwargs::@Kwargs{updater::typeof(ITensorMPS.applyexp_updater), updater_kwargs::@NamedTuple{tol::Float32, krylovdim::Int64}, nsite::Int64, reverse_step::Bool, sweep::Int64, observer!::ITensorMPS.EmptyObserver, normalize::Bool, outputlevel::Int64, maxdim::Int64, mindim::Int64, cutoff::Float32, noise::Bool})
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/sweep_update.jl:25
+  [7] macro expansion
+    @ ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/alternating_update.jl:69 [inlined]
+  [8] macro expansion
+    @ ./timing.jl:421 [inlined]
+  [9] alternating_update(operator::MPO, init::MPS; updater::Function, updater_kwargs::@NamedTuple{tol::Float32, krylovdim::Int64}, nsweeps::Int64, checkdone::Returns{Bool}, write_when_maxdim_exceeds::Nothing, nsite::Int64, reverse_step::Bool, time_start::ComplexF64, time_step::ComplexF64, order::Int64, observer!::ITensorMPS.EmptyObserver, sweep_observer!::ITensorMPS.EmptyObserver, outputlevel::Int64, normalize::Bool, maxdim::Int64, mindim::Int64, cutoff::Float32, noise::Bool)
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/alternating_update.jl:68
+ [10] alternating_update
+    @ ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/alternating_update.jl:23 [inlined]
+ [11] #tdvp#767
+    @ ~/.julia/packages/ITensorMPS/DPGqJ/src/solvers/tdvp.jl:86 [inlined]
+ [12] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float32, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:221
+ [13] top-level scope
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:286
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:286

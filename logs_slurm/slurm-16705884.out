@@ -1,0 +1,17 @@
+slurmstepd: error: *** STEP 16705884.3 ON nid008269 CANCELLED AT 2023-10-07T05:50:16 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16705884.1 ON nid008269 CANCELLED AT 2023-10-07T05:50:16 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16705884.0 ON nid008269 CANCELLED AT 2023-10-07T05:50:16 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16705884.2 ON nid008269 CANCELLED AT 2023-10-07T05:50:16 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 16705884 ON nid008269 CANCELLED AT 2023-10-07T05:50:16 DUE TO TIME LIMIT ***
+
+[820317] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239
+
+[821444] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239
+
+[820321] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239
+
+[820320] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:239

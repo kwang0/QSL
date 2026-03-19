@@ -1,0 +1,13 @@
+After sweep 1: maxlinkdim=1024 maxerr=5.43E-04 current_time=0.0 - 0.5im time=11461.689
+Time = 6.0
+After sweep 1: maxlinkdim=1024 maxerr=5.43E-04 current_time=0.0 - 0.5im time=11514.715
+Time = 6.5
+After sweep 1: maxlinkdim=1024 maxerr=5.41E-04 current_time=0.0 - 0.5im time=10926.728
+Time = 7.0
+After sweep 1: maxlinkdim=1024 maxerr=5.39E-04 current_time=0.0 - 0.5im time=10752.747
+Time = 7.5
+After sweep 1: maxlinkdim=1024 maxerr=5.26E-04 current_time=0.0 - 0.5im time=10869.508
+Time = 8.0
+After sweep 1: maxlinkdim=1024 maxerr=5.13E-04 current_time=0.0 - 0.5im time=12335.911
+Time = 8.5
+MPS(288)

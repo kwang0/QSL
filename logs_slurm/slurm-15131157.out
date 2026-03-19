@@ -1,0 +1,10 @@
+ERROR: LoadError: ArgumentError: Package PyPlot not found in current path.
+- Run `import Pkg; Pkg.add("PyPlot")` to install the PyPlot package.
+Stacktrace:
+ [1] macro expansion
+   @ ./loading.jl:1630 [inlined]
+ [2] macro expansion
+   @ ./lock.jl:267 [inlined]
+ [3] require(into::Module, mod::Symbol)
+   @ Base ./loading.jl:1611
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:7

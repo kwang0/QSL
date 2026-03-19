@@ -1,0 +1,47 @@
+ERROR: LoadError: Fluxes not all equal
+Stacktrace:
+  [1] error(s::String)
+    @ Base ./error.jl:44
+  [2] checkflux
+    @ ~/.julia/packages/ITensors/SOADD/src/qn/flux.jl:74 [inlined]
+  [3] ITensor(::NDTensors.AllowAlias, elt::Type{Float64}, A::Matrix{Float64}, inds::Tuple{Index{Vector{Pair{QN, Int64}}}, Index{Vector{Pair{QN, Int64}}}}; tol::Float64, checkflux::Bool)
+    @ ITensors ~/.julia/packages/ITensors/SOADD/src/qn/qnitensor.jl:334
+  [4] ITensor(::NDTensors.AllowAlias, elt::Type{Float64}, A::Matrix{Float64}, inds::Tuple{Index{Vector{Pair{QN, Int64}}}, Index{Vector{Pair{QN, Int64}}}})
+    @ ITensors ~/.julia/packages/ITensors/SOADD/src/qn/qnitensor.jl:315
+  [5] ITensor(::NDTensors.AllowAlias, ::Matrix{Float64}, ::Index{Vector{Pair{QN, Int64}}}, ::Vararg{Index{Vector{Pair{QN, Int64}}}}; kwargs::@Kwargs{})
+    @ ITensors ~/.julia/packages/ITensors/SOADD/src/itensor.jl:417
+  [6] ITensor(::NDTensors.AllowAlias, ::Matrix{Float64}, ::Index{Vector{Pair{QN, Int64}}}, ::Vararg{Index{Vector{Pair{QN, Int64}}}})
+    @ ITensors ~/.julia/packages/ITensors/SOADD/src/itensor.jl:414
+  [7] itensor(::Matrix{Float64}, ::Vararg{Any}; kwargs::@Kwargs{})
+    @ ITensors ~/.julia/packages/ITensors/SOADD/src/itensor.jl:139
+  [8] op(name::String, s::Index{Vector{Pair{QN, Int64}}}; adjoint::Bool, kwargs::@Kwargs{})
+    @ ITensors.SiteTypes ~/.julia/packages/ITensors/SOADD/src/lib/SiteTypes/src/sitetype.jl:330
+  [9] op
+    @ ~/.julia/packages/ITensors/SOADD/src/lib/SiteTypes/src/sitetype.jl:236 [inlined]
+ [10] op(s::Index{Vector{Pair{QN, Int64}}}, opname::String)
+    @ ITensors.SiteTypes ~/.julia/packages/ITensors/SOADD/src/lib/SiteTypes/src/sitetype.jl:449
+ [11] (::ITensorMPS.var"#calcQN#652"{Vector{Index{Vector{Pair{QN, Int64}}}}, Dict{Pair{String, Int64}, ITensor}})(term::Vector{Op})
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/kjso2/src/opsum_to_mpo/opsum_to_mpo_qn.jl:27
+ [12] qn_svdMPO(ValType::Type{Float64}, os::Sum{Scaled{ComplexF64, Prod{Op}}}, sites::Vector{Index{Vector{Pair{QN, Int64}}}}; mindim::Int64, maxdim::Int64, cutoff::Float64)
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/kjso2/src/opsum_to_mpo/opsum_to_mpo_qn.jl:35
+ [13] qn_svdMPO
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/opsum_to_mpo/opsum_to_mpo_qn.jl:5 [inlined]
+ [14] #qn_svdMPO#666
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/opsum_to_mpo/opsum_to_mpo_qn.jl:260 [inlined]
+ [15] qn_svdMPO
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/opsum_to_mpo/opsum_to_mpo_qn.jl:257 [inlined]
+ [16] MPO(os::Sum{Scaled{ComplexF64, Prod{Op}}}, sites::Vector{Index{Vector{Pair{QN, Int64}}}}; splitblocks::Bool, kwargs::@Kwargs{})
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/kjso2/src/opsum_to_mpo/opsum_to_mpo_generic.jl:298
+ [17] MPO(os::Sum{Scaled{ComplexF64, Prod{Op}}}, sites::Vector{Index{Vector{Pair{QN, Int64}}}})
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/kjso2/src/opsum_to_mpo/opsum_to_mpo_generic.jl:290
+ [18] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Bperp::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, maxdim::Int64)
+    @ Main /global/u2/k/kwang98/QSL/ground_state_search_cpu.jl:190
+ [19] top-level scope
+    @ /global/u2/k/kwang98/QSL/ground_state_search_cpu.jl:242
+ [20] include(mod::Module, _path::String)
+    @ Base ./Base.jl:306
+ [21] exec_options(opts::Base.JLOptions)
+    @ Base ./client.jl:317
+ [22] _start()
+    @ Base ./client.jl:550
+in expression starting at /global/u2/k/kwang98/QSL/ground_state_search_cpu.jl:242

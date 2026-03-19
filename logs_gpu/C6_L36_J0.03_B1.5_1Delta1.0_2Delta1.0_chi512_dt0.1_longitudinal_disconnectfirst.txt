@@ -1,0 +1,453 @@
+Time = 44.6
+After sweep 1: maxlinkdim=512 maxerr=6.04E-06 current_time=0.0 - 0.1im time=380.663
+Time = 44.7
+After sweep 1: maxlinkdim=512 maxerr=6.02E-06 current_time=0.0 - 0.1im time=358.464
+Time = 44.8
+After sweep 1: maxlinkdim=512 maxerr=6.00E-06 current_time=0.0 - 0.1im time=358.575
+Time = 44.9
+After sweep 1: maxlinkdim=512 maxerr=5.98E-06 current_time=0.0 - 0.1im time=358.934
+Time = 45.0
+After sweep 1: maxlinkdim=512 maxerr=5.95E-06 current_time=0.0 - 0.1im time=359.189
+Time = 45.1
+After sweep 1: maxlinkdim=512 maxerr=5.94E-06 current_time=0.0 - 0.1im time=358.286
+Time = 45.2
+After sweep 1: maxlinkdim=512 maxerr=5.92E-06 current_time=0.0 - 0.1im time=358.043
+Time = 45.3
+After sweep 1: maxlinkdim=512 maxerr=5.91E-06 current_time=0.0 - 0.1im time=358.531
+Time = 45.4
+After sweep 1: maxlinkdim=512 maxerr=5.89E-06 current_time=0.0 - 0.1im time=358.667
+Time = 45.5
+After sweep 1: maxlinkdim=512 maxerr=5.87E-06 current_time=0.0 - 0.1im time=357.659
+Time = 45.6
+After sweep 1: maxlinkdim=512 maxerr=5.86E-06 current_time=0.0 - 0.1im time=357.68
+Time = 45.7
+After sweep 1: maxlinkdim=512 maxerr=5.86E-06 current_time=0.0 - 0.1im time=358.238
+Time = 45.8
+After sweep 1: maxlinkdim=512 maxerr=5.86E-06 current_time=0.0 - 0.1im time=357.347
+Time = 45.9
+After sweep 1: maxlinkdim=512 maxerr=5.84E-06 current_time=0.0 - 0.1im time=356.711
+Time = 46.0
+After sweep 1: maxlinkdim=512 maxerr=5.81E-06 current_time=0.0 - 0.1im time=358.003
+Time = 46.1
+After sweep 1: maxlinkdim=512 maxerr=5.78E-06 current_time=0.0 - 0.1im time=357.679
+Time = 46.2
+After sweep 1: maxlinkdim=512 maxerr=5.76E-06 current_time=0.0 - 0.1im time=356.993
+Time = 46.3
+After sweep 1: maxlinkdim=512 maxerr=5.74E-06 current_time=0.0 - 0.1im time=358.098
+Time = 46.4
+After sweep 1: maxlinkdim=512 maxerr=5.73E-06 current_time=0.0 - 0.1im time=357.357
+Time = 46.5
+After sweep 1: maxlinkdim=512 maxerr=5.71E-06 current_time=0.0 - 0.1im time=357.847
+Time = 46.6
+After sweep 1: maxlinkdim=512 maxerr=5.70E-06 current_time=0.0 - 0.1im time=357.95
+Time = 46.7
+After sweep 1: maxlinkdim=512 maxerr=5.69E-06 current_time=0.0 - 0.1im time=356.922
+Time = 46.8
+After sweep 1: maxlinkdim=512 maxerr=5.67E-06 current_time=0.0 - 0.1im time=357.849
+Time = 46.9
+After sweep 1: maxlinkdim=512 maxerr=5.66E-06 current_time=0.0 - 0.1im time=358.048
+Time = 47.0
+After sweep 1: maxlinkdim=512 maxerr=5.64E-06 current_time=0.0 - 0.1im time=358.153
+Time = 47.1
+After sweep 1: maxlinkdim=512 maxerr=5.63E-06 current_time=0.0 - 0.1im time=357.439
+Time = 47.2
+After sweep 1: maxlinkdim=512 maxerr=5.62E-06 current_time=0.0 - 0.1im time=357.888
+Time = 47.3
+After sweep 1: maxlinkdim=512 maxerr=5.60E-06 current_time=0.0 - 0.1im time=357.717
+Time = 47.4
+After sweep 1: maxlinkdim=512 maxerr=5.58E-06 current_time=0.0 - 0.1im time=358.348
+Time = 47.5
+After sweep 1: maxlinkdim=512 maxerr=5.55E-06 current_time=0.0 - 0.1im time=358.166
+Time = 47.6
+After sweep 1: maxlinkdim=512 maxerr=5.52E-06 current_time=0.0 - 0.1im time=357.391
+Time = 47.7
+After sweep 1: maxlinkdim=512 maxerr=5.50E-06 current_time=0.0 - 0.1im time=358.313
+Time = 47.8
+After sweep 1: maxlinkdim=512 maxerr=5.47E-06 current_time=0.0 - 0.1im time=357.882
+Time = 47.9
+After sweep 1: maxlinkdim=512 maxerr=5.44E-06 current_time=0.0 - 0.1im time=357.109
+Time = 48.0
+After sweep 1: maxlinkdim=512 maxerr=5.42E-06 current_time=0.0 - 0.1im time=357.908
+Time = 48.1
+After sweep 1: maxlinkdim=512 maxerr=5.40E-06 current_time=0.0 - 0.1im time=357.451
+Time = 48.2
+After sweep 1: maxlinkdim=512 maxerr=5.39E-06 current_time=0.0 - 0.1im time=358.779
+Time = 48.3
+After sweep 1: maxlinkdim=512 maxerr=5.37E-06 current_time=0.0 - 0.1im time=357.446
+Time = 48.4
+After sweep 1: maxlinkdim=512 maxerr=5.36E-06 current_time=0.0 - 0.1im time=357.717
+Time = 48.5
+After sweep 1: maxlinkdim=512 maxerr=5.34E-06 current_time=0.0 - 0.1im time=357.778
+Time = 48.6
+After sweep 1: maxlinkdim=512 maxerr=5.32E-06 current_time=0.0 - 0.1im time=358.261
+Time = 48.7
+After sweep 1: maxlinkdim=512 maxerr=5.30E-06 current_time=0.0 - 0.1im time=358.133
+Time = 48.8
+After sweep 1: maxlinkdim=512 maxerr=5.28E-06 current_time=0.0 - 0.1im time=357.397
+Time = 48.9
+After sweep 1: maxlinkdim=512 maxerr=5.27E-06 current_time=0.0 - 0.1im time=357.537
+Time = 49.0
+After sweep 1: maxlinkdim=512 maxerr=5.25E-06 current_time=0.0 - 0.1im time=357.57
+Time = 49.1
+After sweep 1: maxlinkdim=512 maxerr=5.24E-06 current_time=0.0 - 0.1im time=357.66
+Time = 49.2
+After sweep 1: maxlinkdim=512 maxerr=5.23E-06 current_time=0.0 - 0.1im time=358.323
+Time = 49.3
+After sweep 1: maxlinkdim=512 maxerr=5.21E-06 current_time=0.0 - 0.1im time=358.24
+Time = 49.4
+After sweep 1: maxlinkdim=512 maxerr=5.20E-06 current_time=0.0 - 0.1im time=357.039
+Time = 49.5
+After sweep 1: maxlinkdim=512 maxerr=5.18E-06 current_time=0.0 - 0.1im time=356.954
+Time = 49.6
+After sweep 1: maxlinkdim=512 maxerr=5.16E-06 current_time=0.0 - 0.1im time=357.226
+Time = 49.7
+After sweep 1: maxlinkdim=512 maxerr=5.14E-06 current_time=0.0 - 0.1im time=356.89
+Time = 49.8
+After sweep 1: maxlinkdim=512 maxerr=5.12E-06 current_time=0.0 - 0.1im time=357.47
+Time = 49.9
+After sweep 1: maxlinkdim=512 maxerr=5.10E-06 current_time=0.0 - 0.1im time=357.759
+Time = 50.0
+After sweep 1: maxlinkdim=512 maxerr=5.09E-06 current_time=0.0 - 0.1im time=356.909
+Time = 50.1
+After sweep 1: maxlinkdim=512 maxerr=5.07E-06 current_time=0.0 - 0.1im time=357.157
+Time = 50.2
+After sweep 1: maxlinkdim=512 maxerr=5.06E-06 current_time=0.0 - 0.1im time=356.914
+Time = 50.3
+After sweep 1: maxlinkdim=512 maxerr=5.04E-06 current_time=0.0 - 0.1im time=357.725
+Time = 50.4
+After sweep 1: maxlinkdim=512 maxerr=5.02E-06 current_time=0.0 - 0.1im time=357.224
+Time = 50.5
+After sweep 1: maxlinkdim=512 maxerr=5.01E-06 current_time=0.0 - 0.1im time=358.576
+Time = 50.6
+After sweep 1: maxlinkdim=512 maxerr=4.99E-06 current_time=0.0 - 0.1im time=357.526
+Time = 50.7
+After sweep 1: maxlinkdim=512 maxerr=4.97E-06 current_time=0.0 - 0.1im time=357.016
+Time = 50.8
+After sweep 1: maxlinkdim=512 maxerr=4.95E-06 current_time=0.0 - 0.1im time=357.162
+Time = 50.9
+After sweep 1: maxlinkdim=512 maxerr=4.94E-06 current_time=0.0 - 0.1im time=357.482
+Time = 51.0
+After sweep 1: maxlinkdim=512 maxerr=4.93E-06 current_time=0.0 - 0.1im time=357.332
+Time = 51.1
+After sweep 1: maxlinkdim=512 maxerr=4.91E-06 current_time=0.0 - 0.1im time=357.294
+Time = 51.2
+After sweep 1: maxlinkdim=512 maxerr=4.90E-06 current_time=0.0 - 0.1im time=357.18
+Time = 51.3
+After sweep 1: maxlinkdim=512 maxerr=4.89E-06 current_time=0.0 - 0.1im time=358.695
+Time = 51.4
+After sweep 1: maxlinkdim=512 maxerr=4.88E-06 current_time=0.0 - 0.1im time=357.115
+Time = 51.5
+After sweep 1: maxlinkdim=512 maxerr=4.87E-06 current_time=0.0 - 0.1im time=357.377
+Time = 51.6
+After sweep 1: maxlinkdim=512 maxerr=4.86E-06 current_time=0.0 - 0.1im time=357.421
+Time = 51.7
+After sweep 1: maxlinkdim=512 maxerr=4.84E-06 current_time=0.0 - 0.1im time=357.509
+Time = 51.8
+After sweep 1: maxlinkdim=512 maxerr=4.82E-06 current_time=0.0 - 0.1im time=357.009
+Time = 51.9
+After sweep 1: maxlinkdim=512 maxerr=4.80E-06 current_time=0.0 - 0.1im time=357.109
+Time = 52.0
+After sweep 1: maxlinkdim=512 maxerr=4.78E-06 current_time=0.0 - 0.1im time=357.822
+Time = 52.1
+After sweep 1: maxlinkdim=512 maxerr=4.77E-06 current_time=0.0 - 0.1im time=357.177
+Time = 52.2
+After sweep 1: maxlinkdim=512 maxerr=4.76E-06 current_time=0.0 - 0.1im time=358.031
+Time = 52.3
+After sweep 1: maxlinkdim=512 maxerr=4.74E-06 current_time=0.0 - 0.1im time=357.581
+Time = 52.4
+After sweep 1: maxlinkdim=512 maxerr=4.73E-06 current_time=0.0 - 0.1im time=356.75
+Time = 52.5
+After sweep 1: maxlinkdim=512 maxerr=4.72E-06 current_time=0.0 - 0.1im time=357.213
+Time = 52.6
+After sweep 1: maxlinkdim=512 maxerr=4.71E-06 current_time=0.0 - 0.1im time=357.377
+Time = 52.7
+After sweep 1: maxlinkdim=512 maxerr=4.70E-06 current_time=0.0 - 0.1im time=357.156
+Time = 52.8
+After sweep 1: maxlinkdim=512 maxerr=4.69E-06 current_time=0.0 - 0.1im time=356.891
+Time = 52.9
+After sweep 1: maxlinkdim=512 maxerr=4.68E-06 current_time=0.0 - 0.1im time=357.347
+Time = 53.0
+After sweep 1: maxlinkdim=512 maxerr=4.66E-06 current_time=0.0 - 0.1im time=356.417
+Time = 53.1
+After sweep 1: maxlinkdim=512 maxerr=4.65E-06 current_time=0.0 - 0.1im time=356.963
+Time = 53.2
+After sweep 1: maxlinkdim=512 maxerr=4.63E-06 current_time=0.0 - 0.1im time=357.613
+Time = 53.3
+After sweep 1: maxlinkdim=512 maxerr=4.61E-06 current_time=0.0 - 0.1im time=357.376
+Time = 53.4
+After sweep 1: maxlinkdim=512 maxerr=4.59E-06 current_time=0.0 - 0.1im time=357.713
+Time = 53.5
+After sweep 1: maxlinkdim=512 maxerr=4.57E-06 current_time=0.0 - 0.1im time=357.417
+Time = 53.6
+After sweep 1: maxlinkdim=512 maxerr=4.56E-06 current_time=0.0 - 0.1im time=357.201
+Time = 53.7
+After sweep 1: maxlinkdim=512 maxerr=4.55E-06 current_time=0.0 - 0.1im time=357.353
+Time = 53.8
+After sweep 1: maxlinkdim=512 maxerr=4.53E-06 current_time=0.0 - 0.1im time=357.421
+Time = 53.9
+After sweep 1: maxlinkdim=512 maxerr=4.51E-06 current_time=0.0 - 0.1im time=356.967
+Time = 54.0
+After sweep 1: maxlinkdim=512 maxerr=4.50E-06 current_time=0.0 - 0.1im time=357.415
+Time = 54.1
+After sweep 1: maxlinkdim=512 maxerr=4.48E-06 current_time=0.0 - 0.1im time=357.636
+Time = 54.2
+After sweep 1: maxlinkdim=512 maxerr=4.46E-06 current_time=0.0 - 0.1im time=357.096
+Time = 54.3
+After sweep 1: maxlinkdim=512 maxerr=4.45E-06 current_time=0.0 - 0.1im time=357.03
+Time = 54.4
+After sweep 1: maxlinkdim=512 maxerr=4.44E-06 current_time=0.0 - 0.1im time=357.554
+Time = 54.5
+After sweep 1: maxlinkdim=512 maxerr=4.43E-06 current_time=0.0 - 0.1im time=358.204
+Time = 54.6
+After sweep 1: maxlinkdim=512 maxerr=4.43E-06 current_time=0.0 - 0.1im time=357.743
+Time = 54.7
+After sweep 1: maxlinkdim=512 maxerr=4.41E-06 current_time=0.0 - 0.1im time=357.446
+Time = 54.8
+After sweep 1: maxlinkdim=512 maxerr=4.40E-06 current_time=0.0 - 0.1im time=357.088
+Time = 54.9
+After sweep 1: maxlinkdim=512 maxerr=4.38E-06 current_time=0.0 - 0.1im time=356.876
+Time = 55.0
+After sweep 1: maxlinkdim=512 maxerr=4.37E-06 current_time=0.0 - 0.1im time=357.589
+Time = 55.1
+After sweep 1: maxlinkdim=512 maxerr=4.36E-06 current_time=0.0 - 0.1im time=357.635
+Time = 55.2
+After sweep 1: maxlinkdim=512 maxerr=4.35E-06 current_time=0.0 - 0.1im time=357.417
+Time = 55.3
+After sweep 1: maxlinkdim=512 maxerr=4.35E-06 current_time=0.0 - 0.1im time=357.247
+Time = 55.4
+After sweep 1: maxlinkdim=512 maxerr=4.35E-06 current_time=0.0 - 0.1im time=357.208
+Time = 55.5
+After sweep 1: maxlinkdim=512 maxerr=4.35E-06 current_time=0.0 - 0.1im time=357.544
+Time = 55.6
+After sweep 1: maxlinkdim=512 maxerr=4.35E-06 current_time=0.0 - 0.1im time=356.88
+Time = 55.7
+After sweep 1: maxlinkdim=512 maxerr=4.34E-06 current_time=0.0 - 0.1im time=357.125
+Time = 55.8
+After sweep 1: maxlinkdim=512 maxerr=4.33E-06 current_time=0.0 - 0.1im time=357.516
+Time = 55.9
+After sweep 1: maxlinkdim=512 maxerr=4.32E-06 current_time=0.0 - 0.1im time=356.329
+Time = 56.0
+After sweep 1: maxlinkdim=512 maxerr=4.30E-06 current_time=0.0 - 0.1im time=357.142
+Time = 56.1
+After sweep 1: maxlinkdim=512 maxerr=4.29E-06 current_time=0.0 - 0.1im time=357.325
+Time = 56.2
+After sweep 1: maxlinkdim=512 maxerr=4.28E-06 current_time=0.0 - 0.1im time=357.568
+Time = 56.3
+After sweep 1: maxlinkdim=512 maxerr=4.28E-06 current_time=0.0 - 0.1im time=356.803
+Time = 56.4
+After sweep 1: maxlinkdim=512 maxerr=4.28E-06 current_time=0.0 - 0.1im time=356.882
+Time = 56.5
+After sweep 1: maxlinkdim=512 maxerr=4.27E-06 current_time=0.0 - 0.1im time=357.778
+Time = 56.6
+After sweep 1: maxlinkdim=512 maxerr=4.27E-06 current_time=0.0 - 0.1im time=357.091
+Time = 56.7
+After sweep 1: maxlinkdim=512 maxerr=4.26E-06 current_time=0.0 - 0.1im time=356.563
+Time = 56.8
+After sweep 1: maxlinkdim=512 maxerr=4.26E-06 current_time=0.0 - 0.1im time=358.195
+Time = 56.9
+After sweep 1: maxlinkdim=512 maxerr=4.25E-06 current_time=0.0 - 0.1im time=357.518
+Time = 57.0
+After sweep 1: maxlinkdim=512 maxerr=4.24E-06 current_time=0.0 - 0.1im time=356.743
+Time = 57.1
+After sweep 1: maxlinkdim=512 maxerr=4.23E-06 current_time=0.0 - 0.1im time=357.114
+Time = 57.2
+After sweep 1: maxlinkdim=512 maxerr=4.22E-06 current_time=0.0 - 0.1im time=357.318
+Time = 57.3
+After sweep 1: maxlinkdim=512 maxerr=4.21E-06 current_time=0.0 - 0.1im time=356.942
+Time = 57.4
+After sweep 1: maxlinkdim=512 maxerr=4.20E-06 current_time=0.0 - 0.1im time=357.027
+Time = 57.5
+After sweep 1: maxlinkdim=512 maxerr=4.19E-06 current_time=0.0 - 0.1im time=356.836
+Time = 57.6
+After sweep 1: maxlinkdim=512 maxerr=4.18E-06 current_time=0.0 - 0.1im time=357.644
+Time = 57.7
+After sweep 1: maxlinkdim=512 maxerr=4.17E-06 current_time=0.0 - 0.1im time=357.134
+Time = 57.8
+After sweep 1: maxlinkdim=512 maxerr=4.16E-06 current_time=0.0 - 0.1im time=356.781
+Time = 57.9
+After sweep 1: maxlinkdim=512 maxerr=4.14E-06 current_time=0.0 - 0.1im time=357.256
+Time = 58.0
+After sweep 1: maxlinkdim=512 maxerr=4.13E-06 current_time=0.0 - 0.1im time=356.626
+Time = 58.1
+After sweep 1: maxlinkdim=512 maxerr=4.12E-06 current_time=0.0 - 0.1im time=356.839
+Time = 58.2
+After sweep 1: maxlinkdim=512 maxerr=4.11E-06 current_time=0.0 - 0.1im time=357.487
+Time = 58.3
+After sweep 1: maxlinkdim=512 maxerr=4.10E-06 current_time=0.0 - 0.1im time=356.987
+Time = 58.4
+After sweep 1: maxlinkdim=512 maxerr=4.09E-06 current_time=0.0 - 0.1im time=356.613
+Time = 58.5
+After sweep 1: maxlinkdim=512 maxerr=4.07E-06 current_time=0.0 - 0.1im time=356.884
+Time = 58.6
+After sweep 1: maxlinkdim=512 maxerr=4.05E-06 current_time=0.0 - 0.1im time=356.991
+Time = 58.7
+After sweep 1: maxlinkdim=512 maxerr=4.04E-06 current_time=0.0 - 0.1im time=356.515
+Time = 58.8
+After sweep 1: maxlinkdim=512 maxerr=4.02E-06 current_time=0.0 - 0.1im time=357.238
+Time = 58.9
+After sweep 1: maxlinkdim=512 maxerr=4.01E-06 current_time=0.0 - 0.1im time=356.893
+Time = 59.0
+After sweep 1: maxlinkdim=512 maxerr=3.99E-06 current_time=0.0 - 0.1im time=356.662
+Time = 59.1
+After sweep 1: maxlinkdim=512 maxerr=3.97E-06 current_time=0.0 - 0.1im time=356.838
+Time = 59.2
+After sweep 1: maxlinkdim=512 maxerr=3.95E-06 current_time=0.0 - 0.1im time=356.714
+Time = 59.3
+After sweep 1: maxlinkdim=512 maxerr=3.92E-06 current_time=0.0 - 0.1im time=356.539
+Time = 59.4
+After sweep 1: maxlinkdim=512 maxerr=3.90E-06 current_time=0.0 - 0.1im time=356.939
+Time = 59.5
+After sweep 1: maxlinkdim=512 maxerr=3.89E-06 current_time=0.0 - 0.1im time=357.621
+Time = 59.6
+After sweep 1: maxlinkdim=512 maxerr=3.87E-06 current_time=0.0 - 0.1im time=356.801
+Time = 59.7
+After sweep 1: maxlinkdim=512 maxerr=3.85E-06 current_time=0.0 - 0.1im time=356.767
+Time = 59.8
+After sweep 1: maxlinkdim=512 maxerr=3.84E-06 current_time=0.0 - 0.1im time=357.838
+Time = 59.9
+After sweep 1: maxlinkdim=512 maxerr=3.82E-06 current_time=0.0 - 0.1im time=356.627
+Time = 60.0
+After sweep 1: maxlinkdim=512 maxerr=3.81E-06 current_time=0.0 - 0.1im time=357.042
+Time = 60.1
+After sweep 1: maxlinkdim=512 maxerr=3.80E-06 current_time=0.0 - 0.1im time=357.946
+Time = 60.2
+After sweep 1: maxlinkdim=512 maxerr=3.78E-06 current_time=0.0 - 0.1im time=357.658
+Time = 60.3
+After sweep 1: maxlinkdim=512 maxerr=3.77E-06 current_time=0.0 - 0.1im time=356.211
+Time = 60.4
+After sweep 1: maxlinkdim=512 maxerr=3.76E-06 current_time=0.0 - 0.1im time=357.592
+Time = 60.5
+After sweep 1: maxlinkdim=512 maxerr=3.75E-06 current_time=0.0 - 0.1im time=357.313
+Time = 60.6
+After sweep 1: maxlinkdim=512 maxerr=3.74E-06 current_time=0.0 - 0.1im time=357.324
+Time = 60.7
+After sweep 1: maxlinkdim=512 maxerr=3.73E-06 current_time=0.0 - 0.1im time=357.049
+Time = 60.8
+After sweep 1: maxlinkdim=512 maxerr=3.72E-06 current_time=0.0 - 0.1im time=357.563
+Time = 60.9
+After sweep 1: maxlinkdim=512 maxerr=3.71E-06 current_time=0.0 - 0.1im time=356.91
+Time = 61.0
+After sweep 1: maxlinkdim=512 maxerr=3.71E-06 current_time=0.0 - 0.1im time=356.747
+Time = 61.1
+After sweep 1: maxlinkdim=512 maxerr=3.71E-06 current_time=0.0 - 0.1im time=357.46
+Time = 61.2
+After sweep 1: maxlinkdim=512 maxerr=3.70E-06 current_time=0.0 - 0.1im time=356.596
+Time = 61.3
+After sweep 1: maxlinkdim=512 maxerr=3.70E-06 current_time=0.0 - 0.1im time=356.574
+Time = 61.4
+After sweep 1: maxlinkdim=512 maxerr=3.70E-06 current_time=0.0 - 0.1im time=357.69
+Time = 61.5
+After sweep 1: maxlinkdim=512 maxerr=3.69E-06 current_time=0.0 - 0.1im time=355.602
+Time = 61.6
+After sweep 1: maxlinkdim=512 maxerr=3.68E-06 current_time=0.0 - 0.1im time=356.26
+Time = 61.7
+After sweep 1: maxlinkdim=512 maxerr=3.67E-06 current_time=0.0 - 0.1im time=357.107
+Time = 61.8
+After sweep 1: maxlinkdim=512 maxerr=3.66E-06 current_time=0.0 - 0.1im time=357.14
+Time = 61.9
+After sweep 1: maxlinkdim=512 maxerr=3.65E-06 current_time=0.0 - 0.1im time=356.689
+Time = 62.0
+After sweep 1: maxlinkdim=512 maxerr=3.63E-06 current_time=0.0 - 0.1im time=357.395
+Time = 62.1
+After sweep 1: maxlinkdim=512 maxerr=3.63E-06 current_time=0.0 - 0.1im time=356.718
+Time = 62.2
+After sweep 1: maxlinkdim=512 maxerr=3.62E-06 current_time=0.0 - 0.1im time=356.613
+Time = 62.3
+After sweep 1: maxlinkdim=512 maxerr=3.62E-06 current_time=0.0 - 0.1im time=356.423
+Time = 62.4
+After sweep 1: maxlinkdim=512 maxerr=3.61E-06 current_time=0.0 - 0.1im time=356.977
+Time = 62.5
+After sweep 1: maxlinkdim=512 maxerr=3.60E-06 current_time=0.0 - 0.1im time=356.679
+Time = 62.6
+After sweep 1: maxlinkdim=512 maxerr=3.59E-06 current_time=0.0 - 0.1im time=357.36
+Time = 62.7
+After sweep 1: maxlinkdim=512 maxerr=3.58E-06 current_time=0.0 - 0.1im time=357.433
+Time = 62.8
+After sweep 1: maxlinkdim=512 maxerr=3.56E-06 current_time=0.0 - 0.1im time=357.065
+Time = 62.9
+After sweep 1: maxlinkdim=512 maxerr=3.54E-06 current_time=0.0 - 0.1im time=356.158
+Time = 63.0
+After sweep 1: maxlinkdim=512 maxerr=3.53E-06 current_time=0.0 - 0.1im time=356.647
+Time = 63.1
+After sweep 1: maxlinkdim=512 maxerr=3.52E-06 current_time=0.0 - 0.1im time=356.345
+Time = 63.2
+After sweep 1: maxlinkdim=512 maxerr=3.51E-06 current_time=0.0 - 0.1im time=356.572
+Time = 63.3
+After sweep 1: maxlinkdim=512 maxerr=3.50E-06 current_time=0.0 - 0.1im time=357.018
+Time = 63.4
+After sweep 1: maxlinkdim=512 maxerr=3.49E-06 current_time=0.0 - 0.1im time=357.225
+Time = 63.5
+After sweep 1: maxlinkdim=512 maxerr=3.48E-06 current_time=0.0 - 0.1im time=356.632
+Time = 63.6
+After sweep 1: maxlinkdim=512 maxerr=3.47E-06 current_time=0.0 - 0.1im time=357.145
+Time = 63.7
+After sweep 1: maxlinkdim=512 maxerr=3.46E-06 current_time=0.0 - 0.1im time=356.451
+Time = 63.8
+After sweep 1: maxlinkdim=512 maxerr=3.46E-06 current_time=0.0 - 0.1im time=356.235
+Time = 63.9
+After sweep 1: maxlinkdim=512 maxerr=3.46E-06 current_time=0.0 - 0.1im time=356.378
+Time = 64.0
+After sweep 1: maxlinkdim=512 maxerr=3.46E-06 current_time=0.0 - 0.1im time=356.076
+Time = 64.1
+After sweep 1: maxlinkdim=512 maxerr=3.45E-06 current_time=0.0 - 0.1im time=357.121
+Time = 64.2
+After sweep 1: maxlinkdim=512 maxerr=3.44E-06 current_time=0.0 - 0.1im time=356.354
+Time = 64.3
+After sweep 1: maxlinkdim=512 maxerr=3.44E-06 current_time=0.0 - 0.1im time=357.408
+Time = 64.4
+After sweep 1: maxlinkdim=512 maxerr=3.43E-06 current_time=0.0 - 0.1im time=356.164
+Time = 64.5
+After sweep 1: maxlinkdim=512 maxerr=3.42E-06 current_time=0.0 - 0.1im time=356.381
+Time = 64.6
+After sweep 1: maxlinkdim=512 maxerr=3.42E-06 current_time=0.0 - 0.1im time=356.657
+Time = 64.7
+After sweep 1: maxlinkdim=512 maxerr=3.41E-06 current_time=0.0 - 0.1im time=356.473
+Time = 64.8
+After sweep 1: maxlinkdim=512 maxerr=3.40E-06 current_time=0.0 - 0.1im time=357.428
+Time = 64.9
+After sweep 1: maxlinkdim=512 maxerr=3.40E-06 current_time=0.0 - 0.1im time=356.286
+Time = 65.0
+After sweep 1: maxlinkdim=512 maxerr=3.39E-06 current_time=0.0 - 0.1im time=356.717
+Time = 65.1
+After sweep 1: maxlinkdim=512 maxerr=3.39E-06 current_time=0.0 - 0.1im time=356.844
+Time = 65.2
+After sweep 1: maxlinkdim=512 maxerr=3.39E-06 current_time=0.0 - 0.1im time=356.709
+Time = 65.3
+After sweep 1: maxlinkdim=512 maxerr=3.39E-06 current_time=0.0 - 0.1im time=357.367
+Time = 65.4
+After sweep 1: maxlinkdim=512 maxerr=3.38E-06 current_time=0.0 - 0.1im time=357.435
+Time = 65.5
+After sweep 1: maxlinkdim=512 maxerr=3.37E-06 current_time=0.0 - 0.1im time=356.318
+Time = 65.6
+After sweep 1: maxlinkdim=512 maxerr=3.36E-06 current_time=0.0 - 0.1im time=356.616
+Time = 65.7
+After sweep 1: maxlinkdim=512 maxerr=3.35E-06 current_time=0.0 - 0.1im time=355.893
+Time = 65.8
+After sweep 1: maxlinkdim=512 maxerr=3.35E-06 current_time=0.0 - 0.1im time=356.18
+Time = 65.9
+After sweep 1: maxlinkdim=512 maxerr=3.33E-06 current_time=0.0 - 0.1im time=356.968
+Time = 66.0
+After sweep 1: maxlinkdim=512 maxerr=3.32E-06 current_time=0.0 - 0.1im time=356.819
+Time = 66.1
+After sweep 1: maxlinkdim=512 maxerr=3.31E-06 current_time=0.0 - 0.1im time=356.461
+Time = 66.2
+After sweep 1: maxlinkdim=512 maxerr=3.29E-06 current_time=0.0 - 0.1im time=357.348
+Time = 66.3
+After sweep 1: maxlinkdim=512 maxerr=3.28E-06 current_time=0.0 - 0.1im time=356.129
+Time = 66.4
+After sweep 1: maxlinkdim=512 maxerr=3.27E-06 current_time=0.0 - 0.1im time=357.065
+Time = 66.5
+After sweep 1: maxlinkdim=512 maxerr=3.26E-06 current_time=0.0 - 0.1im time=356.648
+Time = 66.6
+After sweep 1: maxlinkdim=512 maxerr=3.24E-06 current_time=0.0 - 0.1im time=357.338
+Time = 66.7
+After sweep 1: maxlinkdim=512 maxerr=3.24E-06 current_time=0.0 - 0.1im time=356.88
+Time = 66.8
+After sweep 1: maxlinkdim=512 maxerr=3.23E-06 current_time=0.0 - 0.1im time=356.934
+Time = 66.9
+After sweep 1: maxlinkdim=512 maxerr=3.22E-06 current_time=0.0 - 0.1im time=356.621
+Time = 67.0
+After sweep 1: maxlinkdim=512 maxerr=3.20E-06 current_time=0.0 - 0.1im time=356.656
+Time = 67.1
+After sweep 1: maxlinkdim=512 maxerr=3.19E-06 current_time=0.0 - 0.1im time=355.982
+Time = 67.2

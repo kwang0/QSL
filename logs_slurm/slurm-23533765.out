@@ -1,0 +1,396 @@
+[ Info:  started timer at: 2024-03-27T23:57:13.402
+[ Info:  started timer at: 2024-03-27T23:57:13.498
+[ Info:  started timer at: 2024-03-27T23:57:13.617
+[ Info:  started timer at: 2024-03-27T23:57:32.192
+ERROR: LoadError: Out of GPU memory trying to allocate 280.000 MiB
+Effective GPU memory usage: 99.96% (79.124 GiB/79.154 GiB)
+Memory pool usage: 69.604 GiB (78.625 GiB reserved)
+
+Stacktrace:
+  [1] macro expansion
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:453 [inlined]
+  [2] macro expansion
+    @ ./timing.jl:393 [inlined]
+  [3] #_alloc#1015
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:441 [inlined]
+  [4] _alloc
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:437 [inlined]
+  [5] #alloc#1014
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:427 [inlined]
+  [6] alloc
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:421 [inlined]
+  [7] CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}(#unused#::UndefInitializer, dims::NTuple{4, Int64})
+    @ CUDA ~/.julia/packages/CUDA/htRwP/src/array.jl:74
+  [8] similar
+    @ ~/.julia/packages/CUDA/htRwP/src/array.jl:194 [inlined]
+  [9] permutedims(B::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, perm::NTuple{4, Int64})
+    @ Base ./multidimensional.jl:1549
+ [10] permutedims
+    @ ~/.julia/packages/NDTensors/pey4a/src/lib/Unwrap/src/functions/permutedims.jl:2 [inlined]
+ [11] _contract!(CT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, AT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, BT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, props::NDTensors.ContractionProperties{4, 4, 4}, α::ComplexF64, β::ComplexF64)
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/abstractarray/tensoralgebra/contract.jl:126
+ [12] _contract!
+    @ ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:228 [inlined]
+ [13] contract!(R::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelsR::NTuple{4, Int64}, T1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelsT1::NTuple{4, Int64}, T2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labelsT2::NTuple{4, Int64}, α::ComplexF64, β::ComplexF64)
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:211
+ [14] contract!
+    @ ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:169 [inlined]
+ [15] _contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:142 [inlined]
+ [16] _contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:130 [inlined]
+ [17] contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:191 [inlined]
+ [18] contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:160 [inlined]
+ [19] contract(tensor1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelstensor1::NTuple{4, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labelstensor2::NTuple{4, Int64}, labelsoutput_tensor::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:113
+ [20] contract(::Type{NDTensors.CanContract{NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}}}, tensor1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labels_tensor1::NTuple{4, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labels_tensor2::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:91
+ [21] contract
+    @ ~/.julia/packages/SimpleTraits/l1ZsK/src/SimpleTraits.jl:331 [inlined]
+ [22] _contract(A::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, B::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}})
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:3
+ [23] _contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:9
+ [24] contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:104
+ [25] *
+    @ ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:91 [inlined]
+ [26] contract(P::ProjMPO, v::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:51
+ [27] product(P::ProjMPO, v::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:71
+ [28] AbstractProjMPO
+    @ ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:87 [inlined]
+ [29] applyexp(H::ProjMPO, tau::ComplexF64, x0::ITensor; kwargs::Base.Pairs{Symbol, Number, NTuple{4, Symbol}, NamedTuple{(:tol, :maxiter, :outputlevel, :current_time), Tuple{Float64, Int64, Int64, ComplexF64}}})
+    @ Main /global/u2/k/kwang98/QSL/applyexp.jl:48
+ [30] applyexp
+    @ /global/u2/k/kwang98/QSL/applyexp.jl:24 [inlined]
+ [31] solver(H::ProjMPO, t::ComplexF64, psi0::ITensor; kwargs::Base.Pairs{Symbol, Number, Tuple{Symbol, Symbol}, NamedTuple{(:current_time, :outputlevel), Tuple{ComplexF64, Int64}}})
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:20
+ [32] solver
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:12 [inlined]
+ [33] region_update!(nsite_val::Val{1}, reverse_step_val::Val{true}, solver::typeof(solver), PH::ProjMPO, psi::MPS, b::Int64; current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, noise::Int64, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float64, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:259
+ [34] region_update!(solver::typeof(solver), PH::ProjMPO, psi::MPS, b::Int64; nsite::Int64, reverse_step::Bool, current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, noise::Int64, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float64, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:172
+ [35] sub_sweep_update(direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, solver::typeof(solver), PH::ProjMPO, time_step::ComplexF64, psi::MPS; which_decomp::Nothing, svd_alg::Nothing, sweep::Int64, current_time::ComplexF64, nsite::Int64, reverse_step::Bool, normalize::Bool, observer!::NoObserver, outputlevel::Int64, maxdim::Int64, mindim::Int64, cutoff::Float64, noise::Int64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:95
+ [36] sweep_update(order::ITensorTDVP.TDVPOrder{2, Base.Order.ForwardOrdering()}, solver::Function, PH::ProjMPO, time_step::ComplexF64, psi::MPS; current_time::Int64, kwargs::Base.Pairs{Symbol, Any, NTuple{9, Symbol}, NamedTuple{(:nsite, :reverse_step, :sweep, :observer!, :normalize, :maxdim, :mindim, :cutoff, :noise), Tuple{Int64, Bool, Int64, NoObserver, Bool, Int64, Int64, Float64, Int64}}})
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:15
+ [37] macro expansion
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:92 [inlined]
+ [38] macro expansion
+    @ ./timing.jl:393 [inlined]
+ [39] alternating_update(solver::typeof(solver), PH::ProjMPO, t::ComplexF64, psi0::MPS; nsweeps::Int64, checkdone::Nothing, write_when_maxdim_exceeds::Nothing, nsite::Int64, reverse_step::Bool, time_start::Int64, time_step::ComplexF64, order::Int64, observer!::NoObserver, step_observer!::NoObserver, outputlevel::Int64, normalize::Bool, maxdim::Int64, mindim::Int64, cutoff::Float64, noise::Int64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:91
+ [40] alternating_update(solver::Function, H::MPO, t::ComplexF64, psi0::MPS; kwargs::Base.Pairs{Symbol, Real, NTuple{7, Symbol}, NamedTuple{(:nsweeps, :reverse_step, :normalize, :maxdim, :cutoff, :outputlevel, :nsite), Tuple{Int64, Bool, Bool, Int64, Float64, Int64, Int64}}})
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:146
+ [41] alternating_update
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:139 [inlined]
+ [42] #tdvp#37
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/tdvp.jl:104 [inlined]
+ [43] tdvp
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/tdvp.jl:103 [inlined]
+ [44] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:195
+ [45] top-level scope
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:254
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:254
+srun: error: nid008657: task 0: Exited with exit code 1
+srun: Terminating StepId=23533765.2
+ERROR: LoadError: Out of GPU memory trying to allocate 280.000 MiB
+Effective GPU memory usage: 99.96% (79.124 GiB/79.154 GiB)
+Memory pool usage: 69.876 GiB (78.625 GiB reserved)
+
+Stacktrace:
+  [1] macro expansion
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:453 [inlined]
+  [2] macro expansion
+    @ ./timing.jl:393 [inlined]
+  [3] #_alloc#1015
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:441 [inlined]
+  [4] _alloc
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:437 [inlined]
+  [5] #alloc#1014
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:427 [inlined]
+  [6] alloc
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:421 [inlined]
+  [7] CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}(#unused#::UndefInitializer, dims::NTuple{4, Int64})
+    @ CUDA ~/.julia/packages/CUDA/htRwP/src/array.jl:74
+  [8] similar
+    @ ~/.julia/packages/CUDA/htRwP/src/array.jl:194 [inlined]
+  [9] permutedims(B::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, perm::NTuple{4, Int64})
+    @ Base ./multidimensional.jl:1549
+ [10] permutedims
+    @ ~/.julia/packages/NDTensors/pey4a/src/lib/Unwrap/src/functions/permutedims.jl:2 [inlined]
+ [11] _contract!(CT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, AT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, BT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, props::NDTensors.ContractionProperties{4, 4, 4}, α::ComplexF64, β::ComplexF64)
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/abstractarray/tensoralgebra/contract.jl:126
+ [12] _contract!
+    @ ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:228 [inlined]
+ [13] contract!(R::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelsR::NTuple{4, Int64}, T1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelsT1::NTuple{4, Int64}, T2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labelsT2::NTuple{4, Int64}, α::ComplexF64, β::ComplexF64)
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:211
+ [14] contract!
+    @ ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:169 [inlined]
+ [15] _contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:142 [inlined]
+ [16] _contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:130 [inlined]
+ [17] contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:191 [inlined]
+ [18] contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:160 [inlined]
+ [19] contract(tensor1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelstensor1::NTuple{4, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labelstensor2::NTuple{4, Int64}, labelsoutput_tensor::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:113
+ [20] contract(::Type{NDTensors.CanContract{NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}}}, tensor1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labels_tensor1::NTuple{4, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labels_tensor2::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:91
+ [21] contract
+    @ ~/.julia/packages/SimpleTraits/l1ZsK/src/SimpleTraits.jl:331 [inlined]
+ [22] _contract(A::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, B::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}})
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:3
+ [23] _contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:9
+ [24] contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:104
+ [25] *
+    @ ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:91 [inlined]
+ [26] contract(P::ProjMPO, v::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:51
+ [27] product(P::ProjMPO, v::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:71
+ [28] AbstractProjMPO
+    @ ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:87 [inlined]
+ [29] applyexp(H::ProjMPO, tau::ComplexF64, x0::ITensor; kwargs::Base.Pairs{Symbol, Number, NTuple{4, Symbol}, NamedTuple{(:tol, :maxiter, :outputlevel, :current_time), Tuple{Float64, Int64, Int64, ComplexF64}}})
+    @ Main /global/u2/k/kwang98/QSL/applyexp.jl:48
+ [30] applyexp
+    @ /global/u2/k/kwang98/QSL/applyexp.jl:24 [inlined]
+ [31] solver(H::ProjMPO, t::ComplexF64, psi0::ITensor; kwargs::Base.Pairs{Symbol, Number, Tuple{Symbol, Symbol}, NamedTuple{(:current_time, :outputlevel), Tuple{ComplexF64, Int64}}})
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:20
+ [32] solver
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:12 [inlined]
+ [33] region_update!(nsite_val::Val{1}, reverse_step_val::Val{true}, solver::typeof(solver), PH::ProjMPO, psi::MPS, b::Int64; current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, noise::Int64, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float64, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:259
+ [34] region_update!(solver::typeof(solver), PH::ProjMPO, psi::MPS, b::Int64; nsite::Int64, reverse_step::Bool, current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, noise::Int64, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float64, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:172
+ [35] sub_sweep_update(direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, solver::typeof(solver), PH::ProjMPO, time_step::ComplexF64, psi::MPS; which_decomp::Nothing, svd_alg::Nothing, sweep::Int64, current_time::ComplexF64, nsite::Int64, reverse_step::Bool, normalize::Bool, observer!::NoObserver, outputlevel::Int64, maxdim::Int64, mindim::Int64, cutoff::Float64, noise::Int64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:95
+ [36] sweep_update(order::ITensorTDVP.TDVPOrder{2, Base.Order.ForwardOrdering()}, solver::Function, PH::ProjMPO, time_step::ComplexF64, psi::MPS; current_time::Int64, kwargs::Base.Pairs{Symbol, Any, NTuple{9, Symbol}, NamedTuple{(:nsite, :reverse_step, :sweep, :observer!, :normalize, :maxdim, :mindim, :cutoff, :noise), Tuple{Int64, Bool, Int64, NoObserver, Bool, Int64, Int64, Float64, Int64}}})
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:15
+ [37] macro expansion
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:92 [inlined]
+ [38] macro expansion
+    @ ./timing.jl:393 [inlined]
+ [39] alternating_update(solver::typeof(solver), PH::ProjMPO, t::ComplexF64, psi0::MPS; nsweeps::Int64, checkdone::Nothing, write_when_maxdim_exceeds::Nothing, nsite::Int64, reverse_step::Bool, time_start::Int64, time_step::ComplexF64, order::Int64, observer!::NoObserver, step_observer!::NoObserver, outputlevel::Int64, normalize::Bool, maxdim::Int64, mindim::Int64, cutoff::Float64, noise::Int64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:91
+ [40] alternating_update(solver::Function, H::MPO, t::ComplexF64, psi0::MPS; kwargs::Base.Pairs{Symbol, Real, NTuple{7, Symbol}, NamedTuple{(:nsweeps, :reverse_step, :normalize, :maxdim, :cutoff, :outputlevel, :nsite), Tuple{Int64, Bool, Bool, Int64, Float64, Int64, Int64}}})
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:146
+ [41] alternating_update
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:139 [inlined]
+ [42] #tdvp#37
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/tdvp.jl:104 [inlined]
+ [43] tdvp
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/tdvp.jl:103 [inlined]
+ [44] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:195
+ [45] top-level scope
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:254
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:254
+srun: error: nid008657: task 0: Exited with exit code 1
+srun: Terminating StepId=23533765.1
+ERROR: LoadError: Out of GPU memory trying to allocate 280.000 MiB
+Effective GPU memory usage: 99.96% (79.125 GiB/79.154 GiB)
+Memory pool usage: 69.167 GiB (78.625 GiB reserved)
+
+Stacktrace:
+  [1] macro expansion
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:453 [inlined]
+  [2] macro expansion
+    @ ./timing.jl:393 [inlined]
+  [3] #_alloc#1015
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:441 [inlined]
+  [4] _alloc
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:437 [inlined]
+  [5] #alloc#1014
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:427 [inlined]
+  [6] alloc
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:421 [inlined]
+  [7] CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}(#unused#::UndefInitializer, dims::NTuple{4, Int64})
+    @ CUDA ~/.julia/packages/CUDA/htRwP/src/array.jl:74
+  [8] similar
+    @ ~/.julia/packages/CUDA/htRwP/src/array.jl:194 [inlined]
+  [9] permutedims(B::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, perm::NTuple{4, Int64})
+    @ Base ./multidimensional.jl:1549
+ [10] permutedims
+    @ ~/.julia/packages/NDTensors/pey4a/src/lib/Unwrap/src/functions/permutedims.jl:2 [inlined]
+ [11] _contract!(CT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, AT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, BT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, props::NDTensors.ContractionProperties{4, 4, 4}, α::ComplexF64, β::ComplexF64)
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/abstractarray/tensoralgebra/contract.jl:126
+ [12] _contract!
+    @ ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:228 [inlined]
+ [13] contract!(R::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelsR::NTuple{4, Int64}, T1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelsT1::NTuple{4, Int64}, T2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labelsT2::NTuple{4, Int64}, α::ComplexF64, β::ComplexF64)
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:211
+ [14] contract!
+    @ ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:169 [inlined]
+ [15] _contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:142 [inlined]
+ [16] _contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:130 [inlined]
+ [17] contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:191 [inlined]
+ [18] contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:160 [inlined]
+ [19] contract(tensor1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelstensor1::NTuple{4, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labelstensor2::NTuple{4, Int64}, labelsoutput_tensor::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:113
+ [20] contract(::Type{NDTensors.CanContract{NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}}}, tensor1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labels_tensor1::NTuple{4, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labels_tensor2::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:91
+ [21] contract
+    @ ~/.julia/packages/SimpleTraits/l1ZsK/src/SimpleTraits.jl:331 [inlined]
+ [22] _contract(A::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, B::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}})
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:3
+ [23] _contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:9
+ [24] contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:104
+ [25] *
+    @ ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:91 [inlined]
+ [26] contract(P::ProjMPO, v::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:51
+ [27] product(P::ProjMPO, v::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:71
+ [28] AbstractProjMPO
+    @ ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:87 [inlined]
+ [29] applyexp(H::ProjMPO, tau::ComplexF64, x0::ITensor; kwargs::Base.Pairs{Symbol, Number, NTuple{4, Symbol}, NamedTuple{(:tol, :maxiter, :outputlevel, :current_time), Tuple{Float64, Int64, Int64, ComplexF64}}})
+    @ Main /global/u2/k/kwang98/QSL/applyexp.jl:48
+ [30] applyexp
+    @ /global/u2/k/kwang98/QSL/applyexp.jl:24 [inlined]
+ [31] solver(H::ProjMPO, t::ComplexF64, psi0::ITensor; kwargs::Base.Pairs{Symbol, Number, Tuple{Symbol, Symbol}, NamedTuple{(:current_time, :outputlevel), Tuple{ComplexF64, Int64}}})
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:20
+ [32] solver
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:12 [inlined]
+ [33] region_update!(nsite_val::Val{1}, reverse_step_val::Val{true}, solver::typeof(solver), PH::ProjMPO, psi::MPS, b::Int64; current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, noise::Int64, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float64, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:259
+ [34] region_update!(solver::typeof(solver), PH::ProjMPO, psi::MPS, b::Int64; nsite::Int64, reverse_step::Bool, current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, noise::Int64, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float64, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:172
+ [35] sub_sweep_update(direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, solver::typeof(solver), PH::ProjMPO, time_step::ComplexF64, psi::MPS; which_decomp::Nothing, svd_alg::Nothing, sweep::Int64, current_time::ComplexF64, nsite::Int64, reverse_step::Bool, normalize::Bool, observer!::NoObserver, outputlevel::Int64, maxdim::Int64, mindim::Int64, cutoff::Float64, noise::Int64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:95
+ [36] sweep_update(order::ITensorTDVP.TDVPOrder{2, Base.Order.ForwardOrdering()}, solver::Function, PH::ProjMPO, time_step::ComplexF64, psi::MPS; current_time::Int64, kwargs::Base.Pairs{Symbol, Any, NTuple{9, Symbol}, NamedTuple{(:nsite, :reverse_step, :sweep, :observer!, :normalize, :maxdim, :mindim, :cutoff, :noise), Tuple{Int64, Bool, Int64, NoObserver, Bool, Int64, Int64, Float64, Int64}}})
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:15
+ [37] macro expansion
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:92 [inlined]
+ [38] macro expansion
+    @ ./timing.jl:393 [inlined]
+ [39] alternating_update(solver::typeof(solver), PH::ProjMPO, t::ComplexF64, psi0::MPS; nsweeps::Int64, checkdone::Nothing, write_when_maxdim_exceeds::Nothing, nsite::Int64, reverse_step::Bool, time_start::Int64, time_step::ComplexF64, order::Int64, observer!::NoObserver, step_observer!::NoObserver, outputlevel::Int64, normalize::Bool, maxdim::Int64, mindim::Int64, cutoff::Float64, noise::Int64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:91
+ [40] alternating_update(solver::Function, H::MPO, t::ComplexF64, psi0::MPS; kwargs::Base.Pairs{Symbol, Real, NTuple{7, Symbol}, NamedTuple{(:nsweeps, :reverse_step, :normalize, :maxdim, :cutoff, :outputlevel, :nsite), Tuple{Int64, Bool, Bool, Int64, Float64, Int64, Int64}}})
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:146
+ [41] alternating_update
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:139 [inlined]
+ [42] #tdvp#37
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/tdvp.jl:104 [inlined]
+ [43] tdvp
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/tdvp.jl:103 [inlined]
+ [44] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:195
+ [45] top-level scope
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:254
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:254
+srun: error: nid008657: task 0: Exited with exit code 1
+srun: Terminating StepId=23533765.0
+ERROR: LoadError: Out of GPU memory trying to allocate 280.000 MiB
+Effective GPU memory usage: 99.96% (79.125 GiB/79.154 GiB)
+Memory pool usage: 70.038 GiB (78.625 GiB reserved)
+
+Stacktrace:
+  [1] macro expansion
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:453 [inlined]
+  [2] macro expansion
+    @ ./timing.jl:393 [inlined]
+  [3] #_alloc#1015
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:441 [inlined]
+  [4] _alloc
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:437 [inlined]
+  [5] #alloc#1014
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:427 [inlined]
+  [6] alloc
+    @ ~/.julia/packages/CUDA/htRwP/src/pool.jl:421 [inlined]
+  [7] CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}(#unused#::UndefInitializer, dims::NTuple{4, Int64})
+    @ CUDA ~/.julia/packages/CUDA/htRwP/src/array.jl:74
+  [8] similar
+    @ ~/.julia/packages/CUDA/htRwP/src/array.jl:194 [inlined]
+  [9] permutedims(B::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, perm::NTuple{4, Int64})
+    @ Base ./multidimensional.jl:1549
+ [10] permutedims
+    @ ~/.julia/packages/NDTensors/pey4a/src/lib/Unwrap/src/functions/permutedims.jl:2 [inlined]
+ [11] _contract!(CT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, AT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, BT::CuArray{ComplexF64, 4, CUDA.Mem.DeviceBuffer}, props::NDTensors.ContractionProperties{4, 4, 4}, α::ComplexF64, β::ComplexF64)
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/abstractarray/tensoralgebra/contract.jl:126
+ [12] _contract!
+    @ ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:228 [inlined]
+ [13] contract!(R::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelsR::NTuple{4, Int64}, T1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelsT1::NTuple{4, Int64}, T2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labelsT2::NTuple{4, Int64}, α::ComplexF64, β::ComplexF64)
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:211
+ [14] contract!
+    @ ~/.julia/packages/NDTensors/pey4a/src/dense/tensoralgebra/contract.jl:169 [inlined]
+ [15] _contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:142 [inlined]
+ [16] _contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:130 [inlined]
+ [17] contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:191 [inlined]
+ [18] contract!!
+    @ ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:160 [inlined]
+ [19] contract(tensor1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labelstensor1::NTuple{4, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labelstensor2::NTuple{4, Int64}, labelsoutput_tensor::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:113
+ [20] contract(::Type{NDTensors.CanContract{NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}}}, tensor1::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, labels_tensor1::NTuple{4, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}}, labels_tensor2::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/pey4a/src/tensoroperations/generic_tensor_operations.jl:91
+ [21] contract
+    @ ~/.julia/packages/SimpleTraits/l1ZsK/src/SimpleTraits.jl:331 [inlined]
+ [22] _contract(A::NDTensors.DenseTensor{ComplexF64, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{ComplexF64, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}}, B::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.Mem.DeviceBuffer}}})
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:3
+ [23] _contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:9
+ [24] contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:104
+ [25] *
+    @ ~/.julia/packages/ITensors/UHeB1/src/tensor_operations/tensor_algebra.jl:91 [inlined]
+ [26] contract(P::ProjMPO, v::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:51
+ [27] product(P::ProjMPO, v::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:71
+ [28] AbstractProjMPO
+    @ ~/.julia/packages/ITensors/UHeB1/src/mps/abstractprojmpo.jl:87 [inlined]
+ [29] applyexp(H::ProjMPO, tau::ComplexF64, x0::ITensor; kwargs::Base.Pairs{Symbol, Number, NTuple{4, Symbol}, NamedTuple{(:tol, :maxiter, :outputlevel, :current_time), Tuple{Float64, Int64, Int64, ComplexF64}}})
+    @ Main /global/u2/k/kwang98/QSL/applyexp.jl:48
+ [30] applyexp
+    @ /global/u2/k/kwang98/QSL/applyexp.jl:24 [inlined]
+ [31] solver(H::ProjMPO, t::ComplexF64, psi0::ITensor; kwargs::Base.Pairs{Symbol, Number, Tuple{Symbol, Symbol}, NamedTuple{(:current_time, :outputlevel), Tuple{ComplexF64, Int64}}})
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:20
+ [32] solver
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:12 [inlined]
+ [33] region_update!(nsite_val::Val{1}, reverse_step_val::Val{true}, solver::typeof(solver), PH::ProjMPO, psi::MPS, b::Int64; current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, noise::Int64, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float64, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:259
+ [34] region_update!(solver::typeof(solver), PH::ProjMPO, psi::MPS, b::Int64; nsite::Int64, reverse_step::Bool, current_time::ComplexF64, outputlevel::Int64, time_step::ComplexF64, normalize::Bool, direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, noise::Int64, which_decomp::Nothing, svd_alg::Nothing, cutoff::Float64, maxdim::Int64, mindim::Int64, maxtruncerr::Float64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:172
+ [35] sub_sweep_update(direction::Base.Order.ReverseOrdering{Base.Order.ForwardOrdering}, solver::typeof(solver), PH::ProjMPO, time_step::ComplexF64, psi::MPS; which_decomp::Nothing, svd_alg::Nothing, sweep::Int64, current_time::ComplexF64, nsite::Int64, reverse_step::Bool, normalize::Bool, observer!::NoObserver, outputlevel::Int64, maxdim::Int64, mindim::Int64, cutoff::Float64, noise::Int64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:95
+ [36] sweep_update(order::ITensorTDVP.TDVPOrder{2, Base.Order.ForwardOrdering()}, solver::Function, PH::ProjMPO, time_step::ComplexF64, psi::MPS; current_time::Int64, kwargs::Base.Pairs{Symbol, Any, NTuple{9, Symbol}, NamedTuple{(:nsite, :reverse_step, :sweep, :observer!, :normalize, :maxdim, :mindim, :cutoff, :noise), Tuple{Int64, Bool, Int64, NoObserver, Bool, Int64, Int64, Float64, Int64}}})
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/sweep_update.jl:15
+ [37] macro expansion
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:92 [inlined]
+ [38] macro expansion
+    @ ./timing.jl:393 [inlined]
+ [39] alternating_update(solver::typeof(solver), PH::ProjMPO, t::ComplexF64, psi0::MPS; nsweeps::Int64, checkdone::Nothing, write_when_maxdim_exceeds::Nothing, nsite::Int64, reverse_step::Bool, time_start::Int64, time_step::ComplexF64, order::Int64, observer!::NoObserver, step_observer!::NoObserver, outputlevel::Int64, normalize::Bool, maxdim::Int64, mindim::Int64, cutoff::Float64, noise::Int64)
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:91
+ [40] alternating_update(solver::Function, H::MPO, t::ComplexF64, psi0::MPS; kwargs::Base.Pairs{Symbol, Real, NTuple{7, Symbol}, NamedTuple{(:nsweeps, :reverse_step, :normalize, :maxdim, :cutoff, :outputlevel, :nsite), Tuple{Int64, Bool, Bool, Int64, Float64, Int64, Int64}}})
+    @ ITensorTDVP ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:146
+ [41] alternating_update
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/alternating_update.jl:139 [inlined]
+ [42] #tdvp#37
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/tdvp.jl:104 [inlined]
+ [43] tdvp
+    @ ~/.julia/packages/ITensorTDVP/njU8f/src/tdvp.jl:103 [inlined]
+ [44] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64, component::String)
+    @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:195
+ [45] top-level scope
+    @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:254
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:254
+srun: error: nid008657: task 0: Exited with exit code 1
+srun: Terminating StepId=23533765.3

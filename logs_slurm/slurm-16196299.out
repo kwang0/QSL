@@ -1,0 +1,136 @@
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+ERROR: ERROR: ERROR: LoadError: LoadError: LoadError: ERROR: LoadError: ERROR: LoadError: ERROR: LoadError: MethodError: MethodError: MethodError: no method matching siteinds(::String, ::Float64no method matching siteinds(::String, ::Float64; no method matching siteinds(::String, ::Float64; ; conserve_qnsconserve_qns::Boolconserve_qns::Bool::Bool)))MethodError: 
+
+Closest candidates are:
+  siteinds(!Matched::SiteType, ::Any; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:744
+  siteinds(::String, !Matched::Integer; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:761
+
+Stacktrace:
+ [1] main(; C::
+
+Closest candidates are:
+
+
+  siteinds(!Matched::SiteType, ::Any; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:744
+Closest candidates are:
+  siteinds(::String, !Matched::Integer; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:761
+  siteinds(!Matched::SiteType, ::Any; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:744
+
+Stacktrace:
+  siteinds(::String, !Matched::Integer; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:761
+ [1] 
+Stacktrace:
+main( [1] ; main(; C::C::Int64, L::Float64, J1::Float64, J2::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:136
+ [2] top-level scope
+   @ /global/u2/k/kwang98/QSL/Int64J1_J2_triangular_gpu.jl:228
+Int64, L::Float64, in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228, J1::
+L::Float64, J2Float64, ::J1::Float64, Float64, J2Δ1::Float64, ::Δ2::Float64, Float64, cutoffΔ1::Float64, ::Float64, δt::Δ2::Float64, Float64, cutoffttotal::Float64, ::δt::Int64, Float64, ttotalmaxdim::Int64, ::maxdim::Int64)
+Int64)   @ 
+Main    @/global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:136 
+Main [2]  top-level scope/global/u2/k/kwang98/QSL/
+J1_J2_triangular_gpu.jl:136   @
+  /global/u2/k/kwang98/QSL/[2]J1_J2_triangular_gpu.jl:228 top-level scope
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+no method matching siteinds(::String, ::Float64; conserve_qns::Bool)
+
+Closest candidates are:
+  siteinds(!Matched::SiteType, ::Any; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:744
+  siteinds(::String, !Matched::Integer; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:761
+
+Stacktrace:
+ [1] main(; C::Int64, L::Float64, J1::Float64, J2::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:136
+ [2] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+MethodError: srun: error: nid008461: task 0: Exited with exit code 1
+srun: Terminating StepId=16196299.3
+no method matching siteinds(::String, ::Float64; conserve_qns::Bool)srun: error: nid008464: task 0: Exited with exit code 1
+srun: Terminating StepId=16196299.1
+srun: error: nid008461: task 0: Exited with exit code 1
+srun: Terminating StepId=16196299.0
+srun: error: nid008461: task 0: Exited with exit code 1
+srun: Terminating StepId=16196299.2
+
+
+Closest candidates are:
+  siteinds(!Matched::SiteType, ::Any; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:744
+  siteinds(::String, !Matched::Integer; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:761
+
+Stacktrace:
+ [1] main(; C::Int64, L::Float64, J1::Float64, J2::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:136
+ [2] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+srun: error: nid008461: task 0: Exited with exit code 1
+srun: Terminating StepId=16196299.4
+MethodError: no method matching siteinds(::String, ::Float64; conserve_qns::Bool)ERROR: LoadError: 
+
+Closest candidates are:
+  siteinds(!Matched::SiteType, ::Any; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:744
+  siteinds(::String, !Matched::Integer; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:761
+
+Stacktrace:
+ [1] main(; C::Int64, L::Float64, J1::Float64, J2::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:136
+ [2] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+srun: error: nid008464: task 0: Exited with exit code 1
+srun: Terminating StepId=16196299.5
+MethodError: no method matching siteinds(::String, ::Float64; conserve_qns::Bool)
+
+Closest candidates are:
+  siteinds(!Matched::SiteType, ::Any; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:744
+  siteinds(::String, !Matched::Integer; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:761
+
+Stacktrace:
+ [1] main(; C::Int64, L::Float64, J1::Float64, J2::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:136
+ [2] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+srun: error: nid008464: task 0: Exited with exit code 1
+srun: Terminating StepId=16196299.6
+ERROR: LoadError: MethodError: no method matching siteinds(::String, ::Float64; conserve_qns::Bool)
+
+Closest candidates are:
+  siteinds(!Matched::SiteType, ::Any; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:744
+  siteinds(::String, !Matched::Integer; kwargs...)
+   @ ITensors ~/.julia/packages/ITensors/HjjU3/src/physics/sitetype.jl:761
+
+Stacktrace:
+ [1] main(; C::Int64, L::Float64, J1::Float64, J2::Float64, Δ1::Float64, Δ2::Float64, cutoff::Float64, δt::Float64, ttotal::Int64, maxdim::Int64)
+   @ Main /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:136
+ [2] top-level scope
+   @ /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:228
+srun: error: nid008464: task 0: Exited with exit code 1
+srun: Terminating StepId=16196299.7

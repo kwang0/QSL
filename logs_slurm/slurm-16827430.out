@@ -1,0 +1,25 @@
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+srun: warning: can't run 1 processes on 2 nodes, setting nnodes to 1
+slurmstepd: error: *** STEP 16827430.4 ON nid008232 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16827430.3 ON nid008232 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16827430.1 ON nid008233 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16827430.2 ON nid008232 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 16827430.0 ON nid008232 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 16827430 ON nid008232 CANCELLED AT 2023-10-12T10:31:41 DUE TO TIME LIMIT ***
+
+[641701] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245
+
+[641700] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245
+
+[641582] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245
+clock_gettime at linux-vdso.so.1 (unknown line)
+
+[642604] signal (15): Terminated
+in expression starting at /global/u2/k/kwang98/QSL/J1_J2_triangular_gpu.jl:245
+__clock_gettime at /lib64/libc.so.6 (unknown line)
