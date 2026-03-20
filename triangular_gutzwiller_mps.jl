@@ -96,6 +96,18 @@ function to_device(x; use_cuda::Bool=false, verbose::Bool=true, label::AbstractS
     end
 end
 
+function resolve_mode_apply_alg(
+    mode_apply_alg::Union{Nothing,Symbol,AbstractString};
+    verbose::Bool = true,
+    label::AbstractString = "mode applications",
+)
+    alg = isnothing(mode_apply_alg) ? "densitymatrix" : String(mode_apply_alg)
+    if !isnothing(mode_apply_alg)
+        vprintln(verbose, "[$label] Using apply(...; alg=\"$alg\")")
+    end
+    return alg
+end
+
 function vbond_dims(psi::MPS)
     N = length(psi)
     N <= 1 && return Int[]
@@ -863,19 +875,72 @@ function apply_mode!(
     W::MPO;
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
+    alg = "densitymatrix",
     normalize_each_step::Bool = true,
     verbose::Bool = true,
     label::AbstractString = "mode",
 )
-    vprintln(verbose, @sprintf("[apply_mode!] Applying %s with cutoff=%.1e, maxdim=%d", label, cutoff, maxdim))
+    vprintln(verbose, @sprintf("[apply_mode!] Applying %s with alg=%s, cutoff=%.1e, maxdim=%d", label, string(alg), cutoff, maxdim))
     vlog_state_summary(verbose, psi, label * " before")
-    psi = apply(W, psi; cutoff=cutoff, maxdim=maxdim)
+    psi = apply(W, psi; alg=alg, cutoff=cutoff, maxdim=maxdim)
     drop_site_primes!(psi)
     if normalize_each_step
         normalize!(psi)
         vprintln(verbose, @sprintf("[apply_mode!] Normalized state after %s", label))
     end
     vlog_state_summary(verbose, psi, label * " after")
+    return psi
+end
+
+function apply_mode_pair!(
+    psi::MPS,
+    W1::MPO,
+    W2::MPO;
+    cutoff::Real = 1e-10,
+    maxdim::Int = 2000,
+    alg = "densitymatrix",
+    normalize_each_step::Bool = true,
+    verbose::Bool = true,
+    label1::AbstractString = "mode 1",
+    label2::AbstractString = "mode 2",
+    pair_label::AbstractString = "mode pair",
+)
+    if alg != "naive"
+        psi = apply_mode!(
+            psi,
+            W1;
+            cutoff=cutoff,
+            maxdim=maxdim,
+            alg=alg,
+            normalize_each_step=normalize_each_step,
+            verbose=verbose,
+            label=label1,
+        )
+        psi = apply_mode!(
+            psi,
+            W2;
+            cutoff=cutoff,
+            maxdim=maxdim,
+            alg=alg,
+            normalize_each_step=normalize_each_step,
+            verbose=verbose,
+            label=label2,
+        )
+        return psi
+    end
+
+    vprintln(verbose, @sprintf("[apply_mode_pair!] Applying %s and %s with alg=%s, cutoff=%.1e, maxdim=%d", label1, label2, string(alg), cutoff, maxdim))
+    vlog_state_summary(verbose, psi, pair_label * " before")
+    psi = apply(W1, psi; alg=alg, truncate=false)
+    drop_site_primes!(psi)
+    psi = apply(W2, psi; alg=alg, truncate=false)
+    drop_site_primes!(psi)
+    truncate!(psi; cutoff=cutoff, maxdim=maxdim)
+    if normalize_each_step
+        normalize!(psi)
+        vprintln(verbose, @sprintf("[apply_mode_pair!] Normalized state after %s", pair_label))
+    end
+    vlog_state_summary(verbose, psi, pair_label * " after")
     return psi
 end
 
@@ -976,6 +1041,7 @@ function prepare_slater_electron_mps(
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
     normalize_each_step::Bool = true,
+    mode_apply_alg::Union{Nothing,Symbol,AbstractString} = nothing,
     use_cuda::Bool = false,
     verbose::Bool = true,
 )
@@ -1004,6 +1070,11 @@ function prepare_slater_electron_mps(
     vprintln(verbose, @sprintf("[prepare_slater_electron_mps] nfill per spin = %d", nfill))
     vprintln(verbose, "[prepare_slater_electron_mps] Orbital application order = $(ord)")
 
+    resolved_mode_apply_alg = resolve_mode_apply_alg(
+        mode_apply_alg;
+        verbose=verbose,
+        label="prepare_slater_electron_mps",
+    )
     elec_sites = siteinds("Electron", Ns; conserve_qns=false)
     psi = MPS(elec_sites, fill("Emp", Ns))
     psi = to_device(psi; use_cuda=use_cuda, verbose=verbose, label="initial Slater electron MPS")
@@ -1022,16 +1093,6 @@ function prepare_slater_electron_mps(
             v_dn=zerosN,
         )
         Wup = to_device(Wup; use_cuda=use_cuda, verbose=verbose, label=@sprintf("Slater orbital %d/%d spin-up MPO", k, length(ord)))
-        psi = apply_mode!(
-            psi,
-            Wup;
-            cutoff=cutoff,
-            maxdim=maxdim,
-            normalize_each_step=normalize_each_step,
-            verbose=verbose,
-            label=@sprintf("Slater orbital %d/%d spin-up", k, length(ord)),
-        )
-
         Wdn = linear_mode_mpo(
             elec_sites;
             u_up=zerosN,
@@ -1040,14 +1101,18 @@ function prepare_slater_electron_mps(
             v_dn=zerosN,
         )
         Wdn = to_device(Wdn; use_cuda=use_cuda, verbose=verbose, label=@sprintf("Slater orbital %d/%d spin-down MPO", k, length(ord)))
-        psi = apply_mode!(
+        psi = apply_mode_pair!(
             psi,
+            Wup,
             Wdn;
             cutoff=cutoff,
             maxdim=maxdim,
+            alg=resolved_mode_apply_alg,
             normalize_each_step=normalize_each_step,
             verbose=verbose,
-            label=@sprintf("Slater orbital %d/%d spin-down", k, length(ord)),
+            label1=@sprintf("Slater orbital %d/%d spin-up", k, length(ord)),
+            label2=@sprintf("Slater orbital %d/%d spin-down", k, length(ord)),
+            pair_label=@sprintf("Slater orbital %d/%d pair", k, length(ord)),
         )
     end
 
@@ -1081,6 +1146,7 @@ function prepare_spin_resolved_slater_electron_mps(
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
     normalize_each_step::Bool = true,
+    mode_apply_alg::Union{Nothing,Symbol,AbstractString} = nothing,
     use_cuda::Bool = false,
     verbose::Bool = true,
 )
@@ -1092,6 +1158,50 @@ function prepare_spin_resolved_slater_electron_mps(
 
     vprintln(verbose, @sprintf("[prepare_spin_resolved_slater_electron_mps] Preparing spin-resolved Slater MPS on %s with C=%d, L=%d, Ns=%d", string(typeof(lat)), lat.C, lat.L, Ns))
     vprintln(verbose, @sprintf("[prepare_spin_resolved_slater_electron_mps] nfill↑ = nfill↓ = %d", nfill))
+
+    if isapprox(h_up, h_dn; atol=1e-12, rtol=1e-10)
+        vprintln(verbose, "[prepare_spin_resolved_slater_electron_mps] Up/down hopping matrices match; using the shared-orbital Slater builder for better numerical stability")
+        shared_mode_apply_alg = mode_apply_alg
+        if isnothing(shared_mode_apply_alg) && use_cuda
+            shared_mode_apply_alg = "naive"
+            vprintln(verbose, "[prepare_spin_resolved_slater_electron_mps] Shared spin sector on CUDA; using apply(...; alg=\"naive\") with one truncation per orbital pair to avoid the phi=pi density-matrix GPU instability")
+        end
+        psi, elec_sites, info0 = prepare_slater_electron_mps(
+            lat,
+            Matrix{ComplexF64}(h_up);
+            localize=localize,
+            ordering=ordering,
+            cutoff=cutoff,
+            maxdim=maxdim,
+            normalize_each_step=normalize_each_step,
+            mode_apply_alg=shared_mode_apply_alg,
+            use_cuda=use_cuda,
+            verbose=verbose,
+        )
+
+        A = Matrix{ComplexF64}(info0[:occupied_orbitals])
+        centers = collect(info0[:centers])
+        orbital_order = collect(info0[:order])
+        mode_metadata = NamedTuple[]
+        for m in orbital_order
+            push!(mode_metadata, (spin=:up, mode=m, center=centers[m]))
+            push!(mode_metadata, (spin=:dn, mode=m, center=centers[m]))
+        end
+
+        info = merge(
+            info0,
+            Dict(
+                :occupied_orbitals_up => A,
+                :occupied_orbitals_dn => copy(A),
+                :centers_up => centers,
+                :centers_dn => copy(centers),
+                :mode_order => collect(1:length(mode_metadata)),
+                :mode_metadata => mode_metadata,
+                :shared_spin_sector => true,
+            ),
+        )
+        return psi, elec_sites, info
+    end
 
     eig_up = eigen(Hermitian((h_up + h_up') / 2))
     p_up = sortperm(real(eig_up.values))
@@ -1119,6 +1229,16 @@ function prepare_spin_resolved_slater_electron_mps(
     ord = ordering == :left_meet_right ? left_meet_right_order([m.center for m in modes]) : collect(1:length(modes))
     vprintln(verbose, "[prepare_spin_resolved_slater_electron_mps] Mode application order = $(ord)")
 
+    auto_mode_apply_alg = mode_apply_alg
+    if isnothing(auto_mode_apply_alg) && use_cuda
+        auto_mode_apply_alg = "naive"
+        vprintln(verbose, "[prepare_spin_resolved_slater_electron_mps] CUDA spin-resolved mode applications are using apply(...; alg=\"naive\") because the density-matrix path becomes NaN for twisted spin sectors on this backend")
+    end
+    resolved_mode_apply_alg = resolve_mode_apply_alg(
+        auto_mode_apply_alg;
+        verbose=verbose,
+        label="prepare_spin_resolved_slater_electron_mps",
+    )
     elec_sites = siteinds("Electron", Ns; conserve_qns=false)
     psi = MPS(elec_sites, fill("Emp", Ns))
     psi = to_device(psi; use_cuda=use_cuda, verbose=verbose, label="initial spin-resolved electron MPS")
@@ -1148,6 +1268,7 @@ function prepare_spin_resolved_slater_electron_mps(
             W;
             cutoff=cutoff,
             maxdim=maxdim,
+            alg=resolved_mode_apply_alg,
             normalize_each_step=normalize_each_step,
             verbose=verbose,
             label=@sprintf("spin-resolved %s mode %d/%d (center x=%.6f)", String(mode.spin), k, length(ord), mode.center),
@@ -1235,6 +1356,7 @@ function prepare_bdg_electron_mps(
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
     normalize_each_step::Bool = true,
+    mode_apply_alg::Union{Nothing,Symbol,AbstractString} = nothing,
     use_cuda::Bool = false,
     verbose::Bool = true,
 )
@@ -1258,6 +1380,11 @@ function prepare_bdg_electron_mps(
     ord = ordering == :left_meet_right ? left_meet_right_order(centers) : collect(1:Ng)
     vprintln(verbose, "[prepare_bdg_electron_mps] Quasihole application order = $(ord)")
 
+    resolved_mode_apply_alg = resolve_mode_apply_alg(
+        mode_apply_alg;
+        verbose=verbose,
+        label="prepare_bdg_electron_mps",
+    )
     elec_sites = siteinds("Electron", Ns; conserve_qns=false)
     psi = MPS(elec_sites, fill("Emp", Ns))
     psi = to_device(psi; use_cuda=use_cuda, verbose=verbose, label="initial BdG electron MPS")
@@ -1279,6 +1406,7 @@ function prepare_bdg_electron_mps(
             Wm;
             cutoff=cutoff,
             maxdim=maxdim,
+            alg=resolved_mode_apply_alg,
             normalize_each_step=normalize_each_step,
             verbose=verbose,
             label=@sprintf("BdG quasihole %d/%d", k, length(ord)),
@@ -1322,6 +1450,7 @@ function prepare_u1_dsl_gutzwiller_mps(
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
     normalize_each_step::Bool = true,
+    mode_apply_alg::Union{Nothing,Symbol,AbstractString} = nothing,
     gauge::Symbol = :auto,
     use_cuda::Bool = false,
     verbose::Bool = true,
@@ -1338,6 +1467,7 @@ function prepare_u1_dsl_gutzwiller_mps(
             cutoff=cutoff,
             maxdim=maxdim,
             normalize_each_step=normalize_each_step,
+            mode_apply_alg=mode_apply_alg,
             use_cuda=use_cuda,
             verbose=verbose,
         )
@@ -1353,6 +1483,7 @@ function prepare_u1_dsl_gutzwiller_mps(
             cutoff=cutoff,
             maxdim=maxdim,
             normalize_each_step=normalize_each_step,
+            mode_apply_alg=mode_apply_alg,
             use_cuda=use_cuda,
             verbose=verbose,
         )
@@ -1388,6 +1519,7 @@ function prepare_z2_0flux_gutzwiller_mps(
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
     normalize_each_step::Bool = true,
+    mode_apply_alg::Union{Nothing,Symbol,AbstractString} = nothing,
     use_cuda::Bool = false,
     verbose::Bool = true,
 )
@@ -1403,6 +1535,7 @@ function prepare_z2_0flux_gutzwiller_mps(
         cutoff=cutoff,
         maxdim=maxdim,
         normalize_each_step=normalize_each_step,
+        mode_apply_alg=mode_apply_alg,
         use_cuda=use_cuda,
         verbose=verbose,
     )
@@ -1434,6 +1567,7 @@ function prepare_z2_piflux_gutzwiller_mps(
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
     normalize_each_step::Bool = true,
+    mode_apply_alg::Union{Nothing,Symbol,AbstractString} = nothing,
     gauge::Symbol = :auto,
     use_cuda::Bool = false,
     verbose::Bool = true,
@@ -1450,6 +1584,7 @@ function prepare_z2_piflux_gutzwiller_mps(
         cutoff=cutoff,
         maxdim=maxdim,
         normalize_each_step=normalize_each_step,
+        mode_apply_alg=mode_apply_alg,
         use_cuda=use_cuda,
         verbose=verbose,
     )
