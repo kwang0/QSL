@@ -192,8 +192,7 @@ function main(; C=4, L=6, J1=1.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-
 
     nsweeps = 20
 
-    J2s = LinRange(0.0,0.2,21)
-    for J2 in J2s
+    for J2 in 0.21:0.01:0.3
         GC.gc()
         println("J2 = $J2")
         filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_YC_C$(C)_L$(L)_J$(J2)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
@@ -201,6 +200,7 @@ function main(; C=4, L=6, J1=1.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-
         ψ = cu(randomMPS(sites))
 
         E0, ψ0 = dmrg(H, ψ; nsweeps, maxdim, cutoff)
+        corrs = correlation_matrix(ψ0, "Sz", "Sz")
         ψ0 = ITensors.cpu(ψ0)
         overlap = inner(u1', ψ0)
         u1_energy = inner(u1', ITensors.cpu(H), u1)
@@ -209,11 +209,13 @@ function main(; C=4, L=6, J1=1.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-
         println("Overlap = $overlap")
         println("u1_energy = $u1_energy")
 
+
         F = h5open(filename,"w")
         F["psi0"] = ψ0
         F["E0"] = E0
         F["u1_energy"] = u1_energy
         F["overlap"] = overlap
+        F["corrs"] = corrs
         close(F)
     end
 end
