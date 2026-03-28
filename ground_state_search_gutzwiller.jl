@@ -201,6 +201,7 @@ function main(; C=4, L=6, J1=1.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-
 
         E0, ψ0 = dmrg(H, ψ; nsweeps, maxdim, cutoff)
         corrs = correlation_matrix(ψ0, "Sz", "Sz")
+        Zs = expect(ψ0, "Sz")
         ψ0 = ITensors.cpu(ψ0)
         overlap = inner(u1', ψ0)
         u1_energy = inner(u1', ITensors.cpu(H), u1)
@@ -216,6 +217,7 @@ function main(; C=4, L=6, J1=1.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cutoff=1f-
         F["u1_energy"] = u1_energy
         F["overlap"] = overlap
         F["corrs"] = corrs
+        F["Zs"] = Zs
         close(F)
     end
 end

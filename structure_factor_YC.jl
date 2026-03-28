@@ -3,6 +3,7 @@ using PyPlot
 using PyCall
 
 @pyimport matplotlib.widgets as widgets
+@pyimport PIL.Image as PILImage
 
 const SQRT3 = sqrt(3.0)
 
@@ -358,7 +359,7 @@ function compute_structure_factor_data(
         qy_limits = qy_limits,
     )
     Sq = compute_structure_factor_grid(displacements, weights, qx, qy)
-    title = E0 === nothing ? "Static structure factor S(q)" : "Static structure factor S(q), E0 = $(round(E0, digits = 8))"
+    title = "Static structure factor S(q)"
 
     return (
         Sq = Sq,
@@ -589,6 +590,36 @@ function interpolate_structure_factor(
     return frame, x_lo, x_hi, weight_hi
 end
 
+function format_structure_factor_title(
+    J2_value::Real;
+)
+    rounded_J2 = round(J2_value, digits = 3)
+    return "Static structure factor S(q), " * raw"$J_2/J_1$" * " = $(rounded_J2)"
+end
+
+function update_structure_factor_artist!(
+    image,
+    ax,
+    frame::AbstractMatrix,
+    J2_value::Real;
+    normalize::Bool = true,
+    logscale::Bool = true,
+    log_vmin::Float64 = 1e-1,
+)
+    frame_plot = prepare_structure_factor_image(frame; normalize = normalize)
+    color_limits = structure_factor_color_limits(frame_plot; logscale = logscale, log_vmin = log_vmin)
+
+    image.set_data(frame_plot)
+    if color_limits.use_logscale
+        image.norm.vmin = color_limits.vmin
+        image.norm.vmax = color_limits.vmax
+    else
+        image.set_clim(color_limits.vmin, color_limits.vmax)
+    end
+    ax.set_title(format_structure_factor_title(J2_value))
+    return nothing
+end
+
 function plot_structure_factor_J_slider(
     C::Integer,
     L::Integer;
@@ -634,32 +665,19 @@ function plot_structure_factor_J_slider(
     qx = datasets[1].qx
     qy = datasets[1].qy
     Sq_stack = Array{Float64}(undef, length(qy), length(qx), length(Js))
-    E0s = Vector{Union{Nothing, Float64}}(undef, length(Js))
 
     for (idx, data) in enumerate(datasets)
         data.qx == qx || error("Inconsistent qx grid while building the J slider.")
         data.qy == qy || error("Inconsistent qy grid while building the J slider.")
         Sq_stack[:, :, idx] .= data.Sq
-        E0s[idx] = isnothing(data.E0) ? nothing : Float64(data.E0)
     end
 
-    function frame_title(J_value::Real, J_lo::Real, J_hi::Real, weight_hi::Real)
-        if J_lo == J_hi
-            idx = findfirst(isequal(J_lo), Js)
-            if !isnothing(idx) && !isnothing(E0s[idx])
-                return "Static structure factor S(q), J = $(round(J_value, digits = 3)), E0 = $(round(E0s[idx], digits = 6))"
-            end
-            return "Static structure factor S(q), J = $(round(J_value, digits = 3))"
-        end
-        return "Static structure factor S(q), J = $(round(J_value, digits = 3))"
-    end
-
-    initial_frame, J_lo, J_hi, weight_hi = interpolate_structure_factor(Sq_stack, Js, Js[1])
+    initial_frame, _, _, _ = interpolate_structure_factor(Sq_stack, Js, Js[1])
     fig, ax, image = plot_structure_factor(
         initial_frame,
         qx,
         qy;
-        title = frame_title(Js[1], J_lo, J_hi, weight_hi),
+        title = format_structure_factor_title(Js[1]),
         normalize = normalize,
         logscale = logscale,
         show_plot = false,
@@ -670,7 +688,7 @@ function plot_structure_factor_J_slider(
     ax_slider = fig.add_axes([0.20, 0.06, 0.60, 0.04])
     slider = widgets.Slider(
         ax_slider,
-        "J",
+        raw"$J_2/J_1$",
         Js[1],
         Js[end],
         valinit = Js[1],
@@ -678,19 +696,18 @@ function plot_structure_factor_J_slider(
     )
 
     function update_slider(val)
-        J_value = Float64(val)
-        frame, J_lo, J_hi, weight_hi = interpolate_structure_factor(Sq_stack, Js, J_value)
-        frame_plot = prepare_structure_factor_image(frame; normalize = normalize)
-        color_limits = structure_factor_color_limits(frame_plot; logscale = logscale, log_vmin = log_vmin)
+        J2_value = Float64(val)
+        frame, _, _, _ = interpolate_structure_factor(Sq_stack, Js, J2_value)
 
-        image.set_data(frame_plot)
-        if color_limits.use_logscale
-            image.norm.vmin = color_limits.vmin
-            image.norm.vmax = color_limits.vmax
-        else
-            image.set_clim(color_limits.vmin, color_limits.vmax)
-        end
-        ax.set_title(frame_title(J_value, J_lo, J_hi, weight_hi))
+        update_structure_factor_artist!(
+            image,
+            ax,
+            frame,
+            J2_value;
+            normalize = normalize,
+            logscale = logscale,
+            log_vmin = log_vmin,
+        )
         fig.canvas.draw_idle()
         return nothing
     end
@@ -711,6 +728,124 @@ function plot_structure_factor_J_slider(
         qy = qy,
         Sq_stack = Sq_stack,
     )
+end
+
+function export_structure_factor_J2_gif(
+    output_gif::AbstractString,
+    C::Integer,
+    L::Integer;
+    directory::AbstractString = "processed_data",
+    delta1::Real = 1.0,
+    delta2::Real = 1.0,
+    chi::Integer = 512,
+    connected::Bool = false,
+    reference_site::Integer = 0,
+    nqx::Integer = 241,
+    nqy::Integer = 181,
+    qx_limits = nothing,
+    qy_limits = nothing,
+    logscale::Bool = true,
+    normalize::Bool = true,
+    log_vmin::Float64 = 3e-1,
+    fps::Integer = 10,
+    frames_per_interval::Integer = 4,
+    hold_frames::Integer = 1,
+)
+    viewer = plot_structure_factor_J_slider(
+        C,
+        L;
+        directory = directory,
+        delta1 = delta1,
+        delta2 = delta2,
+        chi = chi,
+        connected = connected,
+        reference_site = reference_site,
+        nqx = nqx,
+        nqy = nqy,
+        qx_limits = qx_limits,
+        qy_limits = qy_limits,
+        logscale = logscale,
+        normalize = normalize,
+        show_plot = false,
+        log_vmin = log_vmin,
+    )
+
+    Js = viewer.J_values
+    Sq_stack = viewer.Sq_stack
+    qx = viewer.qx
+    qy = viewer.qy
+    close(viewer.fig)
+
+    initial_frame, _, _, _ = interpolate_structure_factor(Sq_stack, Js, Js[1])
+    fig, ax, image = plot_structure_factor(
+        initial_frame,
+        qx,
+        qy;
+        title = format_structure_factor_title(Js[1]),
+        normalize = normalize,
+        logscale = logscale,
+        show_plot = false,
+        log_vmin = log_vmin,
+    )
+
+    tempdir = mktempdir()
+    frame_paths = String[]
+    frame_counter = 0
+
+    try
+        function save_current_frame!(J2_value::Real)
+            frame, _, _, _ = interpolate_structure_factor(Sq_stack, Js, J2_value)
+
+            update_structure_factor_artist!(
+                image,
+                ax,
+                frame,
+                J2_value;
+                normalize = normalize,
+                logscale = logscale,
+                log_vmin = log_vmin,
+            )
+            fig.canvas.draw()
+            path = joinpath(tempdir, "frame_" * lpad(string(frame_counter), 4, '0') * ".png")
+            savefig(path, dpi = 160, bbox_inches = "tight")
+            push!(frame_paths, path)
+            return nothing
+        end
+
+        sampled_Js = Float64[]
+        for idx in 1:(length(Js) - 1)
+            segment = collect(range(Js[idx], Js[idx + 1]; length = frames_per_interval + 1))
+            append!(sampled_Js, idx == 1 ? segment : segment[2:end])
+        end
+        if isempty(sampled_Js)
+            sampled_Js = [Js[1]]
+        end
+
+        for J2_value in sampled_Js
+            for _ in 1:hold_frames
+                frame_counter += 1
+                save_current_frame!(J2_value)
+            end
+        end
+
+        pil_frames = pybuiltin("list")([PILImage.open(path) for path in frame_paths])
+        duration_ms = round(Int, 1000 / max(fps, 1))
+        first_frame = pil_frames[1]
+        append_images = pil_frames[2:end]
+        first_frame.save(
+            output_gif;
+            save_all = true,
+            append_images = append_images,
+            duration = duration_ms,
+            loop = 0,
+        )
+        println("Saved animated GIF to $output_gif")
+    finally
+        close(fig)
+        rm(tempdir; recursive = true, force = true)
+    end
+
+    return output_gif
 end
 
 function main(args::Vector{String})
