@@ -191,13 +191,21 @@ function default_q_axes(
     return qx, qy
 end
 
-function prepare_structure_factor_image(Sq::AbstractMatrix; normalize::Bool = true)
+function prepare_structure_factor_image(
+    Sq::AbstractMatrix;
+    normalize::Bool = true,
+    logscale::Bool = false,
+    log_vmin::Float64 = 1e-1,
+)
     Sq_plot = Float64.(Sq)
     if normalize
         scale = maximum(abs, Sq_plot)
         if scale > 0
             Sq_plot ./= scale
         end
+    end
+    if logscale
+        Sq_plot .= max.(Sq_plot, max(log_vmin, eps(Float64)))
     end
     return Sq_plot
 end
@@ -207,9 +215,10 @@ function structure_factor_color_limits(
     logscale::Bool = true,
     log_vmin::Float64 = 1e-1,
 )
-    if logscale && minimum(Sq_plot) > 0
-        vmax = maximum(Sq_plot)
+    if logscale
+        raw_vmax = maximum(Sq_plot)
         vmin = max(minimum(Sq_plot), log_vmin)
+        vmax = max(raw_vmax, vmin * (1 + 1e-12))
         return (use_logscale = true, vmin = vmin, vmax = vmax)
     end
 
@@ -218,6 +227,15 @@ function structure_factor_color_limits(
         vmax = vmin + 1e-12
     end
     return (use_logscale = false, vmin = vmin, vmax = vmax)
+end
+
+function apply_structure_factor_color_scale!(image, color_limits)
+    if color_limits.use_logscale
+        image.set_norm(matplotlib[:colors][:LogNorm](vmin = color_limits.vmin, vmax = color_limits.vmax))
+    else
+        image.set_norm(matplotlib[:colors][:Normalize](vmin = color_limits.vmin, vmax = color_limits.vmax))
+    end
+    return nothing
 end
 
 function plot_structure_factor(
@@ -231,13 +249,17 @@ function plot_structure_factor(
     show_plot::Bool = false,
     log_vmin::Float64 = 1e-1,
 )
-    Sq_plot = prepare_structure_factor_image(Sq; normalize = normalize)
+    Sq_plot = prepare_structure_factor_image(
+        Sq;
+        normalize = normalize,
+        logscale = logscale,
+        log_vmin = log_vmin,
+    )
     color_limits = structure_factor_color_limits(Sq_plot; logscale = logscale, log_vmin = log_vmin)
     extent = (first(qx), last(qx), first(qy), last(qy))
 
     fig, ax = subplots(figsize = (7.0, 5.5))
     if color_limits.use_logscale
-        norm = matplotlib[:colors][:LogNorm](vmin = color_limits.vmin, vmax = color_limits.vmax)
         image = ax.imshow(
             Sq_plot,
             origin = "lower",
@@ -245,7 +267,7 @@ function plot_structure_factor(
             interpolation = "bicubic",
             cmap = "afmhot",
             aspect = "equal",
-            norm = norm,
+            norm = matplotlib[:colors][:LogNorm](vmin = color_limits.vmin, vmax = color_limits.vmax),
         )
     else
         image = ax.imshow(
@@ -606,16 +628,16 @@ function update_structure_factor_artist!(
     logscale::Bool = true,
     log_vmin::Float64 = 1e-1,
 )
-    frame_plot = prepare_structure_factor_image(frame; normalize = normalize)
+    frame_plot = prepare_structure_factor_image(
+        frame;
+        normalize = normalize,
+        logscale = logscale,
+        log_vmin = log_vmin,
+    )
     color_limits = structure_factor_color_limits(frame_plot; logscale = logscale, log_vmin = log_vmin)
 
     image.set_data(frame_plot)
-    if color_limits.use_logscale
-        image.norm.vmin = color_limits.vmin
-        image.norm.vmax = color_limits.vmax
-    else
-        image.set_clim(color_limits.vmin, color_limits.vmax)
-    end
+    apply_structure_factor_color_scale!(image, color_limits)
     ax.set_title(format_structure_factor_title(J2_value))
     return nothing
 end
