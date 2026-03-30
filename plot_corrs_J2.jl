@@ -40,10 +40,13 @@ function discover_ground_state_search_files_for_corrs(
     return file_map
 end
 
-function read_ground_state_corrs_for_plot(input_file::AbstractString)
+function read_ground_state_corrs_for_plot(
+    input_file::AbstractString;
+    corrs_dataset::AbstractString = "corrs",
+)
     h5open(input_file, "r") do file
-        haskey(file, "corrs") || error("The file $input_file does not contain a `corrs` dataset.")
-        corrs = read(file, "corrs")
+        haskey(file, corrs_dataset) || error("The file $input_file does not contain a `$corrs_dataset` dataset.")
+        corrs = read(file, corrs_dataset)
         Zs = haskey(file, "Zs") ? vec(read(file, "Zs")) : nothing
         return ComplexF64.(corrs), Zs
     end
@@ -68,12 +71,13 @@ function extract_reference_corrs(
     reference_site::Integer = yc_center_site(C, L),
     connected::Bool = false,
     component::Symbol = :real,
+    corrs_dataset::AbstractString = "corrs",
 )
-    corrs, Zs = read_ground_state_corrs_for_plot(input_file)
+    corrs, Zs = read_ground_state_corrs_for_plot(input_file; corrs_dataset = corrs_dataset)
     size(corrs, 1) == size(corrs, 2) || error("Expected a square correlation matrix in $input_file.")
 
     N = C * L
-    size(corrs, 1) == N || error("Expected `corrs` to have size ($N, $N), got $(size(corrs)).")
+    size(corrs, 1) == N || error("Expected `$corrs_dataset` to have size ($N, $N), got $(size(corrs)).")
     1 <= reference_site <= N || error("reference_site = $reference_site is outside 1:$N.")
 
     ref_corrs = vec(corrs[reference_site, :])
@@ -307,6 +311,7 @@ function format_corrs_title(
     reference_site::Integer,
     C::Integer;
     component::Symbol = :real,
+    corrs_dataset::AbstractString = "corrs",
 )
     row = site_row(reference_site, C)
     col = site_col(reference_site, C)
@@ -315,13 +320,17 @@ function format_corrs_title(
         component === :imag ? "Im" :
         "Abs"
     rounded_J2 = round(J2_value, digits = 3)
-    return component_label * raw"($\langle S_i^z S_j^z \rangle), J_2/J_1$" * " = $(rounded_J2)"
+    dataset_suffix = corrs_dataset == "corrs" ? "" : " [$corrs_dataset]"
+    return component_label * raw"($\langle S_i^z S_j^z \rangle$)" *
+           ", central site (row = $(row), col = $(col))" *
+           dataset_suffix * ", " * raw"$J_2/J_1$" * " = $(rounded_J2)"
 end
 
 function format_reference_corrs_title(
     reference_site::Integer,
     C::Integer;
     component::Symbol = :real,
+    corrs_dataset::AbstractString = "corrs",
     state_label::AbstractString = "",
 )
     row = site_row(reference_site, C)
@@ -331,7 +340,9 @@ function format_reference_corrs_title(
         component === :imag ? "Im" :
         "Abs"
 
-    title = component_label * raw"($\langle S_i^z S_j^z \rangle$)"
+    dataset_suffix = corrs_dataset == "corrs" ? "" : " [$corrs_dataset]"
+    title = component_label * raw"($\langle S_i^z S_j^z \rangle$)" *
+            ", central site (row = $(row), col = $(col))" * dataset_suffix
     if !isempty(state_label)
         title *= ", " * state_label
     end
@@ -353,6 +364,7 @@ function plot_corrs_from_file(
     component::Symbol = :real,
     plot_mode::Symbol = :triangular,
     cmap::AbstractString = "RdBu_r",
+    corrs_dataset::AbstractString = "corrs",
     color_limits = nothing,
     logscale::Bool = false,
     log_vmin::Real = 1e-3,
@@ -369,6 +381,7 @@ function plot_corrs_from_file(
         reference_site = reference_site,
         connected = connected,
         component = component,
+        corrs_dataset = corrs_dataset,
     )
 
     color_scale = resolve_corr_color_scale(
@@ -385,8 +398,8 @@ function plot_corrs_from_file(
     resolved_title =
         isnothing(title) ?
         (isnothing(inferred_J2) ?
-            format_reference_corrs_title(reference_site, C; component = component, state_label = state_label) :
-            format_corrs_title(inferred_J2, reference_site, C; component = component)
+            format_reference_corrs_title(reference_site, C; component = component, corrs_dataset = corrs_dataset, state_label = state_label) :
+            format_corrs_title(inferred_J2, reference_site, C; component = component, corrs_dataset = corrs_dataset)
         ) :
         String(title)
 
@@ -422,6 +435,7 @@ function plot_corrs_from_file(
         plot_mode = plot_mode,
         site_marker_size = site_marker_size,
         input_file = input_file,
+        corrs_dataset = corrs_dataset,
     )
 end
 
@@ -437,6 +451,7 @@ function plot_corrs_J2_slider(
     component::Symbol = :real,
     plot_mode::Symbol = :triangular,
     cmap::AbstractString = "RdBu_r",
+    corrs_dataset::AbstractString = "corrs",
     color_limits = nothing,
     logscale::Bool = false,
     log_vmin::Real = 1e-3,
@@ -462,6 +477,7 @@ function plot_corrs_J2_slider(
             reference_site = reference_site,
             connected = connected,
             component = component,
+            corrs_dataset = corrs_dataset,
         ) for J2 in J2_values
     ]
 
@@ -495,7 +511,7 @@ function plot_corrs_J2_slider(
         site_marker_size = site_marker_size,
     )
     colorbar(image, ax = ax, label = corrs_colorbar_label(component))
-    ax.set_title(format_corrs_title(J2_values[1], reference_site, C; component = component))
+    ax.set_title(format_corrs_title(J2_values[1], reference_site, C; component = component, corrs_dataset = corrs_dataset))
 
     fig.subplots_adjust(left = 0.10, right = 0.90, top = 0.88, bottom = 0.22)
     ax_slider = fig.add_axes([0.20, 0.08, 0.60, 0.05])
@@ -512,7 +528,7 @@ function plot_corrs_J2_slider(
         J2_value = Float64(val)
         frame, _, _, _ = interpolate_corr_grid(corr_stack, J2_values, J2_value)
         update_corr_artist!(image, frame; plot_mode = plot_mode)
-        ax.set_title(format_corrs_title(J2_value, reference_site, C; component = component))
+        ax.set_title(format_corrs_title(J2_value, reference_site, C; component = component, corrs_dataset = corrs_dataset))
         fig.canvas.draw_idle()
         return nothing
     end
@@ -532,6 +548,7 @@ function plot_corrs_J2_slider(
         file_map = file_map,
         corr_stack = corr_stack,
         reference_site = reference_site,
+        corrs_dataset = corrs_dataset,
         color_limits = resolved_color_limits,
         logscale = logscale,
         plot_mode = plot_mode,
@@ -552,6 +569,7 @@ function export_corrs_J2_gif(
     component::Symbol = :real,
     plot_mode::Symbol = :triangular,
     cmap::AbstractString = "RdBu_r",
+    corrs_dataset::AbstractString = "corrs",
     color_limits = nothing,
     logscale::Bool = false,
     log_vmin::Real = 1e-3,
@@ -573,6 +591,7 @@ function export_corrs_J2_gif(
         component = component,
         plot_mode = plot_mode,
         cmap = cmap,
+        corrs_dataset = corrs_dataset,
         color_limits = color_limits,
         logscale = logscale,
         log_vmin = log_vmin,
@@ -610,7 +629,7 @@ function export_corrs_J2_gif(
         site_marker_size = site_marker_size,
     )
     colorbar(image, ax = ax, label = corrs_colorbar_label(component))
-    ax.set_title(format_corrs_title(J2_values[1], reference_site, C; component = component))
+    ax.set_title(format_corrs_title(J2_values[1], reference_site, C; component = component, corrs_dataset = corrs_dataset))
     fig.subplots_adjust(left = 0.10, right = 0.90, top = 0.88, bottom = 0.16)
 
     tempdir = mktempdir()
@@ -621,7 +640,7 @@ function export_corrs_J2_gif(
         function save_current_frame!(J2_value::Real)
             frame, _, _, _ = interpolate_corr_grid(corr_stack, J2_values, J2_value)
             update_corr_artist!(image, frame; plot_mode = plot_mode)
-            ax.set_title(format_corrs_title(J2_value, reference_site, C; component = component))
+            ax.set_title(format_corrs_title(J2_value, reference_site, C; component = component, corrs_dataset = corrs_dataset))
             fig.canvas.draw()
             path = joinpath(tempdir, "frame_" * lpad(string(frame_counter), 4, '0') * ".png")
             savefig(path, dpi = 160, bbox_inches = "tight")

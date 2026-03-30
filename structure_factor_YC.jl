@@ -317,10 +317,13 @@ function save_structure_factor(
     end
 end
 
-function read_ground_state_corrs(input_file::AbstractString)
+function read_ground_state_corrs(
+    input_file::AbstractString;
+    corrs_dataset::AbstractString = "corrs",
+)
     h5open(input_file, "r") do file
-        haskey(file, "corrs") || error("The file $input_file does not contain a `corrs` dataset.")
-        corrs = read(file, "corrs")
+        haskey(file, corrs_dataset) || error("The file $input_file does not contain a `$corrs_dataset` dataset.")
+        corrs = read(file, corrs_dataset)
         Zs = haskey(file, "Zs") ? read(file, "Zs") : nothing
         E0 = haskey(file, "E0") ? read(file, "E0") : nothing
         return corrs, Zs, E0
@@ -333,12 +336,13 @@ function compute_structure_factor_data(
     L::Integer;
     connected::Bool = false,
     reference_site::Integer = 0,
+    corrs_dataset::AbstractString = "corrs",
     nqx::Integer = 241,
     nqy::Integer = 181,
     qx_limits = nothing,
     qy_limits = nothing,
 )
-    corrs_raw, Zs, E0 = read_ground_state_corrs(input_file)
+    corrs_raw, Zs, E0 = read_ground_state_corrs(input_file; corrs_dataset = corrs_dataset)
     corrs, corr_kind = normalize_corrs_shape(corrs_raw)
 
     N = corr_kind == :matrix ? size(corrs, 1) : length(corrs)
@@ -381,7 +385,7 @@ function compute_structure_factor_data(
         qy_limits = qy_limits,
     )
     Sq = compute_structure_factor_grid(displacements, weights, qx, qy)
-    title = "Static structure factor S(q)"
+    title = corrs_dataset == "corrs" ? "Static structure factor S(q)" : "Static structure factor S(q) from $corrs_dataset"
 
     return (
         Sq = Sq,
@@ -405,6 +409,7 @@ function print_usage()
         "  julia structure_factor_YC.jl <input.h5> <C> <L> [options]\n\n" *
         "Options:\n" *
         "  --connected            subtract <Sz_i><Sz_j> if Zs is present\n" *
+        "  --corrs-dataset=<key>  choose the HDF5 correlation dataset (default `corrs`)\n" *
         "  --reference-site=<n>   use a single reference site instead of the full matrix\n" *
         "  --nqx=<n>              number of qx points (default 241)\n" *
         "  --nqy=<n>              number of qy points (default 181)\n" *
@@ -423,6 +428,7 @@ function parse_cli(args::Vector{String})
     positional = String[]
     options = Dict{String, Any}(
         "connected" => false,
+        "corrs_dataset" => "corrs",
         "reference_site" => 0,
         "nqx" => 241,
         "nqy" => 181,
@@ -434,6 +440,8 @@ function parse_cli(args::Vector{String})
     for arg in args
         if arg == "--connected"
             options["connected"] = true
+        elseif startswith(arg, "--corrs-dataset=")
+            options["corrs_dataset"] = split(arg, "=", limit = 2)[2]
         elseif arg == "--linear-scale"
             options["logscale"] = false
         elseif arg == "--no-normalize"
@@ -470,6 +478,7 @@ function process_static_structure_factor(
     L::Integer;
     connected::Bool = false,
     reference_site::Integer = 0,
+    corrs_dataset::AbstractString = "corrs",
     nqx::Integer = 241,
     nqy::Integer = 181,
     qx_limits = nothing,
@@ -488,6 +497,7 @@ function process_static_structure_factor(
         L;
         connected = connected,
         reference_site = reference_site,
+        corrs_dataset = corrs_dataset,
         nqx = nqx,
         nqy = nqy,
         qx_limits = qx_limits,
@@ -539,6 +549,7 @@ function plot_structure_factor_from_file(
     L::Integer;
     connected::Bool = false,
     reference_site::Integer = 0,
+    corrs_dataset::AbstractString = "corrs",
     nqx::Integer = 241,
     nqy::Integer = 181,
     qx_limits = nothing,
@@ -554,6 +565,7 @@ function plot_structure_factor_from_file(
         L;
         connected = connected,
         reference_site = reference_site,
+        corrs_dataset = corrs_dataset,
         nqx = nqx,
         nqy = nqy,
         qx_limits = qx_limits,
@@ -651,6 +663,7 @@ function plot_structure_factor_J_slider(
     chi::Integer = 512,
     connected::Bool = false,
     reference_site::Integer = 0,
+    corrs_dataset::AbstractString = "corrs",
     nqx::Integer = 241,
     nqy::Integer = 181,
     qx_limits = nothing,
@@ -677,6 +690,7 @@ function plot_structure_factor_J_slider(
             L;
             connected = connected,
             reference_site = reference_site,
+            corrs_dataset = corrs_dataset,
             nqx = nqx,
             nqy = nqy,
             qx_limits = qx_limits,
@@ -749,6 +763,7 @@ function plot_structure_factor_J_slider(
         qx = qx,
         qy = qy,
         Sq_stack = Sq_stack,
+        corrs_dataset = corrs_dataset,
     )
 end
 
@@ -762,6 +777,7 @@ function export_structure_factor_J2_gif(
     chi::Integer = 512,
     connected::Bool = false,
     reference_site::Integer = 0,
+    corrs_dataset::AbstractString = "corrs",
     nqx::Integer = 241,
     nqy::Integer = 181,
     qx_limits = nothing,
@@ -782,6 +798,7 @@ function export_structure_factor_J2_gif(
         chi = chi,
         connected = connected,
         reference_site = reference_site,
+        corrs_dataset = corrs_dataset,
         nqx = nqx,
         nqy = nqy,
         qx_limits = qx_limits,
@@ -880,6 +897,7 @@ function main(args::Vector{String})
         config["L"];
         connected = config["connected"],
         reference_site = config["reference_site"],
+        corrs_dataset = config["corrs_dataset"],
         nqx = config["nqx"],
         nqy = config["nqy"],
         output_prefix = isempty(config["output_prefix"]) ? default_output_prefix(config["input_file"]) : config["output_prefix"],
