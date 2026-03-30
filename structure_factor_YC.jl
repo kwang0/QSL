@@ -191,6 +191,59 @@ function default_q_axes(
     return qx, qy
 end
 
+function reciprocal_basis_vectors()
+    b_col = (4 * pi / SQRT3, 0.0)
+    b_row = (-2 * pi / SQRT3, 2 * pi)
+    return b_col, b_row
+end
+
+function finite_sample_momentum_points(
+    C::Integer,
+    L::Integer,
+    qx::AbstractVector,
+    qy::AbstractVector;
+    shift_range::UnitRange{Int} = -2:2,
+)
+    b_col, b_row = reciprocal_basis_vectors()
+    qx_min, qx_max = extrema(qx)
+    qy_min, qy_max = extrema(qy)
+    pad_x = 0.02 * max(qx_max - qx_min, 1.0)
+    pad_y = 0.02 * max(qy_max - qy_min, 1.0)
+
+    points = Set{Tuple{Int, Int}}()
+    q_points = NTuple{2, Float64}[]
+
+    for ncol in 0:(L - 1)
+        for nrow in 0:(C - 1)
+            qx0 = ncol / L * b_col[1] + nrow / C * b_row[1]
+            qy0 = ncol / L * b_col[2] + nrow / C * b_row[2]
+
+            for s_col in shift_range
+                for s_row in shift_range
+                    qx_val = qx0 + s_col * b_col[1] + s_row * b_row[1]
+                    qy_val = qy0 + s_col * b_col[2] + s_row * b_row[2]
+
+                    if qx_min - pad_x <= qx_val <= qx_max + pad_x &&
+                       qy_min - pad_y <= qy_val <= qy_max + pad_y
+                        key = (round(Int, 1_000_000 * qx_val), round(Int, 1_000_000 * qy_val))
+                        if !(key in points)
+                            push!(points, key)
+                            push!(q_points, (qx_val, qy_val))
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    sort!(q_points, by = p -> (p[2], p[1]))
+    q_overlay = Matrix{Float64}(undef, 2, length(q_points))
+    for (idx, point) in enumerate(q_points)
+        q_overlay[:, idx] .= point
+    end
+    return q_overlay
+end
+
 function prepare_structure_factor_image(
     Sq::AbstractMatrix;
     normalize::Bool = true,
@@ -242,12 +295,17 @@ function plot_structure_factor(
     Sq::AbstractMatrix,
     qx::AbstractVector,
     qy::AbstractVector;
+    C::Union{Nothing, Integer} = nothing,
+    L::Union{Nothing, Integer} = nothing,
     output_png = nothing,
     title::AbstractString = "Static structure factor S(q)",
     normalize::Bool = true,
     logscale::Bool = true,
     show_plot::Bool = false,
     log_vmin::Float64 = 1e-1,
+    show_allowed_momenta::Bool = false,
+    allowed_momenta_color::AbstractString = "deepskyblue",
+    allowed_momenta_size::Real = 12,
 )
     Sq_plot = prepare_structure_factor_image(
         Sq;
@@ -284,6 +342,21 @@ function plot_structure_factor(
 
     bz = first_bz_hexagon()
     ax.plot(bz[:, 1], bz[:, 2], color = "0.75", linewidth = 2.2)
+    if show_allowed_momenta
+        isnothing(C) && error("`show_allowed_momenta=true` requires passing C to `plot_structure_factor`.")
+        isnothing(L) && error("`show_allowed_momenta=true` requires passing L to `plot_structure_factor`.")
+        q_overlay = finite_sample_momentum_points(C, L, qx, qy)
+        ax.scatter(
+            q_overlay[1, :],
+            q_overlay[2, :];
+            s = allowed_momenta_size,
+            facecolors = "none",
+            edgecolors = allowed_momenta_color,
+            linewidths = 0.8,
+            alpha = 0.9,
+            zorder = 4,
+        )
+    end
     ax.set_xlim(first(qx), last(qx))
     ax.set_ylim(first(qy), last(qy))
     ax.set_xlabel(raw"$q_x$")
@@ -490,6 +563,9 @@ function process_static_structure_factor(
     save_data::Bool = true,
     show_plot::Bool = false,
     log_vmin::Float64 = 1e-1,
+    show_allowed_momenta::Bool = false,
+    allowed_momenta_color::AbstractString = "deepskyblue",
+    allowed_momenta_size::Real = 12,
 )
     data = compute_structure_factor_data(
         input_file,
@@ -515,12 +591,17 @@ function process_static_structure_factor(
         Sq,
         qx,
         qy;
+        C = C,
+        L = L,
         output_png = output_png,
         title = data.title,
         normalize = normalize,
         logscale = logscale,
         show_plot = show_plot,
         log_vmin = log_vmin,
+        show_allowed_momenta = show_allowed_momenta,
+        allowed_momenta_color = allowed_momenta_color,
+        allowed_momenta_size = allowed_momenta_size,
     )
 
     if save_data
@@ -558,6 +639,9 @@ function plot_structure_factor_from_file(
     normalize::Bool = true,
     show_plot::Bool = true,
     log_vmin::Float64 = 1e-1,
+    show_allowed_momenta::Bool = false,
+    allowed_momenta_color::AbstractString = "deepskyblue",
+    allowed_momenta_size::Real = 12,
 )
     return process_static_structure_factor(
         input_file,
@@ -576,6 +660,9 @@ function plot_structure_factor_from_file(
         save_data = false,
         show_plot = show_plot,
         log_vmin = log_vmin,
+        show_allowed_momenta = show_allowed_momenta,
+        allowed_momenta_color = allowed_momenta_color,
+        allowed_momenta_size = allowed_momenta_size,
     )
 end
 
@@ -672,6 +759,9 @@ function plot_structure_factor_J_slider(
     normalize::Bool = true,
     show_plot::Bool = true,
     log_vmin::Float64 = 3e-1,
+    show_allowed_momenta::Bool = false,
+    allowed_momenta_color::AbstractString = "deepskyblue",
+    allowed_momenta_size::Real = 12,
 )
     file_map = discover_ground_state_search_files(
         C,
@@ -713,11 +803,16 @@ function plot_structure_factor_J_slider(
         initial_frame,
         qx,
         qy;
+        C = C,
+        L = L,
         title = format_structure_factor_title(Js[1]),
         normalize = normalize,
         logscale = logscale,
         show_plot = false,
         log_vmin = log_vmin,
+        show_allowed_momenta = show_allowed_momenta,
+        allowed_momenta_color = allowed_momenta_color,
+        allowed_momenta_size = allowed_momenta_size,
     )
 
     fig.subplots_adjust(bottom = 0.17)
@@ -764,6 +859,7 @@ function plot_structure_factor_J_slider(
         qy = qy,
         Sq_stack = Sq_stack,
         corrs_dataset = corrs_dataset,
+        show_allowed_momenta = show_allowed_momenta,
     )
 end
 
@@ -785,6 +881,9 @@ function export_structure_factor_J2_gif(
     logscale::Bool = true,
     normalize::Bool = true,
     log_vmin::Float64 = 3e-1,
+    show_allowed_momenta::Bool = false,
+    allowed_momenta_color::AbstractString = "deepskyblue",
+    allowed_momenta_size::Real = 12,
     fps::Integer = 10,
     frames_per_interval::Integer = 4,
     hold_frames::Integer = 1,
@@ -807,6 +906,9 @@ function export_structure_factor_J2_gif(
         normalize = normalize,
         show_plot = false,
         log_vmin = log_vmin,
+        show_allowed_momenta = show_allowed_momenta,
+        allowed_momenta_color = allowed_momenta_color,
+        allowed_momenta_size = allowed_momenta_size,
     )
 
     Js = viewer.J_values
@@ -820,11 +922,16 @@ function export_structure_factor_J2_gif(
         initial_frame,
         qx,
         qy;
+        C = C,
+        L = L,
         title = format_structure_factor_title(Js[1]),
         normalize = normalize,
         logscale = logscale,
         show_plot = false,
         log_vmin = log_vmin,
+        show_allowed_momenta = show_allowed_momenta,
+        allowed_momenta_color = allowed_momenta_color,
+        allowed_momenta_size = allowed_momenta_size,
     )
 
     tempdir = mktempdir()
