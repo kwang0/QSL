@@ -150,6 +150,192 @@ function compute_structure_factor_grid(
     return Sq
 end
 
+
+function pi_flux_mf_dvector(qx::Real, qy::Real; t::Real = 1.0)
+    dx = 4 * t * cos((SQRT3 / 2) * qx) * cos(qy / 2)
+    dz = 2 * t * cos(qy)
+    return dx, dz
+end
+
+function pi_flux_mf_reciprocal_basis_vectors()
+    b1 = (2 * pi / SQRT3, 0.0)
+    b2 = (-2 * pi / SQRT3, 2 * pi)
+    return b1, b2
+end
+
+function build_pi_flux_mf_kgrid(nk1::Integer, nk2::Integer)
+    b1, b2 = pi_flux_mf_reciprocal_basis_vectors()
+    kx = Matrix{Float64}(undef, nk1, nk2)
+    ky = Matrix{Float64}(undef, nk1, nk2)
+
+    for i in 1:nk1
+        u = (i - 0.5) / nk1
+        for j in 1:nk2
+            v = (j - 0.5) / nk2
+            kx[i, j] = u * b1[1] + v * b2[1]
+            ky[i, j] = u * b1[2] + v * b2[2]
+        end
+    end
+
+    return kx, ky
+end
+
+function compute_pi_flux_mean_field_structure_factor_grid(
+    qx::AbstractVector,
+    qy::AbstractVector;
+    t::Real = 1.0,
+    nk1::Integer = 121,
+    nk2::Integer = 121,
+    prefactor::Real = 3 / 8,
+    singular_cutoff::Real = 1e-12,
+)
+    kx, ky = build_pi_flux_mf_kgrid(nk1, nk2)
+    dhx = Matrix{Float64}(undef, nk1, nk2)
+    dhz = Matrix{Float64}(undef, nk1, nk2)
+
+    for i in 1:nk1
+        for j in 1:nk2
+            dx, dz = pi_flux_mf_dvector(kx[i, j], ky[i, j]; t = t)
+            norm_d = hypot(dx, dz)
+            if norm_d <= singular_cutoff
+                dhx[i, j] = 0.0
+                dhz[i, j] = 0.0
+            else
+                inv_norm = inv(norm_d)
+                dhx[i, j] = dx * inv_norm
+                dhz[i, j] = dz * inv_norm
+            end
+        end
+    end
+
+    Sq = Matrix{Float64}(undef, length(qy), length(qx))
+    norm_factor = prefactor / (nk1 * nk2)
+
+    for iy in eachindex(qy)
+        qy_val = qy[iy]
+        for ix in eachindex(qx)
+            qx_val = qx[ix]
+            accum = 0.0
+
+            @inbounds for i in 1:nk1
+                for j in 1:nk2
+                    dx2, dz2 = pi_flux_mf_dvector(kx[i, j] + qx_val, ky[i, j] + qy_val; t = t)
+                    norm_d2 = hypot(dx2, dz2)
+                    if norm_d2 <= singular_cutoff
+                        continue
+                    end
+
+                    accum += 1 - (dhx[i, j] * dx2 + dhz[i, j] * dz2) / norm_d2
+                end
+            end
+
+            Sq[iy, ix] = norm_factor * accum
+        end
+    end
+
+    return Sq
+end
+
+function compute_pi_flux_mean_field_structure_factor_data(
+    ;
+    nqx::Integer = 241,
+    nqy::Integer = 181,
+    qx_limits = nothing,
+    qy_limits = nothing,
+    t::Real = 1.0,
+    nk1::Integer = 121,
+    nk2::Integer = 121,
+    prefactor::Real = 3 / 8,
+)
+    qx, qy = default_q_axes(
+        nqx = nqx,
+        nqy = nqy,
+        qx_limits = qx_limits,
+        qy_limits = qy_limits,
+    )
+    Sq = compute_pi_flux_mean_field_structure_factor_grid(
+        qx,
+        qy;
+        t = t,
+        nk1 = nk1,
+        nk2 = nk2,
+        prefactor = prefactor,
+    )
+    title = "Static structure factor S(q) U(1) DSL mean field"
+
+    return (
+        Sq = Sq,
+        qx = qx,
+        qy = qy,
+        title = title,
+        nk1 = nk1,
+        nk2 = nk2,
+        t = t,
+    )
+end
+
+function plot_pi_flux_mean_field_structure_factor(
+    ;
+    C::Union{Nothing, Integer} = nothing,
+    L::Union{Nothing, Integer} = nothing,
+    nqx::Integer = 241,
+    nqy::Integer = 181,
+    qx_limits = nothing,
+    qy_limits = nothing,
+    t::Real = 1.0,
+    nk1::Integer = 121,
+    nk2::Integer = 121,
+    prefactor::Real = 3 / 8,
+    output_png = nothing,
+    normalize::Bool = true,
+    logscale::Bool = true,
+    show_plot::Bool = true,
+    log_vmin::Float64 = 1e-1,
+    show_allowed_momenta::Bool = false,
+    allowed_momenta_color::AbstractString = "deepskyblue",
+    allowed_momenta_size::Real = 12,
+)
+    data = compute_pi_flux_mean_field_structure_factor_data(
+        nqx = nqx,
+        nqy = nqy,
+        qx_limits = qx_limits,
+        qy_limits = qy_limits,
+        t = t,
+        nk1 = nk1,
+        nk2 = nk2,
+        prefactor = prefactor,
+    )
+
+    fig, ax, image = plot_structure_factor(
+        data.Sq,
+        data.qx,
+        data.qy;
+        C = C,
+        L = L,
+        output_png = output_png,
+        title = data.title,
+        normalize = normalize,
+        logscale = logscale,
+        show_plot = show_plot,
+        log_vmin = log_vmin,
+        show_allowed_momenta = show_allowed_momenta,
+        allowed_momenta_color = allowed_momenta_color,
+        allowed_momenta_size = allowed_momenta_size,
+    )
+
+    return (
+        Sq = data.Sq,
+        qx = data.qx,
+        qy = data.qy,
+        fig = fig,
+        ax = ax,
+        image = image,
+        nk1 = nk1,
+        nk2 = nk2,
+        t = t,
+    )
+end
+
 function first_bz_hexagon()
     return [
          0.0              4 * pi / 3
