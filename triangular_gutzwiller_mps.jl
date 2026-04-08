@@ -196,6 +196,34 @@ end
 
 xcoords(lat::AbstractTriangularCylinder) = [coord(lat, i)[1] for i in 1:nsite(lat)]
 
+chaincoords(lat::AbstractTriangularCylinder) = Float64.(collect(1:nsite(lat)))
+
+function localization_positions(
+    lat::AbstractTriangularCylinder;
+    coordinate::Symbol = :mps,
+)
+    if coordinate == :mps || coordinate == :site || coordinate == :chain
+        return chaincoords(lat)
+    elseif coordinate == :x
+        return xcoords(lat)
+    else
+        error("Unknown localization coordinate = $coordinate; expected :mps or :x")
+    end
+end
+
+function spinful_localization_positions(
+    lat::AbstractTriangularCylinder;
+    coordinate::Symbol = :mps,
+)
+    xs = localization_positions(lat; coordinate=coordinate)
+    out = Vector{Float64}(undef, 2 * length(xs))
+    for j in eachindex(xs)
+        out[2j - 1] = xs[j]
+        out[2j] = xs[j]
+    end
+    return out
+end
+
 # ------------------------------------------------------------------
 # Bond generation
 # ------------------------------------------------------------------
@@ -785,6 +813,57 @@ function left_meet_right_order(centers::AbstractVector{<:Real})
     return out
 end
 
+strip_index(lat::AbstractTriangularCylinder, site::Int) = mod(site - 1, lat.C) + 1
+
+function dominant_strip_labels(
+    lat::AbstractTriangularCylinder,
+    mode_weights::AbstractMatrix{<:Number},
+)
+    Ns = nsite(lat)
+    @assert size(mode_weights, 1) == Ns
+    nmode = size(mode_weights, 2)
+    strip_weights = zeros(Float64, lat.C, nmode)
+    for site in 1:Ns
+        strip = strip_index(lat, site)
+        for m in 1:nmode
+            strip_weights[strip, m] += abs2(mode_weights[site, m])
+        end
+    end
+    return [argmax(view(strip_weights, :, m)) for m in 1:nmode]
+end
+
+function strip_by_strip_order(
+    lat::AbstractTriangularCylinder,
+    centers::AbstractVector{<:Real},
+    strip_labels::AbstractVector{<:Integer},
+)
+    length(centers) == length(strip_labels) || error("Need one strip label per mode")
+    out = Int[]
+    for strip in 1:lat.C
+        modes = findall(==(strip), strip_labels)
+        isempty(modes) && continue
+        local_ord = left_meet_right_order(centers[modes])
+        append!(out, modes[local_ord])
+    end
+    return out
+end
+
+function resolve_mode_order(
+    lat::AbstractTriangularCylinder,
+    ordering::Symbol,
+    centers::AbstractVector{<:Real};
+    strip_labels::Union{Nothing,AbstractVector{<:Integer}} = nothing,
+)
+    if ordering == :left_meet_right
+        return left_meet_right_order(centers)
+    elseif ordering == :strip_by_strip || ordering == :strip_left_meet_right
+        isnothing(strip_labels) && error("ordering=$ordering requires strip labels")
+        return strip_by_strip_order(lat, centers, strip_labels)
+    else
+        return collect(1:length(centers))
+    end
+end
+
 # ------------------------------------------------------------------
 # MPO for a generic odd fermionic mode
 # ------------------------------------------------------------------
@@ -959,29 +1038,14 @@ Local map:
 |UpDn⟩ -> 0
 """
 function project_electron_tensor_to_spin(A::ITensor, s_e::Index, s_s::Index)
+    hasind(A, s_e) || error("project_electron_tensor_to_spin expected the electron site index to be present in the tensor.")
+
+    P = ITensor(ComplexF64, s_s, s_e)
+    P[s_s => "Up", s_e => "Up"] = 1
+    P[s_s => "Dn", s_e => "Dn"] = 1
+
     others = [i for i in inds(A) if i != s_e]
-    B = ITensor(ComplexF64, Tuple((s_s, others...))...)
-
-    if length(others) == 0
-        B[s_s => "Up"] = A[s_e => "Up"]
-        B[s_s => "Dn"] = A[s_e => "Dn"]
-    elseif length(others) == 1
-        l1 = others[1]
-        for i1 in 1:dim(l1)
-            B[s_s => "Up", l1 => i1] = A[s_e => "Up", l1 => i1]
-            B[s_s => "Dn", l1 => i1] = A[s_e => "Dn", l1 => i1]
-        end
-    elseif length(others) == 2
-        l1, l2 = others
-        for i1 in 1:dim(l1), i2 in 1:dim(l2)
-            B[s_s => "Up", l1 => i1, l2 => i2] = A[s_e => "Up", l1 => i1, l2 => i2]
-            B[s_s => "Dn", l1 => i1, l2 => i2] = A[s_e => "Dn", l1 => i1, l2 => i2]
-        end
-    else
-        error("project_electron_tensor_to_spin only supports rank-1, rank-2, and rank-3 MPS site tensors; got rank $(length(inds(A))).")
-    end
-
-    return B
+    return permute(P * A, s_s, others...)
 end
 
 function resolve_spin_sites(
@@ -1037,6 +1101,7 @@ function prepare_slater_electron_mps(
     lat::AbstractTriangularCylinder,
     h0::AbstractMatrix{ComplexF64};
     localize::Bool = true,
+    localize_coordinate::Symbol = :mps,
     ordering::Symbol = :left_meet_right,
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
@@ -1057,18 +1122,20 @@ function prepare_slater_electron_mps(
     p = sortperm(real(eig.values))
     A = Matrix{ComplexF64}(eig.vectors[:, p[1:nfill]])
 
-    xpos = xcoords(lat)
-    centers = copy(xpos[1:nfill])
+    locpos = localization_positions(lat; coordinate=localize_coordinate)
+    centers = copy(locpos[1:nfill])
     if localize
-        vprintln(verbose, "[prepare_slater_electron_mps] Localizing occupied orbitals by projected position")
-        A, centers = localize_slater_orbitals(A, xpos)
+        vprintln(verbose, "[prepare_slater_electron_mps] Localizing occupied orbitals by projected position in $(localize_coordinate) coordinates")
+        A, centers = localize_slater_orbitals(A, locpos)
     else
-        centers = [real(dot(A[:, m], Diagonal(xpos) * A[:, m])) for m in 1:nfill]
+        centers = [real(dot(A[:, m], Diagonal(locpos) * A[:, m])) for m in 1:nfill]
     end
 
-    ord = ordering == :left_meet_right ? left_meet_right_order(centers) : collect(1:nfill)
+    strip_labels = dominant_strip_labels(lat, A)
+    ord = resolve_mode_order(lat, ordering, centers; strip_labels=strip_labels)
     vprintln(verbose, @sprintf("[prepare_slater_electron_mps] nfill per spin = %d", nfill))
     vprintln(verbose, "[prepare_slater_electron_mps] Orbital application order = $(ord)")
+    vprintln(verbose, "[prepare_slater_electron_mps] Orbital strip labels = $(strip_labels)")
 
     resolved_mode_apply_alg = resolve_mode_apply_alg(
         mode_apply_alg;
@@ -1082,7 +1149,7 @@ function prepare_slater_electron_mps(
 
     zerosN = zeros(ComplexF64, Ns)
     for (k, m) in enumerate(ord)
-        vprintln(verbose, @sprintf("[prepare_slater_electron_mps] Filling orbital %d/%d (mode index %d, center x=%.6f)", k, length(ord), m, centers[m]))
+        vprintln(verbose, @sprintf("[prepare_slater_electron_mps] Filling orbital %d/%d (mode index %d, center=%.6f in %s coordinates)", k, length(ord), m, centers[m], String(localize_coordinate)))
         coeff = A[:, m]
 
         Wup = linear_mode_mpo(
@@ -1120,6 +1187,8 @@ function prepare_slater_electron_mps(
     return psi, elec_sites, Dict(
         :occupied_orbitals => A,
         :centers => centers,
+        :localize_coordinate => localize_coordinate,
+        :strip_labels => strip_labels,
         :order => ord,
     )
 end
@@ -1142,6 +1211,7 @@ function prepare_spin_resolved_slater_electron_mps(
     h_up::AbstractMatrix{ComplexF64},
     h_dn::AbstractMatrix{ComplexF64};
     localize::Bool = true,
+    localize_coordinate::Symbol = :mps,
     ordering::Symbol = :left_meet_right,
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
@@ -1170,6 +1240,7 @@ function prepare_spin_resolved_slater_electron_mps(
             lat,
             Matrix{ComplexF64}(h_up);
             localize=localize,
+            localize_coordinate=localize_coordinate,
             ordering=ordering,
             cutoff=cutoff,
             maxdim=maxdim,
@@ -1181,11 +1252,15 @@ function prepare_spin_resolved_slater_electron_mps(
 
         A = Matrix{ComplexF64}(info0[:occupied_orbitals])
         centers = collect(info0[:centers])
+        orbital_strip_labels = collect(info0[:strip_labels])
         orbital_order = collect(info0[:order])
         mode_metadata = NamedTuple[]
+        mode_strip_labels = Int[]
         for m in orbital_order
             push!(mode_metadata, (spin=:up, mode=m, center=centers[m]))
+            push!(mode_strip_labels, orbital_strip_labels[m])
             push!(mode_metadata, (spin=:dn, mode=m, center=centers[m]))
+            push!(mode_strip_labels, orbital_strip_labels[m])
         end
 
         info = merge(
@@ -1195,6 +1270,8 @@ function prepare_spin_resolved_slater_electron_mps(
                 :occupied_orbitals_dn => copy(A),
                 :centers_up => centers,
                 :centers_dn => copy(centers),
+                :localize_coordinate => localize_coordinate,
+                :mode_strip_labels => mode_strip_labels,
                 :mode_order => collect(1:length(mode_metadata)),
                 :mode_metadata => mode_metadata,
                 :shared_spin_sector => true,
@@ -1211,23 +1288,29 @@ function prepare_spin_resolved_slater_electron_mps(
     p_dn = sortperm(real(eig_dn.values))
     A_dn = Matrix{ComplexF64}(eig_dn.vectors[:, p_dn[1:nfill]])
 
-    xpos = xcoords(lat)
+    locpos = localization_positions(lat; coordinate=localize_coordinate)
     if localize
-        vprintln(verbose, "[prepare_spin_resolved_slater_electron_mps] Localizing occupied orbitals in each spin sector")
-        A_up, centers_up = localize_slater_orbitals(A_up, xpos)
-        A_dn, centers_dn = localize_slater_orbitals(A_dn, xpos)
+        vprintln(verbose, "[prepare_spin_resolved_slater_electron_mps] Localizing occupied orbitals in each spin sector in $(localize_coordinate) coordinates")
+        A_up, centers_up = localize_slater_orbitals(A_up, locpos)
+        A_dn, centers_dn = localize_slater_orbitals(A_dn, locpos)
     else
-        centers_up = [real(dot(A_up[:, m], Diagonal(xpos) * A_up[:, m])) for m in 1:nfill]
-        centers_dn = [real(dot(A_dn[:, m], Diagonal(xpos) * A_dn[:, m])) for m in 1:nfill]
+        centers_up = [real(dot(A_up[:, m], Diagonal(locpos) * A_up[:, m])) for m in 1:nfill]
+        centers_dn = [real(dot(A_dn[:, m], Diagonal(locpos) * A_dn[:, m])) for m in 1:nfill]
     end
 
+    strip_labels_up = dominant_strip_labels(lat, A_up)
+    strip_labels_dn = dominant_strip_labels(lat, A_dn)
     modes = NamedTuple[]
+    mode_strip_labels = Int[]
     for m in 1:nfill
         push!(modes, (spin=:up, mode=m, center=centers_up[m]))
+        push!(mode_strip_labels, strip_labels_up[m])
         push!(modes, (spin=:dn, mode=m, center=centers_dn[m]))
+        push!(mode_strip_labels, strip_labels_dn[m])
     end
-    ord = ordering == :left_meet_right ? left_meet_right_order([m.center for m in modes]) : collect(1:length(modes))
+    ord = resolve_mode_order(lat, ordering, [m.center for m in modes]; strip_labels=mode_strip_labels)
     vprintln(verbose, "[prepare_spin_resolved_slater_electron_mps] Mode application order = $(ord)")
+    vprintln(verbose, "[prepare_spin_resolved_slater_electron_mps] Mode strip labels = $(mode_strip_labels)")
 
     auto_mode_apply_alg = mode_apply_alg
     if isnothing(auto_mode_apply_alg) && use_cuda
@@ -1271,7 +1354,7 @@ function prepare_spin_resolved_slater_electron_mps(
             alg=resolved_mode_apply_alg,
             normalize_each_step=normalize_each_step,
             verbose=verbose,
-            label=@sprintf("spin-resolved %s mode %d/%d (center x=%.6f)", String(mode.spin), k, length(ord), mode.center),
+            label=@sprintf("spin-resolved %s mode %d/%d (center=%.6f in %s coordinates)", String(mode.spin), k, length(ord), mode.center, String(localize_coordinate)),
         )
     end
 
@@ -1281,6 +1364,8 @@ function prepare_spin_resolved_slater_electron_mps(
         :occupied_orbitals_dn => A_dn,
         :centers_up => centers_up,
         :centers_dn => centers_dn,
+        :localize_coordinate => localize_coordinate,
+        :mode_strip_labels => mode_strip_labels,
         :mode_order => ord,
         :mode_metadata => modes,
     )
@@ -1317,16 +1402,6 @@ function bdg_quasiholes(
     return evals, V, U
 end
 
-function spinful_xcoords(lat::AbstractTriangularCylinder)
-    xs = xcoords(lat)
-    out = Vector{Float64}(undef, 2 * length(xs))
-    for j in eachindex(xs)
-        out[2j - 1] = xs[j]
-        out[2j] = xs[j]
-    end
-    return out
-end
-
 function unpack_spinful_mode(
     Vcol::AbstractVector{<:Number},
     Ucol::AbstractVector{<:Number},
@@ -1352,6 +1427,7 @@ function prepare_bdg_electron_mps(
     h::AbstractMatrix{ComplexF64},
     Δ::AbstractMatrix{ComplexF64};
     localize::Bool = true,
+    localize_coordinate::Symbol = :mps,
     ordering::Symbol = :left_meet_right,
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
@@ -1368,17 +1444,27 @@ function prepare_bdg_electron_mps(
 
     evals, V, U = bdg_quasiholes(h, Δ; verbose=verbose)
 
-    xspin = spinful_xcoords(lat)
+    locpos_spinful = spinful_localization_positions(lat; coordinate=localize_coordinate)
     if localize
-        vprintln(verbose, "[prepare_bdg_electron_mps] Localizing quasihole modes by projected position")
-        V, U, centers = localize_bdg_modes(V, U, xspin)
+        vprintln(verbose, "[prepare_bdg_electron_mps] Localizing quasihole modes by projected position in $(localize_coordinate) coordinates")
+        V, U, centers = localize_bdg_modes(V, U, locpos_spinful)
     else
-        centers = [real(dot(V[:, m], Diagonal(xspin) * V[:, m]) +
-                        dot(U[:, m], Diagonal(xspin) * U[:, m])) for m in 1:Ng]
+        centers = [real(dot(V[:, m], Diagonal(locpos_spinful) * V[:, m]) +
+                        dot(U[:, m], Diagonal(locpos_spinful) * U[:, m])) for m in 1:Ng]
     end
 
-    ord = ordering == :left_meet_right ? left_meet_right_order(centers) : collect(1:Ng)
+    site_weights = zeros(Float64, Ns, Ng)
+    for j in 1:Ns
+        iu = spinup_index(j)
+        id = spindn_index(j)
+        for m in 1:Ng
+            site_weights[j, m] = abs2(V[iu, m]) + abs2(V[id, m]) + abs2(U[iu, m]) + abs2(U[id, m])
+        end
+    end
+    strip_labels = dominant_strip_labels(lat, site_weights)
+    ord = resolve_mode_order(lat, ordering, centers; strip_labels=strip_labels)
     vprintln(verbose, "[prepare_bdg_electron_mps] Quasihole application order = $(ord)")
+    vprintln(verbose, "[prepare_bdg_electron_mps] Quasihole strip labels = $(strip_labels)")
 
     resolved_mode_apply_alg = resolve_mode_apply_alg(
         mode_apply_alg;
@@ -1391,7 +1477,7 @@ function prepare_bdg_electron_mps(
     vlog_state_summary(verbose, psi, "initial electron vacuum")
 
     for (k, m) in enumerate(ord)
-        vprintln(verbose, @sprintf("[prepare_bdg_electron_mps] Applying quasihole %d/%d (mode index %d, center x=%.6f, E=%.6e)", k, length(ord), m, centers[m], evals[min(m, length(evals))]))
+        vprintln(verbose, @sprintf("[prepare_bdg_electron_mps] Applying quasihole %d/%d (mode index %d, center=%.6f in %s coordinates, E=%.6e)", k, length(ord), m, centers[m], String(localize_coordinate), evals[min(m, length(evals))]))
         u_up, u_dn, v_up, v_dn = unpack_spinful_mode(V[:, m], U[:, m], Ns)
         Wm = linear_mode_mpo(
             elec_sites;
@@ -1419,6 +1505,8 @@ function prepare_bdg_electron_mps(
         :V => V,
         :U => U,
         :centers => centers,
+        :localize_coordinate => localize_coordinate,
+        :strip_labels => strip_labels,
         :order => ord,
     )
 end
@@ -1446,6 +1534,7 @@ function prepare_u1_dsl_gutzwiller_mps(
     theta::Real = 0.0,
     phi::Real = 0.0,
     localize::Bool = true,
+    localize_coordinate::Symbol = :mps,
     ordering::Symbol = :left_meet_right,
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
@@ -1463,6 +1552,7 @@ function prepare_u1_dsl_gutzwiller_mps(
             lat,
             h0;
             localize=localize,
+            localize_coordinate=localize_coordinate,
             ordering=ordering,
             cutoff=cutoff,
             maxdim=maxdim,
@@ -1479,6 +1569,7 @@ function prepare_u1_dsl_gutzwiller_mps(
             h_up,
             h_dn;
             localize=localize,
+            localize_coordinate=localize_coordinate,
             ordering=ordering,
             cutoff=cutoff,
             maxdim=maxdim,
@@ -1515,6 +1606,7 @@ function prepare_z2_0flux_gutzwiller_mps(
     theta::Real = 0.0,
     phi::Real = 0.0,
     localize::Bool = true,
+    localize_coordinate::Symbol = :mps,
     ordering::Symbol = :left_meet_right,
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
@@ -1531,6 +1623,7 @@ function prepare_z2_0flux_gutzwiller_mps(
         h,
         Δ;
         localize=localize,
+        localize_coordinate=localize_coordinate,
         ordering=ordering,
         cutoff=cutoff,
         maxdim=maxdim,
@@ -1563,6 +1656,7 @@ function prepare_z2_piflux_gutzwiller_mps(
     theta::Real = 0.0,
     phi::Real = 0.0,
     localize::Bool = true,
+    localize_coordinate::Symbol = :mps,
     ordering::Symbol = :left_meet_right,
     cutoff::Real = 1e-10,
     maxdim::Int = 2000,
@@ -1580,6 +1674,7 @@ function prepare_z2_piflux_gutzwiller_mps(
         h,
         Δ;
         localize=localize,
+        localize_coordinate=localize_coordinate,
         ordering=ordering,
         cutoff=cutoff,
         maxdim=maxdim,

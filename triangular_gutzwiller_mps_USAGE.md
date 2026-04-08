@@ -44,6 +44,36 @@ res = prepare_u1_dsl_gutzwiller_mps(
 At the mean-field boundary-condition level, `(phi = pi, theta = 0)` is equivalent to
 `(phi = 0, theta = 2pi)` because the spinon twists are `phi ± theta/2`.
 
+## Wannier localization coordinate
+
+The Slater and BdG builders now localize modes in the intrinsic MPS site
+coordinate by default, using `1, 2, ..., C*L` rather than only the geometric
+open-direction coordinate. This better matches the MPO support that is costly in
+the MPS construction.
+
+If you want the previous behavior, you can still request geometric localization
+with `localize_coordinate=:x`.
+
+```julia
+lat = TriangularYC(6, 36)
+
+res_mps = prepare_u1_dsl_gutzwiller_mps(lat; localize_coordinate=:mps)
+res_x = prepare_u1_dsl_gutzwiller_mps(lat; localize_coordinate=:x)
+```
+
+## Orbital filling order
+
+The Slater/BdG builders accept `ordering=:strip_by_strip` (alias
+`ordering=:strip_left_meet_right`) to group localized modes by cylinder strip.
+Strip `1` corresponds to sites `1, C+1, 2*C+1, ...`, strip `2` to
+`2, C+2, 2*C+2, ...`, and so on. Within each strip, modes are still applied
+from the two open ends toward the middle.
+
+```julia
+lat = TriangularYC(6, 12)
+res = prepare_u1_dsl_gutzwiller_mps(lat; ordering=:strip_by_strip)
+```
+
 ## Shared physical spin-site indices
 
 ```julia
