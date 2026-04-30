@@ -12,8 +12,8 @@ using Printf
 #   4 = (-Q, p=2)
 # ============================================================
 
-const L1 = 1
-const L2 = 2
+const L1 = 2
+const L2 = 4
 const Ns = 6 * L1 * L2
 const Nc = L1 * L2
 const t = 1.0

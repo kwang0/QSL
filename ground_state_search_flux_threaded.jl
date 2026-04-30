@@ -1,6 +1,7 @@
 using MKL
 using ITensors
 using ITensorMPS
+using CUDA
 using HDF5
 using LinearAlgebra
 using Printf
@@ -130,6 +131,15 @@ function dmrg_excited(H, refs, psi; nsweeps, maxdim, cutoff, noise, weight, outp
         return dmrg(H, refs, psi; nsweeps, maxdim, cutoff, noise, weight, outputlevel)
     end
     return dmrg(H, refs, psi; nsweeps, maxdim, cutoff, weight, outputlevel)
+end
+
+function scheduled_nsweeps(k, nflux, nsweeps_initial, nsweeps_intermediate, nsweeps_final)
+    if k == 1
+        return nsweeps_initial
+    elseif k == nflux
+        return nsweeps_final
+    end
+    return nsweeps_intermediate
 end
 
 function total_twosz(psi)
@@ -281,7 +291,9 @@ function run_trajectory_cpu(;
     output_dir,
     theta_pi,
     nflux,
-    nsweeps,
+    nsweeps_initial,
+    nsweeps_intermediate,
+    nsweeps_final,
     maxdim,
     cutoff,
     weight,
@@ -312,9 +324,13 @@ function run_trajectory_cpu(;
     M_neutral = zeros(Float64, length(fluxes))
     M_spin = zeros(Float64, length(fluxes))
     neutral_overlaps = fill(NaN, length(fluxes))
+    nsweeps_used = zeros(Int, length(fluxes))
 
     for (k, theta) in enumerate(fluxes)
+        nsweeps = scheduled_nsweeps(k, length(fluxes), nsweeps_initial, nsweeps_intermediate, nsweeps_final)
+        nsweeps_used[k] = nsweeps
         println("Flux step $k / $(length(fluxes)): theta = $theta ($(theta / pi) * pi)")
+        println("nsweeps = $nsweeps")
         H = MPO(
             triangular_model_YC_flux(
                 C,
@@ -410,7 +426,7 @@ function run_trajectory_cpu(;
             spin_twosz,
             maxdim,
             cutoff,
-            nsweeps,
+            nsweeps=nsweeps_used[1:k],
             weight,
             psi0,
             psi_neutral,
@@ -430,6 +446,7 @@ function run_trajectory_cpu(;
         M_neutral,
         M_spin,
         neutral_overlaps,
+        nsweeps_used,
         psi0,
         psi_neutral,
         psi_spin,
@@ -449,7 +466,9 @@ function run_trajectory_gpu(;
     output_dir,
     theta_pi,
     nflux,
-    nsweeps,
+    nsweeps_initial,
+    nsweeps_intermediate,
+    nsweeps_final,
     maxdim,
     cutoff,
     weight,
@@ -470,9 +489,13 @@ function run_trajectory_gpu(;
     M0s = zeros(Float64, length(fluxes))
     M1s = zeros(Float64, length(fluxes))
     overlaps = fill(NaN, length(fluxes))
+    nsweeps_used = zeros(Int, length(fluxes))
 
     for (k, theta) in enumerate(fluxes)
+        nsweeps = scheduled_nsweeps(k, length(fluxes), nsweeps_initial, nsweeps_intermediate, nsweeps_final)
+        nsweeps_used[k] = nsweeps
         println("Flux step $k / $(length(fluxes)): theta = $theta ($(theta / pi) * pi)")
+        println("nsweeps = $nsweeps")
         H = cu(
             MPO(
                 triangular_model_YC_flux(
@@ -551,7 +574,7 @@ function run_trajectory_gpu(;
             overlaps=overlaps[1:k],
             maxdim,
             cutoff,
-            nsweeps,
+            nsweeps=nsweeps_used[1:k],
             weight,
             psi0=psi0_cpu,
             psi1=psi1_cpu,
@@ -584,7 +607,9 @@ function main(;
     yc_shift=0,
     theta_pi=1.0,
     nflux=9,
-    nsweeps=10,
+    nsweeps_initial=10,
+    nsweeps_intermediate=2,
+    nsweeps_final=10,
     cutoff=1e-10,
     maxdim=512,
     weight=20.0,
@@ -625,7 +650,9 @@ function main(;
             output_dir,
             theta_pi,
             nflux,
-            nsweeps,
+            nsweeps_initial,
+            nsweeps_intermediate,
+            nsweeps_final,
             maxdim,
             cutoff,
             weight,
@@ -648,7 +675,9 @@ function main(;
             output_dir,
             theta_pi,
             nflux,
-            nsweeps,
+            nsweeps_initial,
+            nsweeps_intermediate,
+            nsweeps_final,
             maxdim,
             cutoff,
             weight,
@@ -671,7 +700,7 @@ ITensors.Strided.set_num_threads(1)
 if abspath(PROGRAM_FILE) == @__FILE__
     if length(ARGS) < 6
         error(
-            "Usage: julia ground_state_search_flux_threaded.jl C L J2 Delta theta_over_pi maxdim [nflux=9] [nsweeps=10] [yc_shift=0] [use_gpu=false] [output_dir]",
+            "Usage: julia ground_state_search_flux_threaded.jl C L J2 Delta theta_over_pi maxdim [nflux=9] [nsweeps_initial=10] [nsweeps_intermediate=2] [nsweeps_final=10] [yc_shift=0] [use_gpu=false] [output_dir]",
         )
     end
 
@@ -682,24 +711,26 @@ if abspath(PROGRAM_FILE) == @__FILE__
     theta_pi = parse(Float64, ARGS[5])
     maxdim = parse(Int, ARGS[6])
     nflux = length(ARGS) >= 7 ? parse(Int, ARGS[7]) : 9
-    nsweeps = length(ARGS) >= 8 ? parse(Int, ARGS[8]) : 10
+    nsweeps_initial = length(ARGS) >= 8 ? parse(Int, ARGS[8]) : 10
+    nsweeps_intermediate = length(ARGS) >= 9 ? parse(Int, ARGS[9]) : 2
+    nsweeps_final = length(ARGS) >= 10 ? parse(Int, ARGS[10]) : 10
     yc_shift = 0
     use_gpu = false
     output_dir = default_output_dir()
-    if length(ARGS) >= 9
-        parsed_shift = tryparse(Int, ARGS[9])
+    if length(ARGS) >= 11
+        parsed_shift = tryparse(Int, ARGS[11])
         if parsed_shift === nothing
-            use_gpu = lowercase(ARGS[9]) in ("1", "true", "t", "yes", "y")
-            output_dir = length(ARGS) >= 10 ? ARGS[10] : default_output_dir()
+            use_gpu = lowercase(ARGS[11]) in ("1", "true", "t", "yes", "y")
+            output_dir = length(ARGS) >= 12 ? ARGS[12] : default_output_dir()
         else
             yc_shift = parsed_shift
-            if length(ARGS) >= 10
-                parsed_gpu = lowercase(ARGS[10]) in ("1", "true", "t", "yes", "y", "0", "false", "f", "no", "n")
+            if length(ARGS) >= 12
+                parsed_gpu = lowercase(ARGS[12]) in ("1", "true", "t", "yes", "y", "0", "false", "f", "no", "n")
                 if parsed_gpu
-                    use_gpu = lowercase(ARGS[10]) in ("1", "true", "t", "yes", "y")
-                    output_dir = length(ARGS) >= 11 ? ARGS[11] : default_output_dir()
+                    use_gpu = lowercase(ARGS[12]) in ("1", "true", "t", "yes", "y")
+                    output_dir = length(ARGS) >= 13 ? ARGS[13] : default_output_dir()
                 else
-                    output_dir = ARGS[10]
+                    output_dir = ARGS[12]
                 end
             end
         end
@@ -715,7 +746,9 @@ if abspath(PROGRAM_FILE) == @__FILE__
         theta_pi,
         maxdim,
         nflux,
-        nsweeps,
+        nsweeps_initial,
+        nsweeps_intermediate,
+        nsweeps_final,
         use_gpu,
         output_dir,
     )
