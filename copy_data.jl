@@ -4,7 +4,7 @@ using Glob
 # Copying data excluding large memory MPSs for easier transfer to local machine
 
 # for input in glob("ground_state_search_YC*.h5", "/pscratch/sd/k/kwang98/QSL/")
-for input in glob("*u1_YC*.h5", "./")
+for input in glob("*u1_YC*.h5", "/pscratch/sd/k/kwang98/QSL/")
 output = "processed_data/" * basename(input)
 
 F = h5open(input,"r")
