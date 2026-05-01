@@ -21,14 +21,14 @@ DELTA=${4:-1.0}
 THETA_PI=${5:-1.0}
 MAXDIM=${6:-512}
 NFLUX=${7:-9}
-NSWEEPS_INITIAL=${8:-10}
+NSWEEPS_INITIAL=${8:-40}
 NSWEEPS_INTERMEDIATE=${9:-2}
-NSWEEPS_FINAL=${10:-10}
+ENERGY_TOL=${10:-1e-6}
 YC_SHIFT=${11:-0}
 
 LOG="logs_cpu/ground_state_search_flux_threaded_YC${C}-${YC_SHIFT}_L${L}_J${J2}_1Delta${DELTA}_2Delta${DELTA}_thetaPi${THETA_PI}_bothgaps_chi${MAXDIM}.txt"
 julia --heap-size-hint=400G ground_state_search_flux_threaded.jl \
     "$C" "$L" "$J2" "$DELTA" "$THETA_PI" "$MAXDIM" \
-    "$NFLUX" "$NSWEEPS_INITIAL" "$NSWEEPS_INTERMEDIATE" "$NSWEEPS_FINAL" "$YC_SHIFT" >> "$LOG"
+    "$NFLUX" "$NSWEEPS_INITIAL" "$NSWEEPS_INTERMEDIATE" "$ENERGY_TOL" "$YC_SHIFT" >> "$LOG"
 
 exit 0

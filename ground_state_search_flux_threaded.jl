@@ -119,27 +119,38 @@ function product_state(N, twosz)
     return state
 end
 
-function dmrg_ground(H, psi; nsweeps, maxdim, cutoff, noise, outputlevel)
-    if noise > 0.0
+function dmrg_ground(H, psi; nsweeps, maxdim, cutoff, noise, outputlevel, observer=nothing)
+    if noise > 0.0 && observer !== nothing
+        return dmrg(H, psi; nsweeps, maxdim, cutoff, noise, outputlevel, observer)
+    elseif noise > 0.0
         return dmrg(H, psi; nsweeps, maxdim, cutoff, noise, outputlevel)
+    elseif observer !== nothing
+        return dmrg(H, psi; nsweeps, maxdim, cutoff, outputlevel, observer)
     end
     return dmrg(H, psi; nsweeps, maxdim, cutoff, outputlevel)
 end
 
-function dmrg_excited(H, refs, psi; nsweeps, maxdim, cutoff, noise, weight, outputlevel)
-    if noise > 0.0
+function dmrg_excited(H, refs, psi; nsweeps, maxdim, cutoff, noise, weight, outputlevel, observer=nothing)
+    if noise > 0.0 && observer !== nothing
+        return dmrg(H, refs, psi; nsweeps, maxdim, cutoff, noise, weight, outputlevel, observer)
+    elseif noise > 0.0
         return dmrg(H, refs, psi; nsweeps, maxdim, cutoff, noise, weight, outputlevel)
+    elseif observer !== nothing
+        return dmrg(H, refs, psi; nsweeps, maxdim, cutoff, weight, outputlevel, observer)
     end
     return dmrg(H, refs, psi; nsweeps, maxdim, cutoff, weight, outputlevel)
 end
 
-function scheduled_nsweeps(k, nflux, nsweeps_initial, nsweeps_intermediate, nsweeps_final)
-    if k == 1
-        return nsweeps_initial
-    elseif k == nflux
-        return nsweeps_final
-    end
-    return nsweeps_intermediate
+function scheduled_nsweeps(k, nsweeps_initial, nsweeps_intermediate)
+    return k == 1 ? nsweeps_initial : nsweeps_intermediate
+end
+
+function initial_dmrg_observer(k, energy_tol)
+    return k == 1 ? ITensorMPS.DMRGObserver(; energy_tol=energy_tol) : nothing
+end
+
+function dmrg_sweeps_used(observer, nsweeps)
+    return observer === nothing ? nsweeps : length(ITensorMPS.energies(observer))
 end
 
 function total_twosz(psi)
@@ -293,7 +304,7 @@ function run_trajectory_cpu(;
     nflux,
     nsweeps_initial,
     nsweeps_intermediate,
-    nsweeps_final,
+    energy_tol,
     maxdim,
     cutoff,
     weight,
@@ -327,10 +338,12 @@ function run_trajectory_cpu(;
     nsweeps_used = zeros(Int, length(fluxes))
 
     for (k, theta) in enumerate(fluxes)
-        nsweeps = scheduled_nsweeps(k, length(fluxes), nsweeps_initial, nsweeps_intermediate, nsweeps_final)
-        nsweeps_used[k] = nsweeps
+        nsweeps = scheduled_nsweeps(k, nsweeps_initial, nsweeps_intermediate)
         println("Flux step $k / $(length(fluxes)): theta = $theta ($(theta / pi) * pi)")
         println("nsweeps = $nsweeps")
+        if k == 1
+            println("Using DMRGObserver energy_tol = $energy_tol")
+        end
         H = MPO(
             triangular_model_YC_flux(
                 C,
@@ -347,6 +360,7 @@ function run_trajectory_cpu(;
             sites,
         )
 
+        ground_observer = initial_dmrg_observer(k, energy_tol)
         E0, psi0 = dmrg_ground(
             H,
             psi0;
@@ -355,8 +369,10 @@ function run_trajectory_cpu(;
             cutoff,
             noise,
             outputlevel,
+            observer=ground_observer,
         )
 
+        neutral_observer = initial_dmrg_observer(k, energy_tol)
         Eneu, psi_neutral = dmrg_excited(
             H,
             [psi0],
@@ -367,9 +383,11 @@ function run_trajectory_cpu(;
             noise,
             weight,
             outputlevel,
+            observer=neutral_observer,
         )
         neutral_overlaps[k] = abs(inner(psi0, psi_neutral))
 
+        spin_observer = initial_dmrg_observer(k, energy_tol)
         Espin, psi_spin = dmrg_ground(
             H,
             psi_spin;
@@ -378,6 +396,13 @@ function run_trajectory_cpu(;
             cutoff,
             noise,
             outputlevel,
+            observer=spin_observer,
+        )
+        nsweeps_used[k] = maximum(
+            dmrg_sweeps_used.(
+                (ground_observer, neutral_observer, spin_observer),
+                Ref(nsweeps),
+            ),
         )
 
         E0s[k] = E0
@@ -468,7 +493,7 @@ function run_trajectory_gpu(;
     nflux,
     nsweeps_initial,
     nsweeps_intermediate,
-    nsweeps_final,
+    energy_tol,
     maxdim,
     cutoff,
     weight,
@@ -492,10 +517,12 @@ function run_trajectory_gpu(;
     nsweeps_used = zeros(Int, length(fluxes))
 
     for (k, theta) in enumerate(fluxes)
-        nsweeps = scheduled_nsweeps(k, length(fluxes), nsweeps_initial, nsweeps_intermediate, nsweeps_final)
-        nsweeps_used[k] = nsweeps
+        nsweeps = scheduled_nsweeps(k, nsweeps_initial, nsweeps_intermediate)
         println("Flux step $k / $(length(fluxes)): theta = $theta ($(theta / pi) * pi)")
         println("nsweeps = $nsweeps")
+        if k == 1
+            println("Using DMRGObserver energy_tol = $energy_tol")
+        end
         H = cu(
             MPO(
                 triangular_model_YC_flux(
@@ -514,6 +541,7 @@ function run_trajectory_gpu(;
             ),
         )
 
+        ground_observer = initial_dmrg_observer(k, energy_tol)
         E0, psi0 = dmrg_ground(
             H,
             psi0;
@@ -522,8 +550,10 @@ function run_trajectory_gpu(;
             cutoff,
             noise,
             outputlevel,
+            observer=ground_observer,
         )
 
+        excited_observer = initial_dmrg_observer(k, energy_tol)
         E1, psi1 = dmrg_excited(
             H,
             [psi0],
@@ -534,6 +564,10 @@ function run_trajectory_gpu(;
             noise,
             weight,
             outputlevel,
+            observer=excited_observer,
+        )
+        nsweeps_used[k] = maximum(
+            dmrg_sweeps_used.((ground_observer, excited_observer), Ref(nsweeps)),
         )
 
         psi0_cpu = ITensors.cpu(psi0)
@@ -607,9 +641,9 @@ function main(;
     yc_shift=0,
     theta_pi=1.0,
     nflux=9,
-    nsweeps_initial=10,
+    nsweeps_initial=40,
     nsweeps_intermediate=2,
-    nsweeps_final=10,
+    energy_tol=1e-6,
     cutoff=1e-10,
     maxdim=512,
     weight=20.0,
@@ -652,7 +686,7 @@ function main(;
             nflux,
             nsweeps_initial,
             nsweeps_intermediate,
-            nsweeps_final,
+            energy_tol,
             maxdim,
             cutoff,
             weight,
@@ -677,7 +711,7 @@ function main(;
             nflux,
             nsweeps_initial,
             nsweeps_intermediate,
-            nsweeps_final,
+            energy_tol,
             maxdim,
             cutoff,
             weight,
@@ -700,7 +734,7 @@ ITensors.Strided.set_num_threads(1)
 if abspath(PROGRAM_FILE) == @__FILE__
     if length(ARGS) < 6
         error(
-            "Usage: julia ground_state_search_flux_threaded.jl C L J2 Delta theta_over_pi maxdim [nflux=9] [nsweeps_initial=10] [nsweeps_intermediate=2] [nsweeps_final=10] [yc_shift=0] [use_gpu=false] [output_dir]",
+            "Usage: julia ground_state_search_flux_threaded.jl C L J2 Delta theta_over_pi maxdim [nflux=9] [nsweeps_initial=40] [nsweeps_intermediate=2] [energy_tol=1e-6] [yc_shift=0] [use_gpu=false] [output_dir]",
         )
     end
 
@@ -711,9 +745,9 @@ if abspath(PROGRAM_FILE) == @__FILE__
     theta_pi = parse(Float64, ARGS[5])
     maxdim = parse(Int, ARGS[6])
     nflux = length(ARGS) >= 7 ? parse(Int, ARGS[7]) : 9
-    nsweeps_initial = length(ARGS) >= 8 ? parse(Int, ARGS[8]) : 10
+    nsweeps_initial = length(ARGS) >= 8 ? parse(Int, ARGS[8]) : 40
     nsweeps_intermediate = length(ARGS) >= 9 ? parse(Int, ARGS[9]) : 2
-    nsweeps_final = length(ARGS) >= 10 ? parse(Int, ARGS[10]) : 10
+    energy_tol = length(ARGS) >= 10 ? parse(Float64, ARGS[10]) : 1e-6
     yc_shift = 0
     use_gpu = false
     output_dir = default_output_dir()
@@ -748,7 +782,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
         nflux,
         nsweeps_initial,
         nsweeps_intermediate,
-        nsweeps_final,
+        energy_tol,
         use_gpu,
         output_dir,
     )
