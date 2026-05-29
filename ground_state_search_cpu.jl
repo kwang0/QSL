@@ -6,6 +6,17 @@ using PyPlot
 using HDF5
 using LinearAlgebra
 
+function entropy_von_neumann(ψ, b)
+  ψ = orthogonalize(ψ, b)
+  U,S,V = svd(ψ[b], (linkinds(ψ, b-1)..., siteinds(ψ, b)...))
+  SvN = 0.0
+  for n=1:dim(S, 1)
+    p = S[n,n]^2
+    SvN -= p * log(p)
+  end
+  return SvN
+end
+
 # Converts index into physical coordinate on triangular lattice (centers MPS site N/2 at coord (0,0))
 function coord(i, C, L)
     y = (i-1) % C
@@ -194,47 +205,44 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cu
     H = MPO(triangular_model(C, L, J1, J2, B, Bperp, Δ1, Δ2), sites)
 
     nsweeps = 20
-    nsamples = 5
-
-    Emin = 1000000
+    energy_tol = 1e-6
 
     state = [isodd(n) ? "Up" : "Dn" for n=1:N]
-    ψ_min = randomMPS(sites, state, linkdims = 16)
 
     # B_sat = 4.5
     # N_spinup = ((B * N / 2) ÷ B_sat) + (N ÷ 2) # Naive guess for magnetization
     # state = [n ≤ N_spinup ? "Up" : "Dn" for n=1:N]
 
-    Ms = Float64[]
-    for i in 1:nsamples
-        GC.gc()
-        ψ = randomMPS(sites, state, linkdims = 16)
+    Ss = Float64[]
+    GC.gc()
+    ψ = randomMPS(sites, state, linkdims = 16)
+    observer = ITensorMPS.DMRGObserver(; energy_tol=energy_tol)
 
-        E0, ψ0 = dmrg(H, ψ; nsweeps, maxdim, cutoff)
+    E0, ψ0 = dmrg(H, ψ; nsweeps, maxdim, cutoff, observer)
 
-        println("E0 = $E0")
-        Zs = expect(ψ0, "Sz")
-        Zs .*= 2
-        M = sum(Zs)
-        println("M = $M")
-        push!(Ms, M)
-        
-        if E0 < Emin
-            Emin = E0
-            ψ_min = ψ0
-        end
+    println("E0 = $E0")
+    Zs = Array(expect(ψ0, "Sz"))
 
-        F = h5open(filename,"w")
-        F["Ms"] = Ms
-        F["psi0"] = ψ_min
-        F["E0"] = Emin
-        close(F)
-    end
+    S = entropy_von_neumann(ψ0, div(N, 2))
+    println("S = $S")
+    push!(Ss, S)
+    corrs = correlation_matrix(ψ0, "Sz", "Sz")
+
+    F = h5open(filename,"w")
+    F["Ss"] = Ss
+    F["Zs"] = Zs
+    F["corrs"] = corrs
+    F["psi0"] = ψ0
+    F["E0"] = E0
+    close(F)
 end
 
-ITensors.Strided.set_num_threads(1)
-BLAS.set_num_threads(256)
-# ITensors.enable_threaded_blocksparse(true)
+# ITensors.Strided.set_num_threads(1)
+# BLAS.set_num_threads(256)
+
+BLAS.set_num_threads(1)
+ITensors.Strided.disable_threads()
+ITensors.enable_threaded_blocksparse()
 
 C = parse(Int64, ARGS[1])
 L = parse(Int64, ARGS[2])
