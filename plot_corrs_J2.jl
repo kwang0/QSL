@@ -16,6 +16,27 @@ function yc_center_site(C::Integer, L::Integer)
     return (center_col - 1) * C + center_row
 end
 
+center_site(C::Integer, L::Integer) = yc_center_site(C, L)
+
+function normalize_geometry(geometry)
+    geom = Symbol(uppercase(String(geometry)))
+    geom in (:YC, :XC) || error("Unsupported geometry `$geometry`. Use :YC or :XC.")
+    return geom
+end
+
+geometry_label(geometry) = String(normalize_geometry(geometry))
+
+function ground_state_search_prefix(C::Integer, L::Integer; geometry = :YC)
+    geom = normalize_geometry(geometry)
+    if geom === :YC
+        return "ground_state_search_YC_C$(C)_L$(L)_J"
+    elseif geom === :XC
+        return "ground_state_search_C$(C)_L$(L)_J"
+    end
+
+    error("Unsupported geometry `$geometry`. Use :YC or :XC.")
+end
+
 function discover_ground_state_search_files_for_corrs(
     C::Integer,
     L::Integer;
@@ -23,8 +44,10 @@ function discover_ground_state_search_files_for_corrs(
     delta1::Real = 1.0,
     delta2::Real = 1.0,
     chi::Integer = 512,
+    geometry = :YC,
 )
-    prefix = "ground_state_search_YC_C$(C)_L$(L)_J"
+    geom = normalize_geometry(geometry)
+    prefix = ground_state_search_prefix(C, L; geometry = geom)
     suffix = "_1Delta$(delta1)_2Delta$(delta2)_chi$(chi).h5"
     file_map = Dict{Float64, String}()
 
@@ -36,7 +59,7 @@ function discover_ground_state_search_files_for_corrs(
         end
     end
 
-    isempty(file_map) && error("No matching ground-state search files were found in $directory.")
+    isempty(file_map) && error("No matching $(geometry_label(geom)) ground-state search files were found in $directory.")
     return file_map
 end
 
@@ -127,6 +150,32 @@ function triangular_yc_positions(C::Integer, L::Integer)
     return xs, ys
 end
 
+function triangular_xc_positions(C::Integer, L::Integer)
+    xs = Matrix{Float64}(undef, C, L)
+    ys = Matrix{Float64}(undef, C, L)
+
+    for col in 1:L
+        for row in 1:C
+            row0 = row - 1
+            xs[row, col] = (col - 1) + 0.5 * isodd(row0)
+            ys[row, col] = row0 * SQRT3 / 2
+        end
+    end
+
+    return xs, ys
+end
+
+function triangular_positions(C::Integer, L::Integer; geometry = :YC)
+    geom = normalize_geometry(geometry)
+    if geom === :YC
+        return triangular_yc_positions(C, L)
+    elseif geom === :XC
+        return triangular_xc_positions(C, L)
+    end
+
+    error("Unsupported geometry `$geometry`. Use :YC or :XC.")
+end
+
 function draw_triangular_yc_bonds!(ax, xs::AbstractMatrix, ys::AbstractMatrix)
     C, L = size(xs)
 
@@ -151,6 +200,49 @@ function draw_triangular_yc_bonds!(ax, xs::AbstractMatrix, ys::AbstractMatrix)
     end
 
     return nothing
+end
+
+function draw_triangular_xc_bonds!(ax, xs::AbstractMatrix, ys::AbstractMatrix)
+    C, L = size(xs)
+
+    for col in 1:L
+        for row in 1:C
+            x0 = xs[row, col]
+            y0 = ys[row, col]
+
+            if row < C
+                ax.plot([x0, xs[row + 1, col]], [y0, ys[row + 1, col]]; color = "0.85", linewidth = 0.8, zorder = 0)
+            end
+            if col < L
+                ax.plot([x0, xs[row, col + 1]], [y0, ys[row, col + 1]]; color = "0.85", linewidth = 0.8, zorder = 0)
+            end
+            if col < L && iseven(row)
+                for diag_row in (row - 1, row + 1)
+                    if 1 <= diag_row <= C
+                        ax.plot([x0, xs[diag_row, col + 1]], [y0, ys[diag_row, col + 1]]; color = "0.85", linewidth = 0.8, zorder = 0)
+                    end
+                end
+            end
+        end
+    end
+
+    return nothing
+end
+
+function draw_triangular_bonds!(ax, xs::AbstractMatrix, ys::AbstractMatrix; geometry = :YC)
+    geom = normalize_geometry(geometry)
+    if geom === :YC
+        return draw_triangular_yc_bonds!(ax, xs, ys)
+    elseif geom === :XC
+        return draw_triangular_xc_bonds!(ax, xs, ys)
+    end
+
+    error("Unsupported geometry `$geometry`. Use :YC or :XC.")
+end
+
+function triangular_axis_labels(geometry)
+    geom_label = geometry_label(geometry)
+    return ("Open $(geom_label) direction", "Wrapped $(geom_label) direction")
 end
 
 function corrs_colorbar_label(component::Symbol)
@@ -214,7 +306,9 @@ function create_corr_artist!(
     color_norm,
     reference_site::Integer,
     site_marker_size::Real,
+    geometry = :YC,
 )
+    geom = normalize_geometry(geometry)
     if plot_mode === :image
         if isnothing(color_norm)
             artist = ax.imshow(
@@ -234,12 +328,13 @@ function create_corr_artist!(
                 aspect = "auto",
             )
         end
-        ax.set_xlabel("Cylinder length index")
-        ax.set_ylabel("Circumference index")
+        geom_label = geometry_label(geom)
+        ax.set_xlabel("$(geom_label) length index")
+        ax.set_ylabel("$(geom_label) circumference index")
         return artist
     elseif plot_mode === :triangular
-        xs, ys = triangular_yc_positions(C, L)
-        draw_triangular_yc_bonds!(ax, xs, ys)
+        xs, ys = triangular_positions(C, L; geometry = geom)
+        draw_triangular_bonds!(ax, xs, ys; geometry = geom)
 
         if isnothing(color_norm)
             artist = ax.scatter(
@@ -284,8 +379,9 @@ function create_corr_artist!(
             zorder = 3,
         )
 
-        ax.set_xlabel("Open YC direction")
-        ax.set_ylabel("Wrapped YC direction")
+        xlabel, ylabel = triangular_axis_labels(geom)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
         ax.set_aspect("equal")
         ax.set_xlim(minimum(xs) - 0.8, maximum(xs) + 0.8)
         ax.set_ylim(minimum(ys) - 0.8, maximum(ys) + 0.8)
@@ -312,6 +408,7 @@ function format_corrs_title(
     C::Integer;
     component::Symbol = :real,
     corrs_dataset::AbstractString = "corrs",
+    geometry = :YC,
 )
     row = site_row(reference_site, C)
     col = site_col(reference_site, C)
@@ -322,7 +419,7 @@ function format_corrs_title(
     rounded_J2 = round(J2_value, digits = 3)
     dataset_suffix = corrs_dataset == "corrs" ? "" : " [$corrs_dataset]"
     return component_label * raw"($\langle S_i^z S_j^z \rangle$)" *
-           ", central site (row = $(row), col = $(col))" *
+           ", $(geometry_label(geometry)) central site (row = $(row), col = $(col))" *
            dataset_suffix * ", " * raw"$J_2/J_1$" * " = $(rounded_J2)"
 end
 
@@ -332,6 +429,7 @@ function format_reference_corrs_title(
     component::Symbol = :real,
     corrs_dataset::AbstractString = "corrs",
     state_label::AbstractString = "",
+    geometry = :YC,
 )
     row = site_row(reference_site, C)
     col = site_col(reference_site, C)
@@ -342,7 +440,7 @@ function format_reference_corrs_title(
 
     dataset_suffix = corrs_dataset == "corrs" ? "" : " [$corrs_dataset]"
     title = component_label * raw"($\langle S_i^z S_j^z \rangle$)" *
-            ", central site (row = $(row), col = $(col))" * dataset_suffix
+            ", $(geometry_label(geometry)) central site (row = $(row), col = $(col))" * dataset_suffix
     if !isempty(state_label)
         title *= ", " * state_label
     end
@@ -373,7 +471,9 @@ function plot_corrs_from_file(
     title = nothing,
     state_label::AbstractString = "",
     show_plot::Bool = true,
+    geometry = :YC,
 )
+    geom = normalize_geometry(geometry)
     frame = extract_reference_corrs(
         input_file,
         C,
@@ -398,8 +498,8 @@ function plot_corrs_from_file(
     resolved_title =
         isnothing(title) ?
         (isnothing(inferred_J2) ?
-            format_reference_corrs_title(reference_site, C; component = component, corrs_dataset = corrs_dataset, state_label = state_label) :
-            format_corrs_title(inferred_J2, reference_site, C; component = component, corrs_dataset = corrs_dataset)
+            format_reference_corrs_title(reference_site, C; component = component, corrs_dataset = corrs_dataset, state_label = state_label, geometry = geom) :
+            format_corrs_title(inferred_J2, reference_site, C; component = component, corrs_dataset = corrs_dataset, geometry = geom)
         ) :
         String(title)
 
@@ -415,6 +515,7 @@ function plot_corrs_from_file(
         color_norm = color_scale.norm,
         reference_site = reference_site,
         site_marker_size = site_marker_size,
+        geometry = geom,
     )
     colorbar(image, ax = ax, label = corrs_colorbar_label(component))
     ax.set_title(resolved_title)
@@ -436,6 +537,7 @@ function plot_corrs_from_file(
         site_marker_size = site_marker_size,
         input_file = input_file,
         corrs_dataset = corrs_dataset,
+        geometry = geom,
     )
 end
 
@@ -458,7 +560,9 @@ function plot_corrs_J2_slider(
     symlog_linthresh = nothing,
     site_marker_size::Real = 100,
     show_plot::Bool = true,
+    geometry = :YC,
 )
+    geom = normalize_geometry(geometry)
     file_map = discover_ground_state_search_files_for_corrs(
         C,
         L;
@@ -466,6 +570,7 @@ function plot_corrs_J2_slider(
         delta1 = delta1,
         delta2 = delta2,
         chi = chi,
+        geometry = geom,
     )
     J2_values = sort(collect(keys(file_map)))
 
@@ -509,9 +614,10 @@ function plot_corrs_J2_slider(
         color_norm = color_scale.norm,
         reference_site = reference_site,
         site_marker_size = site_marker_size,
+        geometry = geom,
     )
     colorbar(image, ax = ax, label = corrs_colorbar_label(component))
-    ax.set_title(format_corrs_title(J2_values[1], reference_site, C; component = component, corrs_dataset = corrs_dataset))
+    ax.set_title(format_corrs_title(J2_values[1], reference_site, C; component = component, corrs_dataset = corrs_dataset, geometry = geom))
 
     fig.subplots_adjust(left = 0.10, right = 0.90, top = 0.88, bottom = 0.22)
     ax_slider = fig.add_axes([0.20, 0.08, 0.60, 0.05])
@@ -528,7 +634,7 @@ function plot_corrs_J2_slider(
         J2_value = Float64(val)
         frame, _, _, _ = interpolate_corr_grid(corr_stack, J2_values, J2_value)
         update_corr_artist!(image, frame; plot_mode = plot_mode)
-        ax.set_title(format_corrs_title(J2_value, reference_site, C; component = component, corrs_dataset = corrs_dataset))
+        ax.set_title(format_corrs_title(J2_value, reference_site, C; component = component, corrs_dataset = corrs_dataset, geometry = geom))
         fig.canvas.draw_idle()
         return nothing
     end
@@ -553,6 +659,7 @@ function plot_corrs_J2_slider(
         logscale = logscale,
         plot_mode = plot_mode,
         site_marker_size = site_marker_size,
+        geometry = geom,
     )
 end
 
@@ -578,7 +685,9 @@ function export_corrs_J2_gif(
     fps::Integer = 10,
     frames_per_interval::Integer = 4,
     hold_frames::Integer = 1,
+    geometry = :YC,
 )
+    geom = normalize_geometry(geometry)
     viewer = plot_corrs_J2_slider(
         C,
         L;
@@ -598,6 +707,7 @@ function export_corrs_J2_gif(
         symlog_linthresh = symlog_linthresh,
         site_marker_size = site_marker_size,
         show_plot = false,
+        geometry = geom,
     )
 
     J2_values = viewer.J2_values
@@ -627,9 +737,10 @@ function export_corrs_J2_gif(
         color_norm = color_scale.norm,
         reference_site = reference_site,
         site_marker_size = site_marker_size,
+        geometry = geom,
     )
     colorbar(image, ax = ax, label = corrs_colorbar_label(component))
-    ax.set_title(format_corrs_title(J2_values[1], reference_site, C; component = component, corrs_dataset = corrs_dataset))
+    ax.set_title(format_corrs_title(J2_values[1], reference_site, C; component = component, corrs_dataset = corrs_dataset, geometry = geom))
     fig.subplots_adjust(left = 0.10, right = 0.90, top = 0.88, bottom = 0.16)
 
     tempdir = mktempdir()
@@ -640,7 +751,7 @@ function export_corrs_J2_gif(
         function save_current_frame!(J2_value::Real)
             frame, _, _, _ = interpolate_corr_grid(corr_stack, J2_values, J2_value)
             update_corr_artist!(image, frame; plot_mode = plot_mode)
-            ax.set_title(format_corrs_title(J2_value, reference_site, C; component = component, corrs_dataset = corrs_dataset))
+            ax.set_title(format_corrs_title(J2_value, reference_site, C; component = component, corrs_dataset = corrs_dataset, geometry = geom))
             fig.canvas.draw()
             path = joinpath(tempdir, "frame_" * lpad(string(frame_counter), 4, '0') * ".png")
             savefig(path, dpi = 160, bbox_inches = "tight")

@@ -208,28 +208,41 @@ function main(; C=4, L=6, J1=1.0, J2=0.0, B=0.0, Bperp=0.0, Δ1=1.0, Δ2=1.0, cu
     # N_spinup = ((B * N / 2) ÷ B_sat) + (N ÷ 2) # Naive guess for magnetization
     # state = [n ≤ N_spinup ? "Up" : "Dn" for n=1:N]
 
-    Ss = Float64[]
     GC.gc()
     ψ = cu(randomMPS(sites))
     observer = ITensorMPS.DMRGObserver(; energy_tol=energy_tol)
 
     E0, ψ0 = dmrg(H, ψ; nsweeps, maxdim, cutoff, observer)
 
+    sweep_energies = ITensorMPS.energies(observer)
+    sweep_maxerrs = ITensorMPS.truncerrors(observer)
+    final_maxerr = isempty(sweep_maxerrs) ? NaN : sweep_maxerrs[end]
+    H2 = inner(H, ψ0, H, ψ0)
+    energy_variance = real(H2 - E0^2)
+    energy_variance_per_site = energy_variance / N
+
     println("E0 = $E0")
+    println("final maxerr = $final_maxerr")
+    println("energy variance = $energy_variance")
+    println("energy variance per site = $energy_variance_per_site")
     Zs = Array(expect(ψ0, "Sz"))
 
     ψ0_cpu = ITensors.cpu(ψ0)
     S = entropy_von_neumann(ψ0_cpu, div(N, 2))
     println("S = $S")
-    push!(Ss, S)
     corrs = correlation_matrix(ψ0_cpu, "Sz", "Sz")
 
     F = h5open(filename,"w")
-    F["Ss"] = Ss
+    F["S"] = S
     F["Zs"] = Zs
     F["corrs"] = corrs
     F["psi0"] = ψ0_cpu
     F["E0"] = E0
+    F["final_maxerr"] = final_maxerr
+    F["sweep_energies"] = sweep_energies
+    F["sweep_maxerrs"] = sweep_maxerrs
+    F["energy_variance"] = energy_variance
+    F["energy_variance_per_site"] = energy_variance_per_site
     close(F)
 end
 
