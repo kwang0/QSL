@@ -1,12 +1,60 @@
 using MKL
 using ITensors
 using ITensorMPS
-using CUDA
 using HDF5
 using LinearAlgebra
 using Printf
 
 const DEFAULT_SCRATCH_DIR = "/pscratch/sd/k/kwang98/QSL"
+
+function parse_env_int(keys, default)
+    for key in keys
+        if haskey(ENV, key) && !isempty(strip(ENV[key]))
+            return parse(Int, ENV[key])
+        end
+    end
+    return default
+end
+
+function default_blas_threads(; use_gpu=false)
+    use_gpu && return parse_env_int(("JULIA_NUM_BLAS_THREADS", "BLAS_THREADS"), 1)
+    return parse_env_int(
+        (
+            "JULIA_NUM_BLAS_THREADS",
+            "MKL_NUM_THREADS",
+            "OPENBLAS_NUM_THREADS",
+            "OMP_NUM_THREADS",
+            "SLURM_CPUS_PER_TASK",
+        ),
+        min(Sys.CPU_THREADS, 256),
+    )
+end
+
+function default_strided_threads()
+    return parse_env_int(("ITENSOR_STRIDED_THREADS", "NDTENSORS_STRIDED_THREADS"), 1)
+end
+
+function configure_threading!(; use_gpu=false, blas_threads=default_blas_threads(; use_gpu), strided_threads=default_strided_threads())
+    blas_threads >= 1 || error("blas_threads must be >= 1")
+    strided_threads >= 1 || error("strided_threads must be >= 1")
+
+    BLAS.set_num_threads(blas_threads)
+    try
+        ITensors.NDTensors.Strided.set_num_threads(strided_threads)
+    catch err
+        @warn "Could not set ITensors.NDTensors.Strided thread count" exception = err
+    end
+
+    active_strided_threads = try
+        ITensors.NDTensors.Strided.get_num_threads()
+    catch
+        missing
+    end
+    println(
+        "Threading: Julia=$(Threads.nthreads()), BLAS=$(BLAS.get_num_threads()), ITensors.Strided=$(active_strided_threads)",
+    )
+    return (; blas_threads=BLAS.get_num_threads(), strided_threads=active_strided_threads)
+end
 
 # Convert row/column labels to the MPS index, with periodic rows.
 function idx(row, col, C)
@@ -197,6 +245,8 @@ function save_both_gap_results(
     cutoff,
     nsweeps,
     weight,
+    blas_threads,
+    strided_threads,
     psi0,
     psi_neutral,
     psi_spin,
@@ -229,6 +279,10 @@ function save_both_gap_results(
         F["cutoff"] = cutoff
         F["nsweeps"] = nsweeps
         F["weight"] = weight
+        F["blas_threads"] = blas_threads
+        if strided_threads !== missing
+            F["strided_threads"] = strided_threads
+        end
         F["psi0"] = psi0
         F["psi_neutral"] = psi_neutral
         F["psi_spin"] = psi_spin
@@ -258,6 +312,8 @@ function save_single_gap_results(
     cutoff,
     nsweeps,
     weight,
+    blas_threads,
+    strided_threads,
     psi0,
     psi1,
 )
@@ -284,6 +340,10 @@ function save_single_gap_results(
         F["cutoff"] = cutoff
         F["nsweeps"] = nsweeps
         F["weight"] = weight
+        F["blas_threads"] = blas_threads
+        if strided_threads !== missing
+            F["strided_threads"] = strided_threads
+        end
         F["psi0"] = psi0
         F["psi1"] = psi1
     end
@@ -314,6 +374,8 @@ function run_trajectory_cpu(;
     initial_linkdim,
     conserve_qns,
     outputlevel,
+    blas_threads,
+    strided_threads,
 )
     N = C * L
     theta_final = pi * theta_pi
@@ -453,6 +515,8 @@ function run_trajectory_cpu(;
             cutoff,
             nsweeps=nsweeps_used[1:k],
             weight,
+            blas_threads,
+            strided_threads,
             psi0,
             psi_neutral,
             psi_spin,
@@ -499,6 +563,8 @@ function run_trajectory_gpu(;
     weight,
     noise,
     outputlevel,
+    blas_threads,
+    strided_threads,
 )
     N = C * L
     theta_final = pi * theta_pi
@@ -610,6 +676,8 @@ function run_trajectory_gpu(;
             cutoff,
             nsweeps=nsweeps_used[1:k],
             weight,
+            blas_threads,
+            strided_threads,
             psi0=psi0_cpu,
             psi1=psi1_cpu,
         )
@@ -655,6 +723,8 @@ function main(;
     use_gpu=false,
     output_dir=default_output_dir(),
     outputlevel=1,
+    blas_threads=default_blas_threads(; use_gpu),
+    strided_threads=default_strided_threads(),
 )
     if !use_gpu && Bperp != 0.0
         error("Bperp uses Sx and breaks total Sz conservation; this CPU script always uses QN sectors")
@@ -662,7 +732,7 @@ function main(;
     if use_gpu
         @eval using CUDA
     end
-    BLAS.set_num_threads(use_gpu ? 1 : 256)
+    threading = configure_threading!(; use_gpu, blas_threads, strided_threads)
 
     mkpath(output_dir)
     label = use_gpu ? "gap" : "bothgaps"
@@ -692,6 +762,8 @@ function main(;
             weight,
             noise,
             outputlevel,
+            blas_threads=threading.blas_threads,
+            strided_threads=threading.strided_threads,
         )
         println("Final E0 = $(result.E0s[end])")
         println("Final gap = $(result.gaps[end])")
@@ -721,6 +793,8 @@ function main(;
             initial_linkdim,
             conserve_qns,
             outputlevel,
+            blas_threads=threading.blas_threads,
+            strided_threads=threading.strided_threads,
         )
         println("Final E0 = $(result.E0s[end])")
         println("Final neutral gap = $(result.neutral_gaps[end])")
@@ -728,8 +802,6 @@ function main(;
     end
     return final_filename
 end
-
-ITensors.Strided.set_num_threads(1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     if length(ARGS) < 6

@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH -c 256
 #SBATCH -t 24:00:00
-#SBATCH -J finite-flux-cpu
+#SBATCH -J vumps-flux-cpu
 #SBATCH -o ./logs_slurm/slurm-%x-%j.out
 
 set -euo pipefail
@@ -17,20 +17,18 @@ cd "${SLURM_SUBMIT_DIR:-$PWD}"
 mkdir -p logs_cpu logs_slurm
 
 C=${1:-6}
-L=${2:-36}
-J2=${3:-0.12}
-DELTA=${4:-1.0}
-THETA_PI=${5:-1.0}
-MAXDIM=${6:-512}
-NFLUX=${7:-9}
-NSWEEPS_INITIAL=${8:-40}
-NSWEEPS_INTERMEDIATE=${9:-2}
-ENERGY_TOL=${10:-1e-6}
-YC_SHIFT=${11:-0}
+J2=${2:-0.12}
+THETA_PI=${3:-2.0}
+MAXDIM=${4:-512}
+NFLUX=${5:-17}
+YC_SHIFT=${6:-0}
+CUTOFF=${7:-1e-10}
+VUMPS_TOL=${8:-1e-8}
+MAX_VUMPS_ITERS=${9:-50}
+NEIGS=${10:-32}
 DEFAULT_OUTPUT_DIR="${PSCRATCH:-/pscratch/sd/k/kwang98}/QSL"
-OUTPUT_DIR="${12:-$DEFAULT_OUTPUT_DIR}"
+OUTPUT_DIR="${11:-$DEFAULT_OUTPUT_DIR}"
 
-USE_GPU=false
 CPUS_PER_TASK="${SLURM_CPUS_PER_TASK:-256}"
 BLAS_THREADS="${BLAS_THREADS:-$CPUS_PER_TASK}"
 ITENSOR_STRIDED_THREADS="${ITENSOR_STRIDED_THREADS:-1}"
@@ -53,7 +51,7 @@ export JULIA_PKG_PRECOMPILE_AUTO="${JULIA_PKG_PRECOMPILE_AUTO:-0}"
 
 mkdir -p "$OUTPUT_DIR"
 
-JOB_TAG="ground_state_search_flux_threaded_YC${C}-${YC_SHIFT}_L${L}_J${J2}_1Delta${DELTA}_2Delta${DELTA}_thetaPi${THETA_PI}_bothgaps_chi${MAXDIM}_nflux${NFLUX}"
+JOB_TAG="ground_state_search_flux_threaded_vumps_YC${C}-${YC_SHIFT}_J${J2}_thetaPi${THETA_PI}_chi${MAXDIM}_nflux${NFLUX}"
 LOG="logs_cpu/${JOB_TAG}_${SLURM_JOB_ID:-manual}.txt"
 
 {
@@ -61,8 +59,8 @@ LOG="logs_cpu/${JOB_TAG}_${SLURM_JOB_ID:-manual}.txt"
     echo "Host: $(hostname)"
     echo "SLURM_JOB_ID: ${SLURM_JOB_ID:-manual}"
     echo "SLURM_CPUS_PER_TASK: ${SLURM_CPUS_PER_TASK:-unset}"
-    echo "C=$C L=$L J2=$J2 Delta=$DELTA theta/pi=$THETA_PI maxdim=$MAXDIM nflux=$NFLUX yc_shift=$YC_SHIFT"
-    echo "nsweeps_initial=$NSWEEPS_INITIAL nsweeps_intermediate=$NSWEEPS_INTERMEDIATE energy_tol=$ENERGY_TOL"
+    echo "C=$C J2=$J2 theta/pi=$THETA_PI maxdim=$MAXDIM nflux=$NFLUX yc_shift=$YC_SHIFT"
+    echo "cutoff=$CUTOFF vumps_tol=$VUMPS_TOL max_vumps_iters=$MAX_VUMPS_ITERS neigs=$NEIGS"
     echo "output_dir=$OUTPUT_DIR"
     echo "Julia threads=$JULIA_NUM_THREADS BLAS threads=$BLAS_THREADS ITensor Strided threads=$ITENSOR_STRIDED_THREADS"
     echo "OMP_PROC_BIND=$OMP_PROC_BIND OMP_PLACES=$OMP_PLACES"
@@ -77,10 +75,9 @@ srun \
     --startup-file=no \
     --threads="$JULIA_NUM_THREADS" \
     --heap-size-hint="$HEAP_SIZE_HINT" \
-    ground_state_search_flux_threaded.jl \
-    "$C" "$L" "$J2" "$DELTA" "$THETA_PI" "$MAXDIM" \
-    "$NFLUX" "$NSWEEPS_INITIAL" "$NSWEEPS_INTERMEDIATE" "$ENERGY_TOL" \
-    "$YC_SHIFT" "$USE_GPU" "$OUTPUT_DIR" \
+    ground_state_search_flux_threaded_vumps.jl \
+    "$C" "$J2" "$THETA_PI" "$MAXDIM" "$NFLUX" "$YC_SHIFT" \
+    "$CUTOFF" "$VUMPS_TOL" "$MAX_VUMPS_ITERS" "$NEIGS" "$OUTPUT_DIR" \
     >> "$LOG" 2>&1
 
 echo "Job finished: $(date)" >> "$LOG"

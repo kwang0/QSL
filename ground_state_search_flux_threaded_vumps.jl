@@ -26,6 +26,54 @@ function default_output_dir()
     return isdir(DEFAULT_SCRATCH_DIR) ? DEFAULT_SCRATCH_DIR : "processed_data"
 end
 
+function parse_env_int(keys, default)
+    for key in keys
+        if haskey(ENV, key) && !isempty(strip(ENV[key]))
+            return parse(Int, ENV[key])
+        end
+    end
+    return default
+end
+
+function default_blas_threads()
+    return parse_env_int(
+        (
+            "JULIA_NUM_BLAS_THREADS",
+            "MKL_NUM_THREADS",
+            "OPENBLAS_NUM_THREADS",
+            "OMP_NUM_THREADS",
+            "SLURM_CPUS_PER_TASK",
+        ),
+        min(Sys.CPU_THREADS, 256),
+    )
+end
+
+function default_strided_threads()
+    return parse_env_int(("ITENSOR_STRIDED_THREADS", "NDTENSORS_STRIDED_THREADS"), 1)
+end
+
+function configure_threading!(; blas_threads=default_blas_threads(), strided_threads=default_strided_threads())
+    blas_threads >= 1 || error("blas_threads must be >= 1")
+    strided_threads >= 1 || error("strided_threads must be >= 1")
+
+    BLAS.set_num_threads(blas_threads)
+    try
+        ITensors.NDTensors.Strided.set_num_threads(strided_threads)
+    catch err
+        @warn "Could not set ITensors.NDTensors.Strided thread count" exception = err
+    end
+
+    active_strided_threads = try
+        ITensors.NDTensors.Strided.get_num_threads()
+    catch
+        missing
+    end
+    println(
+        "Threading: Julia=$(Threads.nthreads()), BLAS=$(BLAS.get_num_threads()), ITensors.Strided=$(active_strided_threads)",
+    )
+    return (; blas_threads=BLAS.get_num_threads(), strided_threads=active_strided_threads)
+end
+
 # Site numbering for one infinite-MPS unit cell equal to one YC column:
 # row = 0:(C - 1), col = 0 is the home unit cell, col = 1 is the next cell.
 function idx(row, col, C)
@@ -100,6 +148,7 @@ function triangular_yc_flux_opsum(
     yc_shift=0,
     B=0.0,
     Bperp=0.0,
+    bonds=yc_unit_cell_bonds(C, yc_shift),
 )
     os = OpSum()
 
@@ -119,7 +168,7 @@ function triangular_yc_flux_opsum(
         end
     end
 
-    for bond in yc_unit_cell_bonds(C, yc_shift)
+    for bond in bonds
         if bond.family == :NN
             os = add_twisted_heisenberg_bond!(
                 os,
@@ -168,6 +217,7 @@ function build_hamiltonian(
     yc_shift,
     B,
     Bperp,
+    bonds,
 )
     os = triangular_yc_flux_opsum(
         C,
@@ -179,6 +229,7 @@ function build_hamiltonian(
         yc_shift,
         B,
         Bperp,
+        bonds,
     )
     return InfiniteSum{MPO}(os, sites)
 end
@@ -278,8 +329,7 @@ function output_filename(output_dir, C, yc_shift, J2, Delta1, Delta2, theta_pi, 
     )
 end
 
-function write_bond_table!(F, C, yc_shift)
-    bonds = yc_unit_cell_bonds(C, yc_shift)
+function write_bond_table!(F, bonds)
     group = create_group(F, "unit_cell_bonds")
     group["family"] = string.([b.family for b in bonds])
     group["row"] = [b.row for b in bonds]
@@ -323,6 +373,9 @@ function save_results(
     max_vumps_iters,
     outer_iters_initial,
     conserve_qns,
+    blas_threads,
+    strided_threads,
+    bonds,
 )
     h5open(filename, "w") do F
         F["C"] = C
@@ -353,7 +406,11 @@ function save_results(
         F["max_vumps_iters"] = max_vumps_iters
         F["outer_iters_initial"] = outer_iters_initial
         F["conserve_qns"] = conserve_qns
-        write_bond_table!(F, C, yc_shift)
+        F["blas_threads"] = blas_threads
+        if strided_threads !== missing
+            F["strided_threads"] = strided_threads
+        end
+        write_bond_table!(F, bonds)
     end
     return filename
 end
@@ -388,19 +445,22 @@ function run_trajectory(;
     transfer_tol=1e-10,
     output_dir=default_output_dir(),
     outputlevel=1,
+    blas_threads=default_blas_threads(),
+    strided_threads=default_strided_threads(),
 )
     if conserve_qns && Bperp != 0.0
         error("Bperp uses Sx and breaks Sz conservation; set conserve_qns=false")
     end
 
     mkpath(output_dir)
-    BLAS.set_num_threads(256)
+    threading = configure_threading!(; blas_threads, strided_threads)
 
     theta_final = pi * theta_pi
     fluxes = nflux == 1 ? [theta_final] : collect(range(0.0, theta_final; length=nflux))
 
     sites = build_sites(C; conserve_qns)
     psi = InfMPS(sites, initial_state)
+    bonds = yc_unit_cell_bonds(C, yc_shift)
 
     energy_densities = zeros(Float64, nflux)
     energy_terms = zeros(Float64, C, nflux)
@@ -439,6 +499,7 @@ function run_trajectory(;
             yc_shift,
             B,
             Bperp,
+            bonds,
         )
 
         psi = run_vumps_update(
@@ -520,6 +581,9 @@ function run_trajectory(;
             max_vumps_iters,
             outer_iters_initial,
             conserve_qns,
+            blas_threads=threading.blas_threads,
+            strided_threads=threading.strided_threads,
+            bonds,
         )
         println("Saved trajectory through theta/pi = $theta_step_pi to $filename")
     end
