@@ -361,12 +361,15 @@ mutable struct CheckpointDMRGObserver <: ITensorMPS.AbstractObserver
     sweep_offset::Int
     previous_sweep_energies::Vector{Float64}
     previous_sweep_maxerrs::Vector{Float64}
+    energy_tol::Float64
+    minsweeps::Int
     checkpoint_kwargs::NamedTuple
 end
 
 function CheckpointDMRGObserver(
     checkpoint_file;
     energy_tol,
+    minsweeps = 2,
     sweep_offset = 0,
     previous_sweep_energies = Float64[],
     previous_sweep_maxerrs = Float64[],
@@ -378,8 +381,18 @@ function CheckpointDMRGObserver(
         sweep_offset,
         previous_sweep_energies,
         previous_sweep_maxerrs,
+        energy_tol,
+        minsweeps,
         (; checkpoint_kwargs...),
     )
+end
+
+function dmrg_energy_converged(sweep_energies, energy_tol; minsweeps = 2)
+    if length(sweep_energies) <= minsweeps || length(sweep_energies) < 2
+        return false
+    end
+
+    return abs(real(sweep_energies[end]) - real(sweep_energies[end - 1])) < energy_tol
 end
 
 function all_sweep_energies(observer::CheckpointDMRGObserver)
@@ -412,7 +425,16 @@ function ITensorMPS.measure!(observer::CheckpointDMRGObserver; kwargs...)
 end
 
 function ITensorMPS.checkdone!(observer::CheckpointDMRGObserver; kwargs...)
-    return ITensorMPS.checkdone!(observer.inner; kwargs...)
+    if dmrg_energy_converged(
+        all_sweep_energies(observer),
+        observer.energy_tol;
+        minsweeps=observer.minsweeps,
+    )
+        get(kwargs, :outputlevel, false) > 0 &&
+            println("Energy difference less than $(observer.energy_tol), stopping DMRG")
+        return true
+    end
+    return false
 end
 
 function main(;
@@ -480,7 +502,8 @@ function main(;
 
     H = MPO(triangular_model(C, L, J1, J2, B, Bperp, Δ1, Δ2), sites)
 
-    remaining_sweeps = max(nsweeps - completed_sweeps, 0)
+    checkpoint_converged = dmrg_energy_converged(previous_sweep_energies, energy_tol)
+    remaining_sweeps = checkpoint_converged ? 0 : max(nsweeps - completed_sweeps, 0)
     observer = CheckpointDMRGObserver(
         checkpoint_file;
         energy_tol=energy_tol,
@@ -502,7 +525,12 @@ function main(;
         initial_psi_dataset=initial_psi_dataset,
     )
 
-    if remaining_sweeps == 0
+    if checkpoint_converged
+        println("Checkpoint energy difference less than $energy_tol; skipping DMRG")
+        flush(stdout)
+        E0 = checkpoint_energy
+        ψ0 = ψ
+    elseif remaining_sweeps == 0
         println("Checkpoint already has $completed_sweeps sweeps; skipping DMRG")
         flush(stdout)
         E0 = checkpoint_energy
