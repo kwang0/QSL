@@ -177,7 +177,7 @@ function discover_ground_state_files(
     chis::AbstractVector{<:Integer},
     geometry::Symbol = :XC,
 )
-    pattern = r"^ground_state_search(_YC)?_C([0-9]+)_L([0-9]+)_J([0-9eE+\-.]+)_1Delta([0-9eE+\-.]+)_2Delta([0-9eE+\-.]+)_chi([0-9]+).*\.h5$"
+    pattern = r"^ground_state_search(_YC)?_C([0-9]+)_L([0-9]+)_J([0-9eE+\-.]+)_1Delta([0-9eE+\-.]+)_2Delta([0-9eE+\-.]+)_chi([0-9]+)\.h5$"
     wanted = Set(Int.(chis))
     files = Dict{Int,String}()
     for path in readdir(directory; join = true)
@@ -540,7 +540,7 @@ function main(args = ARGS)
     L = length(args) >= 3 ? parse(Int, args[3]) : 36
     J2 = length(args) >= 4 ? parse(Float64, args[4]) : 0.043
     delta = length(args) >= 5 ? parse(Float64, args[5]) : 1.0
-    chis = length(args) >= 6 ? parse.(Int, args[6:end]) : [513, 1025, 2049]
+    chis = length(args) >= 6 ? parse.(Int, args[6:end]) : [513, 1025, 2049, 4096]
 
     output_dir = "plots_bond_dim_convergence"
     edge_cols = 4
