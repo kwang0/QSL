@@ -205,6 +205,10 @@ function checkpoint_filename(filename)
     return endswith(filename, ".h5") ? filename[1:(end - 3)] * "_checkpoint.h5" : filename * ".checkpoint.h5"
 end
 
+function postprocess_checkpoint_filename(filename)
+    return endswith(filename, ".h5") ? filename[1:(end - 3)] * "_postprocess_checkpoint.h5" : filename * ".postprocess_checkpoint.h5"
+end
+
 function read_vector_or_empty(F, name)
     return haskey(F, name) ? collect(read(F, name)) : Float64[]
 end
@@ -216,6 +220,24 @@ function parse_bool_arg(arg)
     elseif value in ("false", "f", "0", "no", "n")
         return false
     end
+    return nothing
+end
+
+function parse_bool_env(name, default)
+    if !haskey(ENV, name)
+        return default
+    end
+
+    parsed = parse_bool_arg(ENV[name])
+    if isnothing(parsed)
+        error("Environment variable $name must be a boolean value, got '$(ENV[name])'")
+    end
+    return parsed
+end
+
+function log_step(message)
+    println(message)
+    flush(stdout)
     return nothing
 end
 
@@ -355,6 +377,62 @@ function save_dmrg_checkpoint(
     return nothing
 end
 
+const POSTPROCESS_CHECKPOINT_DATASETS = (
+    "E0",
+    "energy_variance",
+    "energy_variance_per_site",
+    "energy_variance_computed",
+    "Zs",
+    "S",
+    "corrs",
+)
+
+function load_postprocess_checkpoint(postprocess_checkpoint_file)
+    values = Dict{String,Any}()
+    if !isfile(postprocess_checkpoint_file)
+        return values
+    end
+
+    try
+        h5open(postprocess_checkpoint_file, "r") do F
+            for name in POSTPROCESS_CHECKPOINT_DATASETS
+                if haskey(F, name)
+                    values[name] = read(F, name)
+                end
+            end
+        end
+    catch err
+        @warn "Could not read postprocess checkpoint $postprocess_checkpoint_file; recomputing postprocessing outputs" exception = err
+    end
+    return values
+end
+
+function save_postprocess_checkpoint(postprocess_checkpoint_file, values)
+    tmp_postprocess_checkpoint_file = postprocess_checkpoint_file * ".tmp"
+    h5open(tmp_postprocess_checkpoint_file, "w") do F
+        F["postprocess_checkpoint_unix_time"] = time()
+        for (name, value) in values
+            F[name] = value
+        end
+    end
+    replace_checkpoint_file(tmp_postprocess_checkpoint_file, postprocess_checkpoint_file)
+    log_step("Saved postprocess checkpoint to $postprocess_checkpoint_file")
+    return nothing
+end
+
+function get_or_compute_postprocess!(values, postprocess_checkpoint_file, name, description, compute)
+    if haskey(values, name)
+        log_step("Loaded $description from postprocess checkpoint")
+        return values[name]
+    end
+
+    log_step("Computing $description")
+    value = compute()
+    values[name] = value
+    save_postprocess_checkpoint(postprocess_checkpoint_file, values)
+    return value
+end
+
 mutable struct CheckpointDMRGObserver <: ITensorMPS.AbstractObserver
     inner::ITensorMPS.DMRGObserver
     checkpoint_file::String
@@ -456,10 +534,12 @@ function main(;
 
     filename = output_filename(C, L, J2, Δ1, Δ2, maxdim)
     checkpoint_file = checkpoint_filename(filename)
+    postprocess_checkpoint_file = postprocess_checkpoint_filename(filename)
     # filename = "/pscratch/sd/k/kwang98/QSL/ground_state_search_C$(C)_L$(L)_J$(J2)_B$(B)_Bperp$(Bperp)_1Delta$(Δ1)_2Delta$(Δ2)_chi$(maxdim).h5"
 
     nsweeps = 20
     energy_tol = 1e-6
+    compute_energy_variance = parse_bool_env("QSL_COMPUTE_ENERGY_VARIANCE", false)
 
     state = [isodd(n) ? "Up" : "Dn" for n=1:N]
 
@@ -545,23 +625,76 @@ function main(;
     sweep_maxerrs = all_sweep_maxerrs(observer)
     dmrg_completed_sweeps = length(sweep_energies)
     final_maxerr = isempty(sweep_maxerrs) ? NaN : sweep_maxerrs[end]
-    H2 = inner(H, ψ0, H, ψ0)
+
+    postprocess_values = load_postprocess_checkpoint(postprocess_checkpoint_file)
     if isnan(E0)
-        E0 = inner(ψ0, H, ψ0)
+        E0 = get_or_compute_postprocess!(
+            postprocess_values,
+            postprocess_checkpoint_file,
+            "E0",
+            "energy",
+            () -> inner(ψ0, H, ψ0),
+        )
+    else
+        postprocess_values["E0"] = E0
     end
-    energy_variance = real(H2 - E0^2)
-    energy_variance_per_site = energy_variance / N
 
-    println("E0 = $E0")
-    println("final maxerr = $final_maxerr")
-    println("energy variance = $energy_variance")
-    println("energy variance per site = $energy_variance_per_site")
-    Zs = Array(expect(ψ0, "Sz"))
+    if haskey(postprocess_values, "energy_variance") &&
+       haskey(postprocess_values, "energy_variance_per_site")
+        log_step("Loaded energy variance from postprocess checkpoint")
+        energy_variance = postprocess_values["energy_variance"]
+        energy_variance_per_site = postprocess_values["energy_variance_per_site"]
+        energy_variance_computed = get(postprocess_values, "energy_variance_computed", 1)
+    elseif compute_energy_variance
+        log_step("Computing energy variance")
+        H2 = inner(H, ψ0, H, ψ0)
+        energy_variance = real(H2 - E0^2)
+        energy_variance_per_site = energy_variance / N
+        energy_variance_computed = 1
+        postprocess_values["energy_variance"] = energy_variance
+        postprocess_values["energy_variance_per_site"] = energy_variance_per_site
+        postprocess_values["energy_variance_computed"] = energy_variance_computed
+        save_postprocess_checkpoint(postprocess_checkpoint_file, postprocess_values)
+    else
+        log_step("Skipping energy variance; set QSL_COMPUTE_ENERGY_VARIANCE=true to compute")
+        energy_variance = NaN
+        energy_variance_per_site = NaN
+        energy_variance_computed = 0
+        postprocess_values["energy_variance_computed"] = energy_variance_computed
+        save_postprocess_checkpoint(postprocess_checkpoint_file, postprocess_values)
+    end
 
-    S = entropy_von_neumann(ψ0, div(N, 2))
-    println("S = $S")
-    corrs = correlation_matrix(ψ0, "Sz", "Sz")
+    log_step("E0 = $E0")
+    log_step("final maxerr = $final_maxerr")
+    log_step("energy variance = $energy_variance")
+    log_step("energy variance per site = $energy_variance_per_site")
 
+    Zs = get_or_compute_postprocess!(
+        postprocess_values,
+        postprocess_checkpoint_file,
+        "Zs",
+        "Sz expectation",
+        () -> Array(expect(ψ0, "Sz")),
+    )
+
+    S = get_or_compute_postprocess!(
+        postprocess_values,
+        postprocess_checkpoint_file,
+        "S",
+        "entanglement entropy",
+        () -> entropy_von_neumann(ψ0, div(N, 2)),
+    )
+    log_step("S = $S")
+
+    corrs = get_or_compute_postprocess!(
+        postprocess_values,
+        postprocess_checkpoint_file,
+        "corrs",
+        "Sz-Sz correlation matrix",
+        () -> correlation_matrix(ψ0, "Sz", "Sz"; ishermitian=true),
+    )
+
+    log_step("Writing final output to $filename")
     F = h5open(filename,"w")
     F["S"] = S
     F["Zs"] = Zs
@@ -573,13 +706,18 @@ function main(;
     F["sweep_maxerrs"] = sweep_maxerrs
     F["energy_variance"] = energy_variance
     F["energy_variance_per_site"] = energy_variance_per_site
+    F["energy_variance_computed"] = energy_variance_computed
+    F["compute_energy_variance"] = compute_energy_variance ? 1 : 0
     F["dmrg_completed_sweeps"] = dmrg_completed_sweeps
     F["dmrg_requested_sweeps"] = nsweeps
     F["dmrg_checkpoint_file"] = checkpoint_file
+    F["postprocess_checkpoint_file"] = postprocess_checkpoint_file
+    F["postprocess_checkpoint_complete"] = 1
     F["dmrg_checkpoint_complete"] = 1
     F["initial_psi_file"] = initial_psi_file_string
     F["initial_psi_dataset"] = initial_psi_dataset
     close(F)
+    log_step("Wrote final output to $filename")
 end
 
 # ITensors.Strided.set_num_threads(1)
