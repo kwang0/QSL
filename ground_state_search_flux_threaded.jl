@@ -376,6 +376,7 @@ function run_trajectory_cpu(;
     outputlevel,
     blas_threads,
     strided_threads,
+    gc_after_save,
 )
     N = C * L
     theta_final = pi * theta_pi
@@ -522,6 +523,14 @@ function run_trajectory_cpu(;
             psi_spin,
         )
         println("Saved trajectory through theta/pi = $theta_step_pi to $filename")
+
+        H = nothing
+        ground_observer = nothing
+        neutral_observer = nothing
+        spin_observer = nothing
+        if gc_after_save
+            GC.gc()
+        end
     end
 
     return (;
@@ -565,6 +574,7 @@ function run_trajectory_gpu(;
     outputlevel,
     blas_threads,
     strided_threads,
+    gc_after_save,
 )
     N = C * L
     theta_final = pi * theta_pi
@@ -682,6 +692,19 @@ function run_trajectory_gpu(;
             psi1=psi1_cpu,
         )
         println("Saved GPU trajectory through theta/pi = $theta_step_pi to $filename")
+
+        H = nothing
+        psi0_cpu = nothing
+        psi1_cpu = nothing
+        ground_observer = nothing
+        excited_observer = nothing
+        if gc_after_save
+            GC.gc()
+            try
+                CUDA.reclaim()
+            catch
+            end
+        end
     end
 
     return (;
@@ -725,6 +748,7 @@ function main(;
     outputlevel=1,
     blas_threads=default_blas_threads(; use_gpu),
     strided_threads=default_strided_threads(),
+    gc_after_save=true,
 )
     if !use_gpu && Bperp != 0.0
         error("Bperp uses Sx and breaks total Sz conservation; this CPU script always uses QN sectors")
@@ -764,6 +788,7 @@ function main(;
             outputlevel,
             blas_threads=threading.blas_threads,
             strided_threads=threading.strided_threads,
+            gc_after_save,
         )
         println("Final E0 = $(result.E0s[end])")
         println("Final gap = $(result.gaps[end])")
@@ -795,6 +820,7 @@ function main(;
             outputlevel,
             blas_threads=threading.blas_threads,
             strided_threads=threading.strided_threads,
+            gc_after_save,
         )
         println("Final E0 = $(result.E0s[end])")
         println("Final neutral gap = $(result.neutral_gaps[end])")

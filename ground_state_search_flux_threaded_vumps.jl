@@ -2,7 +2,7 @@ using MKL
 using ITensors
 using ITensorMPS
 using ITensorInfiniteMPS
-using KrylovKit: eigsolve
+using KrylovKit: Arnoldi, eigsolve
 using HDF5
 using LinearAlgebra
 using Printf
@@ -297,10 +297,11 @@ function energy_density(psi, H, C)
     return sum(terms) / C, terms
 end
 
-function transfer_matrix_spectrum(psi; neigs=32, tol=1e-10)
+function transfer_matrix_spectrum(psi; neigs=16, tol=1e-10, krylovdim=max(neigs + 8, 2 * neigs))
     T = TransferMatrix(psi.AL)
     v0 = random_itensor(dag(input_inds(T)))
-    lambdas, vecs, info = eigsolve(T, v0, neigs, :LM; tol)
+    alg = Arnoldi(; krylovdim=max(krylovdim, neigs + 2), tol)
+    lambdas, vecs, _ = eigsolve(T, v0, neigs, :LM, alg)
     lambda0 = lambdas[1]
     normalized = lambdas ./ lambda0
     inverse_xi = map(eachindex(normalized)) do n
@@ -320,7 +321,7 @@ function transfer_matrix_spectrum(psi; neigs=32, tol=1e-10)
         end
         push!(flux_labels, label)
     end
-    return (; lambdas, normalized, inverse_xi, xi, momenta, flux_labels, info)
+    return (; lambdas, normalized, inverse_xi, xi, momenta, flux_labels)
 end
 
 function output_filename(output_dir, C, yc_shift, J2, Delta1, Delta2, theta_pi, maxdim)
@@ -444,12 +445,13 @@ function run_trajectory(;
     outer_iters_initial=max(1, ceil(Int, log2(maxdim))),
     multisite_update_alg="sequential",
     conserve_qns=true,
-    neigs=32,
+    neigs=16,
     transfer_tol=1e-10,
     output_dir=default_output_dir(),
     outputlevel=1,
     blas_threads=default_blas_threads(),
     strided_threads=default_strided_threads(),
+    gc_after_save=true,
 )
     if conserve_qns && Bperp != 0.0
         error("Bperp uses Sx and breaks Sz conservation; set conserve_qns=false")
@@ -588,6 +590,15 @@ function run_trajectory(;
             bonds,
         )
         println("Saved trajectory through theta/pi = $theta_step_pi to $filename")
+
+        H = nothing
+        spectrum = nothing
+        eterms = nothing
+        S = nothing
+        Snorms = nothing
+        if gc_after_save
+            GC.gc()
+        end
     end
 
     return (;
@@ -611,7 +622,7 @@ end
 function usage()
     return """
     Usage:
-      julia ground_state_search_flux_threaded_vumps.jl C J2 theta_over_pi maxdim [nflux=9] [yc_shift=0] [cutoff=1e-10] [vumps_tol=1e-5] [max_vumps_iters=20] [neigs=32] [output_dir]
+      julia ground_state_search_flux_threaded_vumps.jl C J2 theta_over_pi maxdim [nflux=9] [yc_shift=0] [cutoff=1e-10] [vumps_tol=1e-5] [max_vumps_iters=20] [neigs=16] [output_dir]
 
     Examples:
       julia ground_state_search_flux_threaded_vumps.jl 8 0.12 2.0 512 17 0
@@ -635,7 +646,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
     cutoff = length(ARGS) >= 7 ? parse(Float64, ARGS[7]) : 1e-10
     vumps_tol = length(ARGS) >= 8 ? parse(Float64, ARGS[8]) : DEFAULT_VUMPS_TOL
     max_vumps_iters = length(ARGS) >= 9 ? parse(Int, ARGS[9]) : DEFAULT_MAX_VUMPS_ITERS
-    neigs = length(ARGS) >= 10 ? parse(Int, ARGS[10]) : 32
+    neigs = length(ARGS) >= 10 ? parse(Int, ARGS[10]) : 16
     output_dir = length(ARGS) >= 11 ? ARGS[11] : default_output_dir()
 
     run_trajectory(;
