@@ -21,6 +21,9 @@ include(
 const DEFAULT_SCRATCH_DIR = "/pscratch/sd/k/kwang98/QSL"
 const NN_DISPLACEMENTS = ((1, 0), (0, 1), (-1, 1))
 const NNN_DISPLACEMENTS = ((1, 1), (-2, 1), (-1, 2))
+const DEFAULT_VUMPS_TOL = 1e-5
+const DEFAULT_MAX_VUMPS_ITERS = 20
+const SOLVER_TOL_FLOOR = 1e-7
 
 function default_output_dir()
     return isdir(DEFAULT_SCRATCH_DIR) ? DEFAULT_SCRATCH_DIR : "processed_data"
@@ -243,14 +246,13 @@ function run_vumps_update(
     outer_iters_initial,
     vumps_tol,
     max_vumps_iters,
-    solver_tol_divisor,
     multisite_update_alg,
     outputlevel,
 )
     vumps_kwargs = (
         tol=vumps_tol,
         maxiter=max_vumps_iters,
-        solver_tol=(x -> x / solver_tol_divisor),
+        solver_tol=(x -> max(x / 100, SOLVER_TOL_FLOOR)),
         multisite_update_alg=multisite_update_alg,
         outputlevel=outputlevel,
     )
@@ -404,6 +406,8 @@ function save_results(
         F["cutoff"] = cutoff
         F["vumps_tol"] = vumps_tol
         F["max_vumps_iters"] = max_vumps_iters
+        F["solver_tol_scale"] = 100.0
+        F["solver_tol_floor"] = SOLVER_TOL_FLOOR
         F["outer_iters_initial"] = outer_iters_initial
         F["conserve_qns"] = conserve_qns
         F["blas_threads"] = blas_threads
@@ -435,10 +439,9 @@ function run_trajectory(;
     nflux=9,
     maxdim=512,
     cutoff=1e-10,
-    vumps_tol=1e-8,
-    max_vumps_iters=50,
+    vumps_tol=DEFAULT_VUMPS_TOL,
+    max_vumps_iters=DEFAULT_MAX_VUMPS_ITERS,
     outer_iters_initial=max(1, ceil(Int, log2(maxdim))),
-    solver_tol_divisor=1000.0,
     multisite_update_alg="sequential",
     conserve_qns=true,
     neigs=32,
@@ -511,7 +514,6 @@ function run_trajectory(;
             outer_iters_initial,
             vumps_tol,
             max_vumps_iters,
-            solver_tol_divisor,
             multisite_update_alg,
             outputlevel,
         )
@@ -609,7 +611,7 @@ end
 function usage()
     return """
     Usage:
-      julia ground_state_search_flux_threaded_vumps.jl C J2 theta_over_pi maxdim [nflux=9] [yc_shift=0] [cutoff=1e-10] [vumps_tol=1e-8] [max_vumps_iters=50] [neigs=32] [output_dir]
+      julia ground_state_search_flux_threaded_vumps.jl C J2 theta_over_pi maxdim [nflux=9] [yc_shift=0] [cutoff=1e-10] [vumps_tol=1e-5] [max_vumps_iters=20] [neigs=32] [output_dir]
 
     Examples:
       julia ground_state_search_flux_threaded_vumps.jl 8 0.12 2.0 512 17 0
@@ -631,8 +633,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
     nflux = length(ARGS) >= 5 ? parse(Int, ARGS[5]) : 9
     yc_shift = length(ARGS) >= 6 ? parse(Int, ARGS[6]) : 0
     cutoff = length(ARGS) >= 7 ? parse(Float64, ARGS[7]) : 1e-10
-    vumps_tol = length(ARGS) >= 8 ? parse(Float64, ARGS[8]) : 1e-8
-    max_vumps_iters = length(ARGS) >= 9 ? parse(Int, ARGS[9]) : 50
+    vumps_tol = length(ARGS) >= 8 ? parse(Float64, ARGS[8]) : DEFAULT_VUMPS_TOL
+    max_vumps_iters = length(ARGS) >= 9 ? parse(Int, ARGS[9]) : DEFAULT_MAX_VUMPS_ITERS
     neigs = length(ARGS) >= 10 ? parse(Int, ARGS[10]) : 32
     output_dir = length(ARGS) >= 11 ? ARGS[11] : default_output_dir()
 

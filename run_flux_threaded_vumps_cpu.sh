@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH -A m4863
 #SBATCH -C cpu
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=64
 #SBATCH -q regular
 #SBATCH -N 1
-#SBATCH --ntasks-per-node=1
-#SBATCH -c 256
-#SBATCH -t 24:00:00
+#SBATCH -t 48:00:00
 #SBATCH -J vumps-flux-cpu
-#SBATCH -o ./logs_slurm/slurm-%x-%j.out
+#SBATCH -o ./logs_slurm/slurm-%j.out
 
 set -euo pipefail
 
@@ -23,16 +23,16 @@ MAXDIM=${4:-512}
 NFLUX=${5:-17}
 YC_SHIFT=${6:-0}
 CUTOFF=${7:-1e-10}
-VUMPS_TOL=${8:-1e-8}
-MAX_VUMPS_ITERS=${9:-50}
+VUMPS_TOL=${8:-1e-5}
+MAX_VUMPS_ITERS=${9:-20}
 NEIGS=${10:-32}
 DEFAULT_OUTPUT_DIR="${PSCRATCH:-/pscratch/sd/k/kwang98}/QSL"
 OUTPUT_DIR="${11:-$DEFAULT_OUTPUT_DIR}"
 
-CPUS_PER_TASK="${SLURM_CPUS_PER_TASK:-256}"
-BLAS_THREADS="${BLAS_THREADS:-$CPUS_PER_TASK}"
+CPUS_PER_TASK="${SLURM_CPUS_PER_TASK:-64}"
+BLAS_THREADS="${BLAS_THREADS:-1}"
 ITENSOR_STRIDED_THREADS="${ITENSOR_STRIDED_THREADS:-1}"
-JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
+JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-32}"
 HEAP_SIZE_HINT="${HEAP_SIZE_HINT:-400G}"
 
 export JULIA_NUM_THREADS
@@ -72,9 +72,9 @@ srun \
     -c "$CPUS_PER_TASK" \
     --cpu-bind=cores \
     julia \
-    --startup-file=no \
-    --threads="$JULIA_NUM_THREADS" \
     --heap-size-hint="$HEAP_SIZE_HINT" \
+    --startup-file=no \
+    -t "$JULIA_NUM_THREADS" \
     ground_state_search_flux_threaded_vumps.jl \
     "$C" "$J2" "$THETA_PI" "$MAXDIM" "$NFLUX" "$YC_SHIFT" \
     "$CUTOFF" "$VUMPS_TOL" "$MAX_VUMPS_ITERS" "$NEIGS" "$OUTPUT_DIR" \
