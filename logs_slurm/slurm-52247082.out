@@ -1,0 +1,104 @@
+ERROR: LoadError: Out of GPU memory trying to allocate 1.023 GiB
+Effective GPU memory usage: 99.97% (79.231 GiB/79.251 GiB)
+Memory pool usage: 72.094 GiB (78.719 GiB reserved)
+
+Stacktrace:
+  [1] _pool_alloc
+    @ ~/.julia/packages/CUDA/wPaDI/src/memory.jl:666 [inlined]
+  [2] macro expansion
+    @ ~/.julia/packages/CUDA/wPaDI/src/memory.jl:623 [inlined]
+  [3] macro expansion
+    @ ./timing.jl:461 [inlined]
+  [4] pool_alloc
+    @ ~/.julia/packages/CUDA/wPaDI/src/memory.jl:622 [inlined]
+  [5] (::CUDA.var"#650#651"{CUDA.DeviceMemory, Int64})()
+    @ CUDA ~/.julia/packages/CUDA/wPaDI/src/array.jl:92
+  [6] cached_alloc(f::CUDA.var"#650#651"{CUDA.DeviceMemory, Int64}, key::Tuple{UnionAll, CuDevice, DataType, Int64})
+    @ GPUArrays ~/.julia/packages/GPUArrays/w335n/src/host/alloc_cache.jl:36
+  [7] CuArray{Float32, 5, CUDA.DeviceMemory}(::UndefInitializer, dims::NTuple{5, Int64})
+    @ CUDA ~/.julia/packages/CUDA/wPaDI/src/array.jl:91
+  [8] similar
+    @ ~/.julia/packages/CUDA/wPaDI/src/array.jl:186 [inlined]
+  [9] permutedims(B::CuArray{Float32, 5, CUDA.DeviceMemory}, perm::NTuple{5, Int64})
+    @ Base ./multidimensional.jl:1674
+ [10] permutedims
+    @ ~/.julia/packages/NDTensors/wnM2t/src/lib/Expose/src/functions/permutedims.jl:2 [inlined]
+ [11] _contract!(CT::CuArray{Float32, 5, CUDA.DeviceMemory}, AT::CuArray{Float32, 5, CUDA.DeviceMemory}, BT::CuArray{Float32, 4, CUDA.DeviceMemory}, props::NDTensors.ContractionProperties{5, 4, 5}, α::Bool, β::Bool)
+    @ NDTensors ~/.julia/packages/NDTensors/wnM2t/src/abstractarray/tensoralgebra/contract.jl:126
+ [12] _contract!(CT::NDTensors.DenseTensor{Float32, 5, NTuple{5, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, AT::NDTensors.DenseTensor{Float32, 5, NTuple{5, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, BT::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, props::NDTensors.ContractionProperties{5, 4, 5}, α::Bool, β::Bool)
+    @ NDTensors ~/.julia/packages/NDTensors/wnM2t/src/dense/tensoralgebra/contract.jl:230
+ [13] contract!
+    @ ~/.julia/packages/NDTensors/wnM2t/src/dense/tensoralgebra/contract.jl:213 [inlined]
+ [14] contract! (repeats 2 times)
+    @ ~/.julia/packages/NDTensors/wnM2t/src/tensoroperations/generic_tensor_operations.jl:165 [inlined]
+ [15] _contract!!(output_tensor::NDTensors.DenseTensor{Float32, 5, NTuple{5, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labelsoutput_tensor::NTuple{5, Int64}, tensor1::NDTensors.DenseTensor{Float32, 5, NTuple{5, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labelstensor1::NTuple{5, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labelstensor2::NTuple{4, Int64}, α::Int64, β::Int64)
+    @ NDTensors ~/.julia/packages/NDTensors/wnM2t/src/tensoroperations/generic_tensor_operations.jl:143
+ [16] _contract!!
+    @ ~/.julia/packages/NDTensors/wnM2t/src/tensoroperations/generic_tensor_operations.jl:131 [inlined]
+ [17] contract!!
+    @ ~/.julia/packages/NDTensors/wnM2t/src/tensoroperations/generic_tensor_operations.jl:219 [inlined]
+ [18] contract!!
+    @ ~/.julia/packages/NDTensors/wnM2t/src/tensoroperations/generic_tensor_operations.jl:188 [inlined]
+ [19] contract(tensor1::NDTensors.DenseTensor{Float32, 5, NTuple{5, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labelstensor1::NTuple{5, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labelstensor2::NTuple{4, Int64}, labelsoutput_tensor::NTuple{5, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/wnM2t/src/tensoroperations/generic_tensor_operations.jl:113
+ [20] contract(::Type{NDTensors.CanContract{NDTensors.DenseTensor{Float32, 5, NTuple{5, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}}}, tensor1::NDTensors.DenseTensor{Float32, 5, NTuple{5, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labels_tensor1::NTuple{5, Int64}, tensor2::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, labels_tensor2::NTuple{4, Int64})
+    @ NDTensors ~/.julia/packages/NDTensors/wnM2t/src/tensoroperations/generic_tensor_operations.jl:91
+ [21] contract
+    @ ~/.julia/packages/SimpleTraits/7VJph/src/SimpleTraits.jl:332 [inlined]
+ [22] _contract(A::NDTensors.DenseTensor{Float32, 5, NTuple{5, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}}, B::NDTensors.DenseTensor{Float32, 4, NTuple{4, Index{Int64}}, NDTensors.Dense{Float32, CuArray{Float32, 1, CUDA.DeviceMemory}}})
+    @ ITensors ~/.julia/packages/ITensors/SOADD/src/tensor_operations/tensor_algebra.jl:3
+ [23] _contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/SOADD/src/tensor_operations/tensor_algebra.jl:9
+ [24] contract(A::ITensor, B::ITensor)
+    @ ITensors ~/.julia/packages/ITensors/SOADD/src/tensor_operations/tensor_algebra.jl:74
+ [25] *
+    @ ~/.julia/packages/ITensors/SOADD/src/tensor_operations/tensor_algebra.jl:61 [inlined]
+ [26] contract(P::ProjMPO, v::ITensor)
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/kjso2/src/abstractprojmpo/abstractprojmpo.jl:51
+ [27] product(P::ProjMPO, v::ITensor)
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/kjso2/src/abstractprojmpo/abstractprojmpo.jl:71
+ [28] AbstractProjMPO
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/abstractprojmpo/abstractprojmpo.jl:87 [inlined]
+ [29] apply
+    @ ~/.julia/packages/KrylovKit/ZcdRg/src/apply.jl:2 [inlined]
+ [30] apply_scalartype
+    @ ~/.julia/packages/KrylovKit/ZcdRg/src/apply.jl:35 [inlined]
+ [31] #eigsolve#51
+    @ ~/.julia/packages/KrylovKit/ZcdRg/src/eigsolve/eigsolve.jl:210 [inlined]
+ [32] eigsolve
+    @ ~/.julia/packages/KrylovKit/ZcdRg/src/eigsolve/eigsolve.jl:209 [inlined]
+ [33] macro expansion
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/dmrg.jl:239 [inlined]
+ [34] macro expansion
+    @ ./timing.jl:461 [inlined]
+ [35] dmrg(PH::ProjMPO, psi0::MPS, sweeps::Sweeps; which_decomp::Nothing, svd_alg::Nothing, observer::NoObserver, outputlevel::Int64, write_when_maxdim_exceeds::Nothing, write_path::String, eigsolve_tol::Float64, eigsolve_krylovdim::Int64, eigsolve_maxiter::Int64, eigsolve_verbosity::Int64, eigsolve_which_eigenvalue::Symbol, ishermitian::Bool)
+    @ ITensorMPS ~/.julia/packages/ITensorMPS/kjso2/src/dmrg.jl:206
+ [36] dmrg
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/dmrg.jl:158 [inlined]
+ [37] #dmrg#606
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/dmrg.jl:28 [inlined]
+ [38] dmrg
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/dmrg.jl:21 [inlined]
+ [39] #dmrg#612
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/dmrg.jl:389 [inlined]
+ [40] dmrg
+    @ ~/.julia/packages/ITensorMPS/kjso2/src/dmrg.jl:379 [inlined]
+ [41] #dmrg_ground#2
+    @ /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:126 [inlined]
+ [42] dmrg_ground
+    @ /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:122 [inlined]
+ [43] run_trajectory_gpu(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Bperp::Float64, Delta1::Float64, Delta2::Float64, yc_shift::Int64, output_dir::String, theta_pi::Float64, nflux::Int64, nsweeps_initial::Int64, nsweeps_intermediate::Int64, nsweeps_final::Int64, maxdim::Int64, cutoff::Float64, weight::Float64, noise::Float64, outputlevel::Int64)
+    @ Main /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:517
+ [44] run_trajectory_gpu
+    @ /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:456 [inlined]
+ [45] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Bperp::Float64, Delta1::Float64, Delta2::Float64, yc_shift::Int64, theta_pi::Float64, nflux::Int64, nsweeps_initial::Int64, nsweeps_intermediate::Int64, nsweeps_final::Int64, cutoff::Float64, maxdim::Int64, weight::Float64, noise::Float64, ground_twosz::Int64, spin_twosz::Int64, initial_linkdim::Int64, conserve_qns::Bool, use_gpu::Bool, output_dir::String, outputlevel::Int64)
+    @ Main /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:640
+ [46] top-level scope
+    @ /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:739
+ [47] include(mod::Module, _path::String)
+    @ Base ./Base.jl:306
+ [48] exec_options(opts::Base.JLOptions)
+    @ Base ./client.jl:317
+ [49] _start()
+    @ Base ./client.jl:550
+in expression starting at /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:700

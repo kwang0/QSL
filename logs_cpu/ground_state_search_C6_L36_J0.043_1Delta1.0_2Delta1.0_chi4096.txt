@@ -1,0 +1,42 @@
+After sweep 1 energy=-112.1608762485479  maxlinkdim=64 maxerr=7.99E-13 time=24.761
+After sweep 2 energy=-115.49178132986147  maxlinkdim=256 maxerr=9.80E-13 time=30.549
+After sweep 3 energy=-115.80994394900874  maxlinkdim=1020 maxerr=1.00E-12 time=174.933
+After sweep 4 energy=-115.83073689859171  maxlinkdim=4016 maxerr=1.00E-12 time=2454.101
+After sweep 5 energy=-115.8325127347448  maxlinkdim=4096 maxerr=1.02E-07 time=12974.254
+After sweep 6 energy=-115.83266230938787  maxlinkdim=4096 maxerr=1.11E-07 time=14443.871
+After sweep 7 energy=-115.83267317370726  maxlinkdim=4096 maxerr=8.24E-08 time=16456.712
+After sweep 8 energy=-115.8326736145581  maxlinkdim=4096 maxerr=8.02E-08 time=15602.021
+Loaded initial wavefunction 'psi0' from /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi2049.h5
+Running 20 DMRG sweeps
+Saved DMRG checkpoint after sweep 1 to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_checkpoint.h5
+After sweep 1 energy=-115.83266548287959  maxlinkdim=4096 maxerr=5.80E-08 time=14056.976
+Saved DMRG checkpoint after sweep 2 to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_checkpoint.h5
+After sweep 2 energy=-115.83267351965344  maxlinkdim=4096 maxerr=7.80E-08 time=19935.757
+Saved DMRG checkpoint after sweep 3 to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_checkpoint.h5
+After sweep 3 energy=-115.83267370305292  maxlinkdim=4096 maxerr=7.95E-08 time=20206.652
+Energy difference less than 1.0e-6, stopping DMRG
+Loaded DMRG checkpoint from /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_checkpoint.h5 after 3 completed sweeps
+Running 17 DMRG sweeps
+Saved DMRG checkpoint after sweep 4 to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_checkpoint.h5
+After sweep 1 energy=-115.83267369978877  maxlinkdim=4096 maxerr=7.98E-08 time=20294.208
+Saved DMRG checkpoint after sweep 5 to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_checkpoint.h5
+After sweep 2 energy=-115.83267369592797  maxlinkdim=4096 maxerr=7.99E-08 time=19880.212
+Loaded DMRG checkpoint from /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_checkpoint.h5 after 5 completed sweeps
+Checkpoint energy difference less than 1.0e-6; skipping DMRG
+Loaded DMRG checkpoint from /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_checkpoint.h5 after 5 completed sweeps
+Checkpoint energy difference less than 1.0e-6; skipping DMRG
+Skipping energy variance; set QSL_COMPUTE_ENERGY_VARIANCE=true to compute
+Saved postprocess checkpoint to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_postprocess_checkpoint.h5
+E0 = -115.83267369592797
+final maxerr = 7.994936105804949e-8
+energy variance = NaN
+energy variance per site = NaN
+Computing Sz expectation
+Saved postprocess checkpoint to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_postprocess_checkpoint.h5
+Computing entanglement entropy
+Saved postprocess checkpoint to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_postprocess_checkpoint.h5
+S = 1.9746043285848252
+Computing Sz-Sz correlation matrix
+Saved postprocess checkpoint to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096_postprocess_checkpoint.h5
+Writing final output to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096.h5
+Wrote final output to /pscratch/sd/k/kwang98/QSL/ground_state_search_C6_L36_J0.043_1Delta1.0_2Delta1.0_chi4096.h5

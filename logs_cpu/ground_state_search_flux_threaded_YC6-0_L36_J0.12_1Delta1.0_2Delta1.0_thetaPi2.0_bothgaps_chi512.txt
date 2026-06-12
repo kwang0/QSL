@@ -1,0 +1,70 @@
+Writing flux-threading trajectory files to /pscratch/sd/k/kwang98/QSL
+Flux step 1 / 21: theta = 0.0 (0.0 * pi)
+After sweep 1 energy=-107.22640881510851  maxlinkdim=64 maxerr=9.66E-11 time=30.947
+After sweep 2 energy=-109.35212574760305  maxlinkdim=256 maxerr=9.97E-11 time=65.825
+After sweep 3 energy=-109.48542977685305  maxlinkdim=512 maxerr=2.82E-06 time=314.091
+After sweep 4 energy=-109.49180537428064  maxlinkdim=512 maxerr=6.14E-06 time=393.492
+After sweep 5 energy=-109.49328892195341  maxlinkdim=512 maxerr=6.08E-06 time=365.372
+After sweep 6 energy=-109.49512589650648  maxlinkdim=512 maxerr=6.47E-06 time=360.005
+After sweep 7 energy=-109.49914091977806  maxlinkdim=512 maxerr=7.59E-06 time=359.146
+After sweep 8 energy=-109.50822438092813  maxlinkdim=512 maxerr=8.74E-06 time=353.336
+After sweep 9 energy=-109.52251714174973  maxlinkdim=512 maxerr=9.92E-06 time=354.017
+After sweep 10 energy=-109.5358736724828  maxlinkdim=512 maxerr=1.06E-05 time=356.442
+After sweep 1 energy=-107.0956621542705  maxlinkdim=64 maxerr=9.99E-11 time=13.722
+After sweep 2 energy=-109.20405830964653  maxlinkdim=256 maxerr=9.94E-11 time=52.288
+After sweep 3 energy=-109.49414247231331  maxlinkdim=512 maxerr=7.73E-06 time=275.215
+After sweep 4 energy=-109.51854675657425  maxlinkdim=512 maxerr=1.52E-05 time=381.606
+After sweep 5 energy=-109.53055098027892  maxlinkdim=512 maxerr=1.28E-05 time=371.782
+After sweep 6 energy=-109.5406185997437  maxlinkdim=512 maxerr=1.29E-05 time=373.479
+After sweep 7 energy=-109.54794469481041  maxlinkdim=512 maxerr=1.34E-05 time=375.655
+After sweep 8 energy=-109.55251304897841  maxlinkdim=512 maxerr=1.40E-05 time=379.033
+After sweep 9 energy=-109.55515526773642  maxlinkdim=512 maxerr=1.45E-05 time=382.168
+After sweep 10 energy=-109.55664287711757  maxlinkdim=512 maxerr=1.50E-05 time=384.981
+After sweep 1 energy=-104.81786047117458  maxlinkdim=64 maxerr=9.69E-11 time=10.686
+After sweep 2 energy=-107.96416943138334  maxlinkdim=256 maxerr=9.95E-11 time=50.353
+After sweep 3 energy=-108.99092917238121  maxlinkdim=512 maxerr=1.22E-05 time=270.631
+After sweep 4 energy=-109.10230233135012  maxlinkdim=512 maxerr=4.10E-05 time=372.642
+After sweep 5 energy=-109.16551939986098  maxlinkdim=512 maxerr=5.42E-05 time=368.105
+After sweep 6 energy=-109.1856230095662  maxlinkdim=512 maxerr=4.73E-05 time=367.119
+After sweep 7 energy=-109.19361831482907  maxlinkdim=512 maxerr=5.16E-05 time=369.686
+After sweep 8 energy=-109.19776144317053  maxlinkdim=512 maxerr=5.33E-05 time=368.419
+After sweep 9 energy=-109.20028935374333  maxlinkdim=512 maxerr=5.62E-05 time=368.742
+After sweep 10 energy=-109.20200288866634  maxlinkdim=512 maxerr=5.83E-05 time=371.537
+E0 = -109.5358736724828
+E neutral = -109.55664287711757
+E spin = -109.20200288866634
+neutral gap = -0.020769204634774496
+spin gap = 0.33387078381645097
+2Sz ground = -5.739945872123078e-15
+2Sz neutral = -8.036480043992298e-15
+2Sz spin = 2.0000000000000564
+Saved trajectory through theta/pi = 0.0 to /pscratch/sd/k/kwang98/QSL/ground_state_search_flux_threaded_YC6-0_L36_J0.12_1Delta1.0_2Delta1.0_thetaPi0_bothgaps_chi512.h5
+Flux step 2 / 21: theta = 0.3141592653589793 (0.1 * pi)
+After sweep 1 energy=-109.53624769286724  maxlinkdim=512 maxerr=1.57E-05 time=673.839
+After sweep 2 energy=-109.54243812101373  maxlinkdim=512 maxerr=1.28E-05 time=643.274
+After sweep 3 energy=-109.54604994285133  maxlinkdim=512 maxerr=1.36E-05 time=647.372
+After sweep 4 energy=-109.54808444835953  maxlinkdim=512 maxerr=1.44E-05 time=649.269
+After sweep 5 energy=-109.54922568741107  maxlinkdim=512 maxerr=1.51E-05 time=652.091
+After sweep 6 energy=-109.54989099254219  maxlinkdim=512 maxerr=1.56E-05 time=651.662
+After sweep 7 energy=-109.55032020542284  maxlinkdim=512 maxerr=1.61E-05 time=628.138
+After sweep 8 energy=-109.550618208934  maxlinkdim=512 maxerr=1.64E-05 time=629.513
+After sweep 9 energy=-109.55084404733826  maxlinkdim=512 maxerr=1.66E-05 time=623.406
+After sweep 10 energy=-109.55101436979402  maxlinkdim=512 maxerr=1.68E-05 time=634.163
+After sweep 1 energy=-109.54929165892669  maxlinkdim=512 maxerr=2.22E-05 time=636.679
+After sweep 2 energy=-109.55001580201545  maxlinkdim=512 maxerr=1.62E-05 time=640.683
+After sweep 3 energy=-109.55043753670782  maxlinkdim=512 maxerr=1.65E-05 time=643.272
+After sweep 4 energy=-109.55071974707656  maxlinkdim=512 maxerr=1.67E-05 time=643.430
+After sweep 5 energy=-109.55092944090909  maxlinkdim=512 maxerr=1.69E-05 time=638.983
+After sweep 6 energy=-109.55109876601217  maxlinkdim=512 maxerr=1.70E-05 time=643.652
+After sweep 7 energy=-109.55123997348903  maxlinkdim=512 maxerr=1.72E-05 time=652.202
+After sweep 8 energy=-109.55136678089752  maxlinkdim=512 maxerr=1.76E-05 time=650.618
+After sweep 9 energy=-109.55147719062055  maxlinkdim=512 maxerr=1.81E-05 time=648.493
+After sweep 10 energy=-109.55158432420144  maxlinkdim=512 maxerr=1.84E-05 time=651.132
+After sweep 1 energy=-109.20441902716865  maxlinkdim=512 maxerr=7.24E-05 time=630.975
+After sweep 2 energy=-109.21377888452716  maxlinkdim=512 maxerr=6.77E-05 time=628.197
+After sweep 3 energy=-109.23479142796556  maxlinkdim=512 maxerr=7.75E-05 time=624.664
+After sweep 4 energy=-109.28100290925686  maxlinkdim=512 maxerr=1.02E-04 time=627.602
+After sweep 5 energy=-109.46702465970903  maxlinkdim=512 maxerr=1.28E-04 time=632.321
+After sweep 6 energy=-109.84666882991222  maxlinkdim=512 maxerr=8.19E-05 time=632.821
+After sweep 7 energy=-110.09633211962219  maxlinkdim=512 maxerr=7.65E-05 time=634.450
+After sweep 8 energy=-110.18359921544179  maxlinkdim=512 maxerr=6.03E-05 time=631.490

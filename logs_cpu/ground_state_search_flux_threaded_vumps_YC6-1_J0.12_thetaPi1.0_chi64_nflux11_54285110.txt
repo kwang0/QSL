@@ -1,0 +1,12 @@
+Job started: Thu Jun 11 01:05:10 AM PDT 2026
+Host: nid006030
+SLURM_JOB_ID: 54285110
+SLURM_CPUS_PER_TASK: 64
+C=6 J2=0.12 theta/pi=1.0 maxdim=64 nflux=11 yc_shift=1
+cutoff=1e-10 vumps_tol=1e-5 max_vumps_iters=20 neigs=32
+output_dir=/pscratch/sd/k/kwang98/QSL
+Julia threads=32 BLAS threads=1 ITensor Strided threads=1
+OMP_PROC_BIND=spread OMP_PLACES=threads
+
+Threading: Julia=32, BLAS=1, ITensors.Strided=1
+[2026-06-11T08:05:53.662] error: *** STEP 54285110.0 ON nid006030 CANCELLED AT 2026-06-11T08:05:53 DUE to SIGNAL Terminated ***

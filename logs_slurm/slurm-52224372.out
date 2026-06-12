@@ -1,0 +1,19 @@
+ERROR: LoadError: UndefVarError: `cu` not defined in `Main`
+The binding may be too new: running in world age 38872, while current world is 38938.
+Hint: a global variable of this name also exists in CUDA.
+Stacktrace:
+ [1] run_trajectory_gpu(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Bperp::Float64, Delta1::Float64, Delta2::Float64, yc_shift::Int64, output_dir::String, theta_pi::Float64, nflux::Int64, nsweeps::Int64, maxdim::Int64, cutoff::Float64, weight::Float64, noise::Float64, outputlevel::Int64)
+   @ Main /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:464
+ [2] run_trajectory_gpu
+   @ /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:439 [inlined]
+ [3] main(; C::Int64, L::Int64, J1::Float64, J2::Float64, B::Float64, Bperp::Float64, Delta1::Float64, Delta2::Float64, yc_shift::Int64, theta_pi::Float64, nflux::Int64, nsweeps::Int64, cutoff::Float64, maxdim::Int64, weight::Float64, noise::Float64, ground_twosz::Int64, spin_twosz::Int64, initial_linkdim::Int64, conserve_qns::Bool, use_gpu::Bool, output_dir::String, outputlevel::Int64)
+   @ Main /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:615
+ [4] top-level scope
+   @ /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:708
+ [5] include(mod::Module, _path::String)
+   @ Base ./Base.jl:306
+ [6] exec_options(opts::Base.JLOptions)
+   @ Base ./client.jl:317
+ [7] _start()
+   @ Base ./client.jl:550
+in expression starting at /global/u2/k/kwang98/QSL/ground_state_search_flux_threaded.jl:671

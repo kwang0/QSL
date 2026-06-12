@@ -1,0 +1,2 @@
+/var/spool/slurmd/job50694466/slurm_script: line 19: syntax error near unexpected token `newline'
+/var/spool/slurmd/job50694466/slurm_script: line 19: `julia ground_state_search_gutzwiller.jl 6 18 512 >>'

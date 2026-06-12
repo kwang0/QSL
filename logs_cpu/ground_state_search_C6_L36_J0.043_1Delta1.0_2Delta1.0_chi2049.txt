@@ -1,0 +1,14 @@
+After sweep 1 energy=-113.12855434992477  maxlinkdim=64 maxerr=7.19E-13 time=26.516
+After sweep 2 energy=-115.51076334253403  maxlinkdim=256 maxerr=9.85E-13 time=32.991
+After sweep 3 energy=-115.81176114122388  maxlinkdim=1020 maxerr=9.94E-13 time=174.864
+After sweep 4 energy=-115.83111186377532  maxlinkdim=2049 maxerr=2.29E-07 time=1473.048
+After sweep 5 energy=-115.83179164889101  maxlinkdim=2049 maxerr=5.22E-07 time=2493.636
+After sweep 6 energy=-115.83181152999984  maxlinkdim=2049 maxerr=5.32E-07 time=2570.305
+After sweep 7 energy=-115.83181261365185  maxlinkdim=2049 maxerr=5.36E-07 time=2577.771
+After sweep 8 energy=-115.83181262218214  maxlinkdim=2049 maxerr=5.37E-07 time=2571.566
+Energy difference less than 1.0e-6, stopping DMRG
+E0 = -115.83181262218214
+final maxerr = 5.374413362023579e-7
+energy variance = 0.005526736229512608
+energy variance per site = 2.558674180329911e-5
+S = 1.969261388652159
