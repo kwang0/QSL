@@ -21,7 +21,7 @@ include(
 const DEFAULT_SCRATCH_DIR = "/pscratch/sd/k/kwang98/QSL"
 const NN_DISPLACEMENTS = ((1, 0), (0, 1), (-1, 1))
 const NNN_DISPLACEMENTS = ((1, 1), (-2, 1), (-1, 2))
-const DEFAULT_VUMPS_TOL = 1e-5
+const DEFAULT_VUMPS_TOL = 1e-4
 const DEFAULT_MAX_VUMPS_ITERS = 20
 const SOLVER_TOL_FLOOR = 1e-7
 
@@ -38,6 +38,15 @@ function parse_env_int(keys, default)
     return default
 end
 
+function parse_env_bool(keys, default)
+    for key in keys
+        if haskey(ENV, key) && !isempty(strip(ENV[key]))
+            return parse_bool(ENV[key])
+        end
+    end
+    return default
+end
+
 function default_blas_threads()
     return parse_env_int(
         (
@@ -45,9 +54,8 @@ function default_blas_threads()
             "MKL_NUM_THREADS",
             "OPENBLAS_NUM_THREADS",
             "OMP_NUM_THREADS",
-            "SLURM_CPUS_PER_TASK",
         ),
-        min(Sys.CPU_THREADS, 256),
+        1,
     )
 end
 
@@ -55,7 +63,16 @@ function default_strided_threads()
     return parse_env_int(("ITENSOR_STRIDED_THREADS", "NDTENSORS_STRIDED_THREADS"), 1)
 end
 
-function configure_threading!(; blas_threads=default_blas_threads(), strided_threads=default_strided_threads())
+function default_threaded_blocksparse()
+    return parse_env_bool(("ITENSOR_THREADED_BLOCKSPARSE", "NDTENSORS_THREADED_BLOCKSPARSE"), true)
+end
+
+function configure_threading!(
+    ;
+    blas_threads=default_blas_threads(),
+    strided_threads=default_strided_threads(),
+    threaded_blocksparse=default_threaded_blocksparse(),
+)
     blas_threads >= 1 || error("blas_threads must be >= 1")
     strided_threads >= 1 || error("strided_threads must be >= 1")
 
@@ -71,10 +88,25 @@ function configure_threading!(; blas_threads=default_blas_threads(), strided_thr
     catch
         missing
     end
+    active_threaded_blocksparse = try
+        if threaded_blocksparse
+            ITensors.enable_threaded_blocksparse()
+        else
+            ITensors.disable_threaded_blocksparse()
+        end
+        ITensors.using_threaded_blocksparse()
+    catch err
+        @warn "Could not configure ITensors block-sparse threading" exception = err
+        missing
+    end
     println(
-        "Threading: Julia=$(Threads.nthreads()), BLAS=$(BLAS.get_num_threads()), ITensors.Strided=$(active_strided_threads)",
+        "Threading: Julia=$(Threads.nthreads()), BLAS=$(BLAS.get_num_threads()), ITensors.Strided=$(active_strided_threads), ITensors.BlockSparse=$(active_threaded_blocksparse)",
     )
-    return (; blas_threads=BLAS.get_num_threads(), strided_threads=active_strided_threads)
+    return (;
+        blas_threads=BLAS.get_num_threads(),
+        strided_threads=active_strided_threads,
+        threaded_blocksparse=active_threaded_blocksparse,
+    )
 end
 
 # Site numbering for one infinite-MPS unit cell equal to one YC column:
@@ -332,6 +364,10 @@ function output_filename(output_dir, C, yc_shift, J2, Delta1, Delta2, theta_pi, 
     )
 end
 
+function checkpoint_filename(output_dir, C, yc_shift, J2, Delta1, Delta2, theta_pi, maxdim)
+    return replace(output_filename(output_dir, C, yc_shift, J2, Delta1, Delta2, theta_pi, maxdim), r"\.h5$" => "_checkpoint.h5")
+end
+
 function write_bond_table!(F, bonds)
     group = create_group(F, "unit_cell_bonds")
     group["family"] = string.([b.family for b in bonds])
@@ -345,6 +381,241 @@ function write_bond_table!(F, bonds)
     group["target_site"] = [b.target_site for b in bonds]
     group["col_shift"] = [b.col_shift for b in bonds]
     return nothing
+end
+
+function replace_checkpoint_file(tmp_checkpoint_file, checkpoint_file)
+    if Sys.iswindows() && isfile(checkpoint_file)
+        rm(checkpoint_file; force=true)
+    end
+    Base.Filesystem.rename(tmp_checkpoint_file, checkpoint_file)
+    return nothing
+end
+
+function checkpoint_value_matches(actual, expected)
+    if expected isa AbstractFloat
+        return isapprox(Float64(real(actual)), Float64(expected); atol=1e-12, rtol=1e-12)
+    end
+    if expected isa Bool
+        return Bool(actual) == expected
+    end
+    return actual == expected
+end
+
+function compatible_checkpoint(F; checks)
+    for (name, expected) in checks
+        if !haskey(F, name)
+            return false, "missing $name"
+        end
+        actual = read(F, name)
+        if !checkpoint_value_matches(actual, expected)
+            return false, "$name is $actual, expected $expected"
+        end
+    end
+    return true, ""
+end
+
+function copy_completed_vector!(dest, src, completed_flux_step, name)
+    completed_flux_step == 0 && return dest
+    length(src) >= completed_flux_step ||
+        error("Checkpoint dataset $name has length $(length(src)), expected at least $completed_flux_step")
+    dest[1:completed_flux_step] .= src[1:completed_flux_step]
+    return dest
+end
+
+function copy_completed_matrix!(dest, src, completed_flux_step, name)
+    completed_flux_step == 0 && return dest
+    ndims(src) == 2 || error("Checkpoint dataset $name is not a matrix")
+    size(src, 1) == size(dest, 1) ||
+        error("Checkpoint dataset $name has first dimension $(size(src, 1)), expected $(size(dest, 1))")
+    size(src, 2) >= completed_flux_step ||
+        error("Checkpoint dataset $name has second dimension $(size(src, 2)), expected at least $completed_flux_step")
+    dest[:, 1:completed_flux_step] .= src[:, 1:completed_flux_step]
+    return dest
+end
+
+function load_vumps_checkpoint(
+    filename;
+    C,
+    J1,
+    J2,
+    yc_shift,
+    B,
+    Bperp,
+    Delta1,
+    Delta2,
+    theta_pi,
+    nflux,
+    maxdim,
+    conserve_qns,
+    neigs,
+)
+    isfile(filename) || return nothing
+
+    h5open(filename, "r") do F
+        if !haskey(F, "psi")
+            @warn "Ignoring checkpoint without psi state" filename
+            return nothing
+        end
+        compatible, reason = compatible_checkpoint(
+            F;
+            checks=(
+                ("C", C),
+                ("J1", J1),
+                ("J2", J2),
+                ("yc_shift", yc_shift),
+                ("B", B),
+                ("Bperp", Bperp),
+                ("Delta1", Delta1),
+                ("Delta2", Delta2),
+                ("theta_pi", theta_pi),
+                ("nflux", nflux),
+                ("maxdim", maxdim),
+                ("conserve_qns", conserve_qns),
+                ("neigs", neigs),
+            ),
+        )
+        if !compatible
+            @warn "Ignoring incompatible checkpoint" filename reason
+            return nothing
+        end
+
+        completed_flux_step = haskey(F, "completed_flux_step") ? Int(read(F, "completed_flux_step")) : 0
+        0 <= completed_flux_step <= nflux ||
+            error("Checkpoint completed_flux_step=$completed_flux_step is outside 0:$nflux")
+
+        return (;
+            psi=read(F, "psi", InfiniteCanonicalMPS),
+            completed_flux_step,
+            energy_densities=haskey(F, "energy_densities") ? read(F, "energy_densities") : Float64[],
+            energy_terms=haskey(F, "energy_terms") ? read(F, "energy_terms") : zeros(Float64, C, 0),
+            entropies=haskey(F, "entropies") ? read(F, "entropies") : zeros(Float64, C, 0),
+            entropy_norms=haskey(F, "entropy_norms") ? read(F, "entropy_norms") : zeros(Float64, C, 0),
+            maxlinkdims=haskey(F, "maxlinkdims") ? Int.(read(F, "maxlinkdims")) : Int[],
+            transfer_lambdas=haskey(F, "transfer_lambdas") ? read(F, "transfer_lambdas") : fill(complex(NaN, NaN), neigs, 0),
+            transfer_normalized_lambdas=haskey(F, "transfer_normalized_lambdas") ? read(F, "transfer_normalized_lambdas") : fill(complex(NaN, NaN), neigs, 0),
+            transfer_inverse_xi=haskey(F, "transfer_inverse_xi") ? read(F, "transfer_inverse_xi") : zeros(Float64, neigs, 0),
+            transfer_xi=haskey(F, "transfer_xi") ? read(F, "transfer_xi") : zeros(Float64, neigs, 0),
+            transfer_momenta=haskey(F, "transfer_momenta") ? read(F, "transfer_momenta") : zeros(Float64, neigs, 0),
+            transfer_flux_labels=haskey(F, "transfer_flux_labels") ? read(F, "transfer_flux_labels") : fill("", neigs, 0),
+        )
+    end
+end
+
+function restore_checkpoint_data!(
+    checkpoint,
+    energy_densities,
+    energy_terms,
+    entropies,
+    entropy_norms,
+    maxlinkdims,
+    transfer_lambdas,
+    transfer_normalized_lambdas,
+    transfer_inverse_xi,
+    transfer_xi,
+    transfer_momenta,
+    transfer_flux_labels,
+)
+    completed_flux_step = checkpoint.completed_flux_step
+    copy_completed_vector!(energy_densities, checkpoint.energy_densities, completed_flux_step, "energy_densities")
+    copy_completed_matrix!(energy_terms, checkpoint.energy_terms, completed_flux_step, "energy_terms")
+    copy_completed_matrix!(entropies, checkpoint.entropies, completed_flux_step, "entropies")
+    copy_completed_matrix!(entropy_norms, checkpoint.entropy_norms, completed_flux_step, "entropy_norms")
+    copy_completed_vector!(maxlinkdims, checkpoint.maxlinkdims, completed_flux_step, "maxlinkdims")
+    copy_completed_matrix!(transfer_lambdas, checkpoint.transfer_lambdas, completed_flux_step, "transfer_lambdas")
+    copy_completed_matrix!(
+        transfer_normalized_lambdas,
+        checkpoint.transfer_normalized_lambdas,
+        completed_flux_step,
+        "transfer_normalized_lambdas",
+    )
+    copy_completed_matrix!(transfer_inverse_xi, checkpoint.transfer_inverse_xi, completed_flux_step, "transfer_inverse_xi")
+    copy_completed_matrix!(transfer_xi, checkpoint.transfer_xi, completed_flux_step, "transfer_xi")
+    copy_completed_matrix!(transfer_momenta, checkpoint.transfer_momenta, completed_flux_step, "transfer_momenta")
+    copy_completed_matrix!(transfer_flux_labels, checkpoint.transfer_flux_labels, completed_flux_step, "transfer_flux_labels")
+    return completed_flux_step
+end
+
+function save_vumps_checkpoint(
+    filename,
+    psi,
+    completed_flux_step;
+    C,
+    J1,
+    J2,
+    yc_shift,
+    B,
+    Bperp,
+    Delta1,
+    Delta2,
+    theta_pi,
+    fluxes,
+    energy_densities,
+    energy_terms,
+    entropies,
+    entropy_norms,
+    maxlinkdims,
+    transfer_lambdas,
+    transfer_normalized_lambdas,
+    transfer_inverse_xi,
+    transfer_xi,
+    transfer_momenta,
+    transfer_flux_labels,
+    maxdim,
+    cutoff,
+    vumps_tol,
+    max_vumps_iters,
+    outer_iters_initial,
+    conserve_qns,
+    neigs,
+    transfer_tol,
+    threaded_blocksparse,
+)
+    tmp_checkpoint_file = filename * ".tmp"
+    h5open(tmp_checkpoint_file, "w") do F
+        F["vumps_checkpoint_version"] = 1
+        F["completed_flux_step"] = completed_flux_step
+        F["vumps_checkpoint_complete"] = completed_flux_step >= length(fluxes) ? 1 : 0
+        F["vumps_checkpoint_unix_time"] = time()
+        F["psi"] = psi
+        F["C"] = C
+        F["J1"] = J1
+        F["J2"] = J2
+        F["yc_shift"] = yc_shift
+        F["B"] = B
+        F["Bperp"] = Bperp
+        F["Delta1"] = Delta1
+        F["Delta2"] = Delta2
+        F["theta_pi"] = theta_pi
+        F["nflux"] = length(fluxes)
+        F["fluxes"] = fluxes
+        F["fluxes_over_pi"] = fluxes ./ pi
+        F["energy_densities"] = energy_densities[1:completed_flux_step]
+        F["energy_terms"] = energy_terms[:, 1:completed_flux_step]
+        F["entropies"] = entropies[:, 1:completed_flux_step]
+        F["entropy_norms"] = entropy_norms[:, 1:completed_flux_step]
+        F["maxlinkdims"] = maxlinkdims[1:completed_flux_step]
+        F["transfer_lambdas"] = transfer_lambdas[:, 1:completed_flux_step]
+        F["transfer_normalized_lambdas"] = transfer_normalized_lambdas[:, 1:completed_flux_step]
+        F["transfer_inverse_xi"] = transfer_inverse_xi[:, 1:completed_flux_step]
+        F["transfer_xi"] = transfer_xi[:, 1:completed_flux_step]
+        F["transfer_momenta"] = transfer_momenta[:, 1:completed_flux_step]
+        F["transfer_flux_labels"] = transfer_flux_labels[:, 1:completed_flux_step]
+        F["maxdim"] = maxdim
+        F["cutoff"] = cutoff
+        F["vumps_tol"] = vumps_tol
+        F["max_vumps_iters"] = max_vumps_iters
+        F["solver_tol_scale"] = 100.0
+        F["solver_tol_floor"] = SOLVER_TOL_FLOOR
+        F["outer_iters_initial"] = outer_iters_initial
+        F["conserve_qns"] = conserve_qns
+        F["neigs"] = neigs
+        F["transfer_tol"] = transfer_tol
+        if threaded_blocksparse !== missing
+            F["threaded_blocksparse"] = threaded_blocksparse
+        end
+    end
+    replace_checkpoint_file(tmp_checkpoint_file, filename)
+    return filename
 end
 
 function save_results(
@@ -378,6 +649,7 @@ function save_results(
     conserve_qns,
     blas_threads,
     strided_threads,
+    threaded_blocksparse,
     bonds,
 )
     h5open(filename, "w") do F
@@ -415,6 +687,9 @@ function save_results(
         if strided_threads !== missing
             F["strided_threads"] = strided_threads
         end
+        if threaded_blocksparse !== missing
+            F["threaded_blocksparse"] = threaded_blocksparse
+        end
         write_bond_table!(F, bonds)
     end
     return filename
@@ -451,6 +726,9 @@ function run_trajectory(;
     outputlevel=1,
     blas_threads=default_blas_threads(),
     strided_threads=default_strided_threads(),
+    threaded_blocksparse=default_threaded_blocksparse(),
+    resume=true,
+    checkpoint_file=nothing,
     gc_after_save=true,
 )
     if conserve_qns && Bperp != 0.0
@@ -458,13 +736,11 @@ function run_trajectory(;
     end
 
     mkpath(output_dir)
-    threading = configure_threading!(; blas_threads, strided_threads)
+    threading = configure_threading!(; blas_threads, strided_threads, threaded_blocksparse)
 
     theta_final = pi * theta_pi
     fluxes = nflux == 1 ? [theta_final] : collect(range(0.0, theta_final; length=nflux))
 
-    sites = build_sites(C; conserve_qns)
-    psi = InfMPS(sites, initial_state)
     bonds = yc_unit_cell_bonds(C, yc_shift)
 
     energy_densities = zeros(Float64, nflux)
@@ -489,8 +765,78 @@ function run_trajectory(;
         theta_pi,
         maxdim,
     )
+    checkpoint_file = isnothing(checkpoint_file) ? checkpoint_filename(output_dir, C, yc_shift, J2, Delta1, Delta2, theta_pi, maxdim) : checkpoint_file
+    mkpath(dirname(checkpoint_file))
 
-    for (k, theta) in enumerate(fluxes)
+    psi = nothing
+    completed_flux_step = 0
+    if resume
+        checkpoint = load_vumps_checkpoint(
+            checkpoint_file;
+            C,
+            J1,
+            J2,
+            yc_shift,
+            B,
+            Bperp,
+            Delta1,
+            Delta2,
+            theta_pi,
+            nflux,
+            maxdim,
+            conserve_qns,
+            neigs,
+        )
+        if checkpoint !== nothing
+            psi = checkpoint.psi
+            completed_flux_step = restore_checkpoint_data!(
+                checkpoint,
+                energy_densities,
+                energy_terms,
+                entropies,
+                entropy_norms,
+                maxlinkdims,
+                transfer_lambdas,
+                transfer_normalized_lambdas,
+                transfer_inverse_xi,
+                transfer_xi,
+                transfer_momenta,
+                transfer_flux_labels,
+            )
+            println("Resuming from checkpoint $checkpoint_file after flux step $completed_flux_step / $nflux")
+        else
+            println("No compatible checkpoint found at $checkpoint_file; starting from theta/pi = 0.0")
+        end
+    else
+        println("Resume disabled; starting from theta/pi = 0.0")
+    end
+
+    if psi === nothing
+        sites = build_sites(C; conserve_qns)
+        psi = InfMPS(sites, initial_state)
+    else
+        sites = siteinds(psi)
+    end
+
+    if completed_flux_step >= nflux
+        println("Checkpoint already contains all $nflux flux step(s); nothing to do.")
+        return (;
+            filename=final_filename,
+            checkpoint_file,
+            fluxes,
+            energy_densities,
+            energy_terms,
+            entropies,
+            maxlinkdims,
+            transfer_lambdas,
+            transfer_inverse_xi,
+            transfer_momenta,
+            psi,
+        )
+    end
+
+    for k in (completed_flux_step + 1):nflux
+        theta = fluxes[k]
         theta_step_pi = theta / pi
         println("Flux step $k / $nflux: theta/pi = $theta_step_pi")
         H = build_hamiltonian(
@@ -510,7 +856,7 @@ function run_trajectory(;
         psi = run_vumps_update(
             H,
             psi;
-            first_step=(k == 1),
+            first_step=(completed_flux_step == 0 && k == 1),
             maxdim,
             cutoff,
             outer_iters_initial,
@@ -587,9 +933,46 @@ function run_trajectory(;
             conserve_qns,
             blas_threads=threading.blas_threads,
             strided_threads=threading.strided_threads,
+            threaded_blocksparse=threading.threaded_blocksparse,
             bonds,
         )
         println("Saved trajectory through theta/pi = $theta_step_pi to $filename")
+        save_vumps_checkpoint(
+            checkpoint_file,
+            psi,
+            k;
+            C,
+            J1,
+            J2,
+            yc_shift,
+            B,
+            Bperp,
+            Delta1,
+            Delta2,
+            theta_pi,
+            fluxes,
+            energy_densities,
+            energy_terms,
+            entropies,
+            entropy_norms,
+            maxlinkdims,
+            transfer_lambdas,
+            transfer_normalized_lambdas,
+            transfer_inverse_xi,
+            transfer_xi,
+            transfer_momenta,
+            transfer_flux_labels,
+            maxdim,
+            cutoff,
+            vumps_tol,
+            max_vumps_iters,
+            outer_iters_initial,
+            conserve_qns,
+            neigs,
+            transfer_tol,
+            threaded_blocksparse=threading.threaded_blocksparse,
+        )
+        println("Saved VUMPS checkpoint through flux step $k / $nflux to $checkpoint_file")
 
         H = nothing
         spectrum = nothing
@@ -603,6 +986,7 @@ function run_trajectory(;
 
     return (;
         filename=final_filename,
+        checkpoint_file,
         fluxes,
         energy_densities,
         energy_terms,
@@ -622,13 +1006,14 @@ end
 function usage()
     return """
     Usage:
-      julia ground_state_search_flux_threaded_vumps.jl C J2 theta_over_pi maxdim [nflux=9] [yc_shift=0] [cutoff=1e-10] [vumps_tol=1e-5] [max_vumps_iters=20] [neigs=16] [output_dir]
+      julia ground_state_search_flux_threaded_vumps.jl C J2 theta_over_pi maxdim [nflux=9] [yc_shift=0] [cutoff=1e-10] [vumps_tol=1e-4] [max_vumps_iters=20] [neigs=16] [output_dir] [threaded_blocksparse=true] [resume=true] [checkpoint_file=auto]
 
     Examples:
       julia ground_state_search_flux_threaded_vumps.jl 8 0.12 2.0 512 17 0
       julia ground_state_search_flux_threaded_vumps.jl 8 0.12 1.0 512 17 1
 
     theta_over_pi is in units of pi. YC(Ly)-n is selected by C=Ly and yc_shift=n.
+    With resume=true, an existing compatible checkpoint resumes from the next unfinished flux step.
     """
 end
 
@@ -648,6 +1033,9 @@ if abspath(PROGRAM_FILE) == @__FILE__
     max_vumps_iters = length(ARGS) >= 9 ? parse(Int, ARGS[9]) : DEFAULT_MAX_VUMPS_ITERS
     neigs = length(ARGS) >= 10 ? parse(Int, ARGS[10]) : 16
     output_dir = length(ARGS) >= 11 ? ARGS[11] : default_output_dir()
+    threaded_blocksparse = length(ARGS) >= 12 ? parse_bool(ARGS[12]) : default_threaded_blocksparse()
+    resume = length(ARGS) >= 13 ? parse_bool(ARGS[13]) : true
+    checkpoint_file = length(ARGS) >= 14 && !isempty(strip(ARGS[14])) ? ARGS[14] : nothing
 
     run_trajectory(;
         C,
@@ -661,5 +1049,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
         max_vumps_iters,
         neigs,
         output_dir,
+        threaded_blocksparse,
+        resume,
+        checkpoint_file,
     )
 end

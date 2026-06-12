@@ -29,6 +29,9 @@ MAX_VUMPS_ITERS=${9:-20}
 NEIGS=${10:-16}
 DEFAULT_OUTPUT_DIR="${PSCRATCH:-/pscratch/sd/k/kwang98}/QSL"
 OUTPUT_DIR="${11:-$DEFAULT_OUTPUT_DIR}"
+THREADED_BLOCKSPARSE="${12:-${THREADED_BLOCKSPARSE:-true}}"
+RESUME="${13:-${VUMPS_RESUME:-true}}"
+CHECKPOINT_FILE="${14:-${VUMPS_CHECKPOINT_FILE:-}}"
 
 CPUS_PER_TASK="${SLURM_CPUS_PER_TASK:-64}"
 BLAS_THREADS="${BLAS_THREADS:-1}"
@@ -44,6 +47,9 @@ export OPENBLAS_NUM_THREADS="$BLAS_THREADS"
 export BLIS_NUM_THREADS="$BLAS_THREADS"
 export VECLIB_MAXIMUM_THREADS="$BLAS_THREADS"
 export ITENSOR_STRIDED_THREADS
+export ITENSOR_THREADED_BLOCKSPARSE="$THREADED_BLOCKSPARSE"
+export VUMPS_RESUME="$RESUME"
+export VUMPS_CHECKPOINT_FILE="$CHECKPOINT_FILE"
 export OMP_PROC_BIND="${OMP_PROC_BIND:-spread}"
 export OMP_PLACES="${OMP_PLACES:-threads}"
 export OMP_DYNAMIC=FALSE
@@ -63,7 +69,8 @@ LOG="logs_cpu/${JOB_TAG}_${SLURM_JOB_ID:-manual}.txt"
     echo "C=$C J2=$J2 theta/pi=$THETA_PI maxdim=$MAXDIM nflux=$NFLUX yc_shift=$YC_SHIFT"
     echo "cutoff=$CUTOFF vumps_tol=$VUMPS_TOL max_vumps_iters=$MAX_VUMPS_ITERS neigs=$NEIGS"
     echo "output_dir=$OUTPUT_DIR"
-    echo "Julia threads=$JULIA_NUM_THREADS BLAS threads=$BLAS_THREADS ITensor Strided threads=$ITENSOR_STRIDED_THREADS"
+    echo "resume=$RESUME checkpoint_file=${CHECKPOINT_FILE:-auto}"
+    echo "Julia threads=$JULIA_NUM_THREADS BLAS threads=$BLAS_THREADS ITensor Strided threads=$ITENSOR_STRIDED_THREADS ITensor BlockSparse=$THREADED_BLOCKSPARSE"
     echo "OMP_PROC_BIND=$OMP_PROC_BIND OMP_PLACES=$OMP_PLACES"
     echo
 } > "$LOG"
@@ -79,6 +86,7 @@ srun \
     ground_state_search_flux_threaded_vumps.jl \
     "$C" "$J2" "$THETA_PI" "$MAXDIM" "$NFLUX" "$YC_SHIFT" \
     "$CUTOFF" "$VUMPS_TOL" "$MAX_VUMPS_ITERS" "$NEIGS" "$OUTPUT_DIR" \
+    "$THREADED_BLOCKSPARSE" "$RESUME" "$CHECKPOINT_FILE" \
     >> "$LOG" 2>&1
 
 echo "Job finished: $(date)" >> "$LOG"
