@@ -64,7 +64,7 @@ function default_strided_threads()
 end
 
 function default_threaded_blocksparse()
-    return parse_env_bool(("ITENSOR_THREADED_BLOCKSPARSE", "NDTENSORS_THREADED_BLOCKSPARSE"), true)
+    return parse_env_bool(("ITENSOR_THREADED_BLOCKSPARSE", "NDTENSORS_THREADED_BLOCKSPARSE"), false)
 end
 
 function configure_threading!(
@@ -98,6 +98,11 @@ function configure_threading!(
     catch err
         @warn "Could not configure ITensors block-sparse threading" exception = err
         missing
+    end
+    if active_threaded_blocksparse === true &&
+       (BLAS.get_num_threads() != 1 ||
+        (active_strided_threads !== missing && active_strided_threads != 1))
+        @warn "ITensors recommends avoiding competing threading backends with block-sparse threading; set BLAS and ITensors.Strided threads to 1 for block-sparse benchmarks."
     end
     println(
         "Threading: Julia=$(Threads.nthreads()), BLAS=$(BLAS.get_num_threads()), ITensors.Strided=$(active_strided_threads), ITensors.BlockSparse=$(active_threaded_blocksparse)",
@@ -1006,13 +1011,14 @@ end
 function usage()
     return """
     Usage:
-      julia ground_state_search_flux_threaded_vumps.jl C J2 theta_over_pi maxdim [nflux=9] [yc_shift=0] [cutoff=1e-10] [vumps_tol=1e-4] [max_vumps_iters=20] [neigs=16] [output_dir] [threaded_blocksparse=true] [resume=true] [checkpoint_file=auto]
+      julia ground_state_search_flux_threaded_vumps.jl C J2 theta_over_pi maxdim [nflux=9] [yc_shift=0] [cutoff=1e-10] [vumps_tol=1e-4] [max_vumps_iters=20] [neigs=16] [output_dir] [threaded_blocksparse=false] [resume=true] [checkpoint_file=auto]
 
     Examples:
       julia ground_state_search_flux_threaded_vumps.jl 8 0.12 2.0 512 17 0
       julia ground_state_search_flux_threaded_vumps.jl 8 0.12 1.0 512 17 1
 
     theta_over_pi is in units of pi. YC(Ly)-n is selected by C=Ly and yc_shift=n.
+    Default threading follows the ITensors CPU guidance used here: BLAS=1, ITensors.Strided=1, and block-sparse threading off unless explicitly enabled.
     With resume=true, an existing compatible checkpoint resumes from the next unfinished flux step.
     """
 end
