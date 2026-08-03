@@ -296,7 +296,7 @@ function plot_summary(runs::Vector{BondRun}, C::Integer, L::Integer, output_dir:
     ax.plot(chis, safe_log_values([r.energy_variance_per_site for r in runs]),
             marker = "o", label = "variance/N", color = "tab:red")
     ax.plot(chis, safe_log_values([r.final_maxerr for r in runs]),
-            marker = "s", label = "final maxerr", color = "tab:purple")
+            marker = "s", label = "final maximum error", color = "tab:purple")
     ax.set_yscale("log")
     ax.set_xlabel(raw"$\chi$")
     ax.set_title("DMRG Quality")
@@ -354,7 +354,7 @@ function plot_energy_extrapolation(runs::Vector{BondRun}, C::Integer, L::Integer
     e = [r.E0 / N for r in runs]
     xs = [
         ("variance/N", [r.energy_variance_per_site for r in runs]),
-        ("final maxerr", [r.final_maxerr for r in runs]),
+        ("final maximum error", [r.final_maxerr for r in runs]),
     ]
 
     fig, axs = subplots(1, 2, figsize = (10.5, 4.2))
@@ -383,6 +383,60 @@ function plot_energy_extrapolation(runs::Vector{BondRun}, C::Integer, L::Integer
 
     fig.tight_layout()
     return save_figure(fig, output_dir, tag * "_energy_extrapolation")
+end
+
+function plot_highlight_convergence(runs::Vector{BondRun}, C::Integer, L::Integer, output_dir::AbstractString, tag::AbstractString)
+    N = C * L
+    chis = [r.chi for r in runs]
+    inv_chis = 1.0 ./ chis
+    energies = [r.E0 / N for r in runs]
+    maxerrs = [r.final_maxerr for r in runs]
+    plot_color = "tab:blue"
+
+    fig, axs = subplots(1, 3, figsize = (15.5, 4.2))
+
+    ax = axs[1]
+    ax.plot(inv_chis, energies; marker = "o", color = plot_color, linewidth = 1.8)
+    ax.set_xlim(0.0, maximum(inv_chis) * 1.05)
+    ax.ticklabel_format(axis = "x", style = "sci", scilimits = (-3, -3))
+    ax.set_xlabel(raw"$1/\chi$")
+    ax.set_ylabel(raw"$E_0/N$")
+    ax.grid(true; alpha = 0.25)
+    ax.text(0.03, 0.96, "(a)"; transform = ax.transAxes,
+            ha = "left", va = "top", fontsize = 13, fontweight = "normal")
+
+    ax = axs[2]
+    ax.plot(chis, safe_log_values(maxerrs);
+            marker = "s", color = plot_color, linewidth = 1.8)
+    ax.set_yscale("log")
+    ymin, ymax = ax.get_ylim()
+    ax.set_ylim(ymin, ymax * 1.6)
+    ax.set_xlabel(raw"$\chi$")
+    ax.set_ylabel("final maximum error")
+    ax.grid(true; alpha = 0.25, which = "both")
+    ax.text(0.03, 0.96, "(b)"; transform = ax.transAxes,
+            ha = "left", va = "top", fontsize = 13, fontweight = "normal")
+
+    ax = axs[3]
+    ax.scatter(maxerrs, energies; color = plot_color, zorder = 3)
+    fit = linear_fit(maxerrs, energies)
+    if !isnothing(fit)
+        keep, coeff = fit
+        xmin, xmax = extrema(maxerrs[keep])
+        xx = collect(range(min(0.0, xmin), xmax; length = 100))
+        yy = coeff[1] .+ coeff[2] .* xx
+        ax.plot(xx, yy; color = plot_color, linestyle = ":", linewidth = 1.8,
+                label = @sprintf("intercept %.10f", coeff[1]))
+        ax.legend(frameon = false, fontsize = 8, loc = "lower right")
+    end
+    ax.set_xlabel("final maximum error")
+    ax.set_ylabel(raw"$E_0/N$")
+    ax.grid(true; alpha = 0.25)
+    ax.text(0.03, 0.96, "(c)"; transform = ax.transAxes,
+            ha = "left", va = "top", fontsize = 13, fontweight = "normal")
+
+    fig.tight_layout()
+    return save_figure(fig, output_dir, tag * "_highlight_convergence")
 end
 
 function plot_sweep_histories(runs::Vector{BondRun}, C::Integer, L::Integer, output_dir::AbstractString, tag::AbstractString)
@@ -562,13 +616,14 @@ function main(args = ARGS)
     tag = output_tag(C, L, J2, delta, delta, sorted_chis)
     summary_paths = plot_summary(runs, C, L, output_dir, tag)
     extrap_paths = plot_energy_extrapolation(runs, C, L, output_dir, tag)
+    highlight_paths = plot_highlight_convergence(runs, C, L, output_dir, tag)
     sweep_paths = plot_sweep_histories(runs, C, L, output_dir, tag)
     map_paths = plot_reference_maps(runs, C, L, output_dir, tag)
     csv_path = write_summary_csv(runs, C, L, output_dir, tag)
 
     print_summary(runs, C, L)
     println("Wrote:")
-    for path in (summary_paths..., extrap_paths..., sweep_paths..., map_paths..., csv_path)
+    for path in (summary_paths..., extrap_paths..., highlight_paths..., sweep_paths..., map_paths..., csv_path)
         println(path)
     end
 
