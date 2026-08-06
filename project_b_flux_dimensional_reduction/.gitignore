@@ -1,0 +1,6 @@
+.DS_Store
+tmp/
+.julia/
+output/
+*.h5
+*.jld2

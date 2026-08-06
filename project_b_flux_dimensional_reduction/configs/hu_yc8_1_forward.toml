@@ -1,0 +1,46 @@
+# Two-flavor Hu geometry. The expected positive crossing is theta/pi = 1.
+[model]
+circumference = 8
+shift = 1
+twist_gauge = "uniform"
+J1 = 1.0
+J2 = 0.12
+Delta1 = 1.0
+Delta2 = 1.0
+Bz = 0.0
+
+[optimizer]
+maxdim = 512
+cutoff = 1.0e-10
+residual_tol = 1.0e-8
+max_iterations = 120
+max_growth_steps = 20
+solver_tol_scale = 100.0
+solver_tol_floor = 1.0e-10
+multisite_update_alg = "sequential"
+require_converged = true
+divergence_patience = 10
+divergence_factor = 4.0
+
+[scan]
+branch = "alternating_forward"
+fluxes_over_pi = [0.0, 0.25, 0.5, 0.75, 0.875, 0.9375, 0.96875, 1.0]
+seed_pattern = "alternating"
+random_seed = 1
+adaptive_bisection = true
+minimum_step_over_pi = 0.015625
+save_rejected = true
+
+[spectrum]
+physical_sz_sectors = [0.0, 1.0]
+neigs = 24
+tolerance = 1.0e-10
+krylov_dimension = 64
+random_seed = 1
+
+[runtime]
+output_directory = "../output/hu_yc8_1_forward"
+blas_threads = 1
+strided_threads = 1
+threaded_blocksparse = false
+output_level = 1
