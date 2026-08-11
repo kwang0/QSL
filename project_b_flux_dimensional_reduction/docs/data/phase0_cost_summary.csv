@@ -1,0 +1,4 @@
+component,estimated_node_hours,source_run,budget_node_hours,budget_share_percent,remaining_budget_node_hours,note
+Failed original seed,0.661567,20260804T205703Z,150,0.441044667,149.338433,"Seed stopped at residual 1.30473e-5 before the benchmark matrix ran"
+Successful retry plus validation,0.432866,phase0_retry_80iter,150,0.288577333,149.567134,"Includes converged seed, candidate matrix, and chi=512 validation"
+Combined Phase 0,1.094433,both runs,150,0.729622000,148.905567,"Total estimated spend charged against the 150 node-hour Project B limit"

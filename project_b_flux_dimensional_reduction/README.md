@@ -14,8 +14,14 @@ Dirac crossing.
 ## What changed relative to the legacy workflow
 
 - Every selected flux has an immutable HDF5 state artifact containing `psi`.
+- Phase 1 states encode geometry, branch, independent preparation, direction,
+  seed, chi, flux, accepted-parent SHA-256, and full flux ancestry.
 - The exact VUMPS residual history is stored, and unconverged points cannot seed
   later flux points.
+- A numerically converged child must also pass a gauge-invariant mixed-transfer
+  overlap gate against its immutable parent before it can seed the next flux.
+  Energy, entropy, local-observable, and Schmidt-spectrum jumps are stored with
+  that decision for audit.
 - Failed continuation intervals can be bisected automatically.
 - Expensive transfer spectroscopy is a separate postprocessing job.
 - One neutral solve normalizes all requested physical sectors; physical
@@ -62,24 +68,110 @@ large run; it defines the convergence gates and paper-to-artifact mapping.
 The allocation-bounded, cross-chat plan is maintained in
 [`docs/PHASES_0_TO_4.md`](docs/PHASES_0_TO_4.md).
 
+For the sparse Phase 1 scout, use one of the four
+`configs/phase1_yc8_*_chi128.toml` files. On Perlmutter, inspect and submit one
+pilot through the guarded launcher:
+
+```bash
+bash slurm/run_scan_cpu.sh plan configs/phase1_yc8_1_forward_chi128.toml
+bash slurm/run_scan_cpu.sh submit configs/phase1_yc8_1_forward_chi128.toml
+bash slurm/run_scan_cpu.sh status
+bash slurm/run_scan_cpu.sh reconcile
+```
+
+For a live run whose residual has been manually confirmed to plateau, use an
+explicit run ID so cancellation is preserved as a numerical-failure artifact:
+
+```bash
+run_dir=$(tr -d '\r\n' < output/phase1_jobs/latest_run.txt)
+bash slurm/run_scan_cpu.sh cancel-plateau "$(basename "$run_dir")"
+```
+
+See [`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`](docs/PHASE1_PLATEAU_DIAGNOSTICS.md)
+for the inner-Krylov, smaller-step, chi-expansion, and U(1)-sector tests.
+
+Direct `sbatch` use is intentionally unsupported. The submit path fixes the
+calibrated compute setting at two Julia threads, a four-CPU scan step, and 8 GiB;
+allows only one Phase 1 pilot at a time; includes active Project B reservations
+in the forecast; and refuses another job until the previous pilot is reconciled
+with `sacct`. It also refuses a configuration whose output directory already
+contains immutable state artifacts, preventing a retry from spending compute
+only to collide with an existing deterministic filename.
+
+Phase 1 continuation uses two independent gates. The configured VUMPS residual
+checks numerical stationarity; it does not select the global minimum and does
+not by itself establish branch identity. Every child of an accepted state must
+also have mixed-transfer overlap per site at least `0.99` with that parent.
+The independently prepared first point has no parent, so only the numerical
+gate applies there. A failed overlap gate triggers the same interval refinement
+as a residual failure, but is classified separately as a possible basin jump.
+
+When adaptive continuation reaches `minimum_step_over_pi` without satisfying a
+gate, the scan writes an immutable `scan_outcome.toml` and exits normally.
+Residual failure is `numerical_continuation_loss_bracketed`; overlap failure is
+`branch_continuity_loss_bracketed`. Neither classification alone establishes a
+physical endpoint.
+
+The reconciled YC8-1 recovery has now accepted the primary-forward branch
+through `theta/pi=0.23828125`. Its closest `theta/pi=0.2421875` attempt ended at
+residual `1.5339e-5` after 200 iterations, but the residual was still smoothly
+contracting and projects to cross `1e-5` near iteration 307. The next attempt is
+therefore
+`configs/phase1_yc8_1_forward_recovery_from_0p23828125_chi128.toml`. It pins the
+accepted parent's known SHA-256, preserves the original inner-solver settings,
+raises only the outer cap to 360, records all inner Krylov solves, and stops a
+genuine plateau without misclassifying the measured contraction. Never seed it
+from a rejected state at `theta/pi=0.2421875` or `0.25`.
+
+The launcher passes the submission-side absolute project directory into the
+private worker entry point. This is required because Slurm executes a staged
+copy of the batch script under `/var/spool/slurmd`; that staging directory is
+not a Julia project and must never be used to derive `--project` or script
+paths.
+
+On Shared QOS, the 8-GiB request can raise `SLURM_CPUS_PER_TASK` from the four
+requested scan-step CPUs to five, with `sacct` reporting six allocated logical
+CPUs after core rounding. This is expected: the scan still runs with four CPUs,
+Julia still uses two threads, and all values from four through six have the same
+budgeted charge of three physical cores.
+
+After both preparations have artifacts, compare them without constructing a
+pointwise minimum-energy envelope:
+
+```bash
+julia --project=. scripts/compare_phase1_branches.jl \
+  output/phase1/yc8_1/primary_forward/seed_101/chi128/states \
+  output/phase1/yc8_1/competing_reverse/seed_102/chi128/states \
+  output/phase1/yc8_1/branch_comparison.tsv
+```
+
+The table reports both labeled states, their residuals and local observables,
+and energy/entropy differences. A lower competing energy is recorded but never
+used to replace the primary threaded branch.
+
 ## Tests
 
 ```bash
 julia --project=. -e 'using Pkg; Pkg.test()'
 PROJECT_B_RUN_VUMPS_SMOKE=1 julia --project=. test/runtests.jl
+bash test/test_phase1_launcher.sh
 ```
 
 The normal suite tests minimal/supercell geometry, uniform twist charges,
-configuration, momentum formulas and mixed-transfer construction,
-central-charge analysis, diagnostics, and an actual infinite-MPS HDF5 round
+configuration, momentum formulas, identical-state mixed-transfer fidelity,
+central-charge analysis, diagnostics, and a schema-v5 infinite-MPS HDF5 round
 trip. The opt-in test also performs one VUMPS iteration and neutral plus
-physical-`S^z=1` transfer eigensolves.
+physical-`S^z=1` transfer eigensolves. The shell regression runs a staged copy
+of the Phase 1 launcher and verifies that it still invokes the original Julia
+project rather than Slurm's spool directory.
 
 ## Directory map
 
 - `src/`: package implementation.
-- `configs/`: pilot, Hu-geometry, and chi-ladder inputs.
-- `scripts/`: scan, spectrum, plotting, scaling, and legacy-diagnosis drivers.
+- `configs/`: Phase 1 branch scouts, later-phase Hu templates, pilots, and
+  chi-ladder inputs.
+- `scripts/`: scan, branch comparison, spectrum, plotting, scaling, and
+  legacy-diagnosis drivers.
 - `slurm/`: CPU launchers; optimization and spectroscopy are separate jobs.
 - `test/`: deterministic tests and opt-in numerical smoke test.
 - `docs/`: reproduction protocol and evidence-backed diagnosis.

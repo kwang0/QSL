@@ -1,0 +1,12 @@
+#!/bin/bash
+
+job_id=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "-j" && "$#" -ge 2 ]]; then
+    job_id="$2"
+    shift 2
+  else
+    shift
+  fi
+done
+printf '%s|%s|\n' "$job_id" "${MOCK_SACCT_STATE:-CANCELLED}"

@@ -1,0 +1,3 @@
+job_id,point_index,theta_over_pi,parent_theta_over_pi,iterations,minimum_residual,minimum_iteration,final_residual,final100_contraction_factor,final100_r_squared,last24_relative_improvement,projected_tolerance_iteration,classification,source_log
+56456634,2,0.25,0.234375,200,8.375149e-5,8,9.207043e-5,,,,,rebounded_after_early_minimum,output/phase1_jobs/20260807T172501Z-yc8-1-primary_forward-128/logs/scan-56456634.out
+56456634,5,0.2421875,0.23828125,200,1.533855e-5,200,1.533855e-5,0.995999421778181,0.9999945431413814,0.09138971870107392,306.71655120133113,iteration_limit_while_contracting,output/phase1_jobs/20260807T172501Z-yc8-1-primary_forward-128/logs/scan-56456634.out

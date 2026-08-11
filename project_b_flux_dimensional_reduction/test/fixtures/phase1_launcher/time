@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -euo pipefail
+
+[[ "${1:-}" == "-v" ]] || exit 64
+shift
+[[ "${1:-}" == "-o" && -n "${2:-}" ]] || exit 64
+output_path="$2"
+shift 2
+: >"$output_path"
+"$@"

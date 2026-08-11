@@ -1,0 +1,3 @@
+#!/bin/bash
+
+printf '%s\n' 'JobId=123 QOS=shared MinMemoryNode=8G'

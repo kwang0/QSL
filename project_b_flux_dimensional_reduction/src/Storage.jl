@@ -1,5 +1,12 @@
 config_identifier(settings::ProjectSettings) = bytes2hex(sha1(settings.config_text))[1:12]
 
+function file_sha256(path::AbstractString)
+    isfile(path) || error("cannot hash missing file: $path")
+    return open(path, "r") do io
+        bytes2hex(sha256(io))
+    end
+end
+
 function sanitize_label(value::AbstractString)
     return replace(lowercase(value), r"[^a-z0-9_.-]+" => "_")
 end
@@ -20,13 +27,18 @@ function state_file_path(
     status = converged ? "accepted" : "rejected"
     geometry = sanitize_label(string(settings.model.geometry))
     branch = sanitize_label(settings.scan.branch)
+    preparation = sanitize_label(settings.scan.preparation)
+    direction = sanitize_label(string(settings.scan.direction))
     filename = @sprintf(
-        "state_%04d_%s_%s_theta_%s_chi%d_%s_%s.h5",
+        "state_%04d_%s_%s_%s_%s_seed%d_chi%d_theta_%s_%s_%s.h5",
         point_index,
-        branch,
         geometry,
-        theta_label(theta_over_pi),
+        branch,
+        preparation,
+        direction,
+        settings.scan.random_seed,
         maxdim,
+        theta_label(theta_over_pi),
         status,
         config_identifier(settings),
     )
@@ -83,7 +95,11 @@ function write_schmidt_probabilities!(file, probabilities)
     return nothing
 end
 
-function write_optimizer_diagnostics!(file, diagnostic::VumpsDiagnostics)
+function write_optimizer_diagnostics!(
+    file,
+    diagnostic::VumpsDiagnostics;
+    residual_tolerance::Real=diagnostic.residual_tolerance,
+)
     file["optimizer/converged"] = diagnostic.converged
     file["optimizer/stop_reason"] = diagnostic.stop_reason
     file["optimizer/iterations"] = diagnostic.iterations
@@ -94,7 +110,89 @@ function write_optimizer_diagnostics!(file, diagnostic::VumpsDiagnostics)
     file["optimizer/energy_right_history"] = diagnostic.energy_right_history
     file["optimizer/growth_dimensions"] = diagnostic.growth_dimensions
     file["optimizer/growth_stage_ends"] = diagnostic.growth_stage_ends
+    file["optimizer/residual_tolerance"] = Float64(residual_tolerance)
+    file["optimizer/trend_window"] = diagnostic.trend_window
+    file["optimizer/recent_relative_improvement"] = diagnostic.recent_relative_improvement
+    file["optimizer/log_residual_slope"] = diagnostic.log_residual_slope
+    file["optimizer/log_residual_r_squared"] = diagnostic.log_residual_r_squared
+    file["optimizer/projected_total_iterations"] = diagnostic.projected_total_iterations
+    group = create_group(file["optimizer"], "krylov_solves")
+    records = diagnostic.krylov_solves
+    group["count"] = length(records)
+    if !isempty(records)
+        group["outer_iteration"] = [record.outer_iteration for record in records]
+        group["solve_kind"] = [record.solve_kind for record in records]
+        group["site"] = [record.site for record in records]
+        group["requested_tolerance"] = [record.requested_tolerance for record in records]
+        group["krylov_dimension"] = [record.krylov_dimension for record in records]
+        group["maximum_iterations"] = [record.maximum_iterations for record in records]
+        group["converged_count"] = [record.converged_count for record in records]
+        group["residual_norm"] = [record.residual_norm for record in records]
+        group["iterations"] = [record.iterations for record in records]
+        group["operations"] = [record.operations for record in records]
+        group["elapsed_seconds"] = [record.elapsed_seconds for record in records]
+    end
     return nothing
+end
+
+function write_continuity_diagnostics!(file, diagnostic::BranchContinuityDiagnostics)
+    file["continuation/continuity_checked"] = diagnostic.checked
+    file["continuation/continuity_passed"] = diagnostic.passed
+    file["continuation/continuity_reason"] = diagnostic.reason
+    file["continuation/parent_theta_over_pi"] = diagnostic.parent_theta_over_pi
+    file["continuation/candidate_theta_over_pi"] = diagnostic.candidate_theta_over_pi
+    file["continuation/mixed_transfer_eigenvalue"] = diagnostic.mixed_transfer_eigenvalue
+    file["continuation/raw_overlap_per_unit_cell"] = diagnostic.raw_overlap_per_unit_cell
+    file["continuation/overlap_per_unit_cell"] = diagnostic.overlap_per_unit_cell
+    file["continuation/overlap_per_site"] = diagnostic.overlap_per_site
+    file["continuation/minimum_overlap_per_site"] = diagnostic.minimum_overlap_per_site
+    file["continuation/overlap_krylov_converged"] = diagnostic.krylov_converged
+    file["continuation/overlap_krylov_residual_norms"] = diagnostic.krylov_residual_norms
+    file["continuation/overlap_krylov_iterations"] = diagnostic.krylov_iterations
+    file["continuation/overlap_krylov_operations"] = diagnostic.krylov_operations
+    file["continuation/energy_density_delta"] = diagnostic.energy_density_delta
+    file["continuation/mean_entropy_delta"] = diagnostic.mean_entropy_delta
+    file["continuation/maximum_cut_entropy_jump"] = diagnostic.maximum_cut_entropy_jump
+    file["continuation/energy_term_rms_jump"] = diagnostic.energy_term_rms_jump
+    file["continuation/magnetization_rms_jump"] = diagnostic.magnetization_rms_jump
+    file["continuation/mean_schmidt_total_variation"] =
+        diagnostic.mean_schmidt_total_variation
+    return nothing
+end
+
+function read_schmidt_probabilities(file)
+    haskey(file, "observables/schmidt_probabilities") || return Vector{Vector{Float64}}()
+    group = file["observables/schmidt_probabilities"]
+    names = sort!(String.(collect(keys(group))))
+    return [Float64.(read(group, name)) for name in names]
+end
+
+function read_stored_observables(file)
+    haskey(file, "observables/energy_density") || return nothing
+    von_neumann = Float64.(read(file, "observables/von_neumann_entropies"))
+    renyi2 = haskey(file, "observables/renyi2_entropies") ?
+        Float64.(read(file, "observables/renyi2_entropies")) : fill(NaN, length(von_neumann))
+    raw_norms = haskey(file, "observables/schmidt_raw_norms") ?
+        Float64.(read(file, "observables/schmidt_raw_norms")) : fill(NaN, length(von_neumann))
+    entropy = (;
+        von_neumann,
+        renyi2,
+        raw_norms,
+        schmidt_probabilities=read_schmidt_probabilities(file),
+    )
+    energy_terms = haskey(file, "observables/energy_terms") ?
+        Float64.(read(file, "observables/energy_terms")) : Float64[]
+    magnetization_z = haskey(file, "observables/magnetization_z") ?
+        Float64.(read(file, "observables/magnetization_z")) : Float64[]
+    return (;
+        energy_density=Float64(read(file, "observables/energy_density")),
+        energy_terms,
+        energy_term_std=haskey(file, "observables/energy_term_std") ?
+            Float64(read(file, "observables/energy_term_std")) : NaN,
+        entropy,
+        magnetization_z,
+        maxlinkdim=Int(read(file, "observables/maxlinkdim")),
+    )
 end
 
 function write_state_file(
@@ -106,9 +204,26 @@ function write_state_file(
     theta_over_pi::Real,
     point_index::Integer;
     continuation_accepted::Bool=diagnostic.converged,
+    parent_state_path::AbstractString="",
+    parent_state_sha256::AbstractString="",
+    parent_flux_history_over_pi::AbstractVector{<:Real}=Float64[],
+    continuity::BranchContinuityDiagnostics=skipped_branch_continuity(
+        "continuity check not requested";
+        passed=true,
+    ),
+    precomputed_observables=nothing,
 )
     ispath(path) && error("refusing to overwrite immutable artifact: $path")
-    observables = local_observables(psi, hamiltonian)
+    isempty(parent_state_path) == isempty(parent_state_sha256) || error(
+        "parent state path and SHA-256 must either both be set or both be empty",
+    )
+    all(isfinite, parent_flux_history_over_pi) || error("parent flux history is non-finite")
+    flux_history = Float64.(parent_flux_history_over_pi)
+    if isempty(flux_history) || !isapprox(last(flux_history), theta_over_pi; atol=1e-12, rtol=0)
+        push!(flux_history, Float64(theta_over_pi))
+    end
+    observables = isnothing(precomputed_observables) ?
+        local_observables(psi, hamiltonian) : precomputed_observables
     mps_period = nsites(psi)
     minimum_period = minimal_mps_period(settings.model.geometry)
     atomic_h5write(path) do file
@@ -116,7 +231,8 @@ function write_state_file(
         create_group(file, "model")
         create_group(file, "optimizer")
         create_group(file, "observables")
-        file["schema_version"] = 2
+        create_group(file, "continuation")
+        file["schema_version"] = 5
         file["artifact_kind"] = "project_b_vumps_state"
         file["created_at_utc"] = string(now(UTC))
         file["config_id"] = config_identifier(settings)
@@ -124,10 +240,30 @@ function write_state_file(
         file["config_text"] = settings.config_text
         file["julia_version"] = string(VERSION)
         file["branch"] = settings.scan.branch
+        file["preparation"] = settings.scan.preparation
+        file["direction"] = string(settings.scan.direction)
+        file["random_seed"] = settings.scan.random_seed
         file["point_index"] = Int(point_index)
         file["theta_over_pi"] = Float64(theta_over_pi)
         file["continuation_accepted"] = continuation_accepted
         file["state_present"] = true
+
+        file["continuation/branch"] = settings.scan.branch
+        file["continuation/preparation"] = settings.scan.preparation
+        file["continuation/direction"] = string(settings.scan.direction)
+        file["continuation/lineage_policy"] = string(settings.scan.lineage_policy)
+        file["continuation/seed_pattern"] = settings.scan.seed_pattern
+        file["continuation/random_seed"] = settings.scan.random_seed
+        file["continuation/preparation_source"] = isempty(parent_state_path) ?
+            "independent_product_state" : "checkpoint_continuation"
+        file["continuation/parent_state_path"] = String(parent_state_path)
+        file["continuation/parent_state_basename"] =
+            isempty(parent_state_path) ? "" : basename(parent_state_path)
+        file["continuation/parent_state_sha256"] = String(parent_state_sha256)
+        file["continuation/parent_flux_history_over_pi"] =
+            Float64.(parent_flux_history_over_pi)
+        file["continuation/flux_history_over_pi"] = flux_history
+        write_continuity_diagnostics!(file, continuity)
 
         geometry = settings.model.geometry
         file["geometry/circumference"] = geometry.circumference
@@ -151,8 +287,24 @@ function write_state_file(
 
         file["optimizer/requested_maxdim"] = settings.optimizer.maxdim
         file["optimizer/cutoff"] = settings.optimizer.cutoff
-        file["optimizer/residual_tolerance"] = settings.optimizer.residual_tol
-        write_optimizer_diagnostics!(file, diagnostic)
+        file["optimizer/solver_tol_scale"] = settings.optimizer.solver_tol_scale
+        file["optimizer/solver_tol_floor"] = settings.optimizer.solver_tol_floor
+        file["optimizer/solver_krylov_dimension"] =
+            settings.optimizer.solver_krylov_dimension
+        file["optimizer/solver_max_iterations"] = settings.optimizer.solver_max_iterations
+        file["optimizer/record_krylov_diagnostics"] =
+            settings.optimizer.record_krylov_diagnostics
+        file["optimizer/plateau_detection"] = settings.optimizer.plateau_detection
+        file["optimizer/plateau_warmup_iterations"] =
+            settings.optimizer.plateau_warmup_iterations
+        file["optimizer/plateau_patience"] = settings.optimizer.plateau_patience
+        file["optimizer/plateau_min_relative_improvement"] =
+            settings.optimizer.plateau_min_relative_improvement
+        write_optimizer_diagnostics!(
+            file,
+            diagnostic;
+            residual_tolerance=settings.optimizer.residual_tol,
+        )
 
         file["observables/energy_density"] = observables.energy_density
         file["observables/energy_terms"] = observables.energy_terms
@@ -166,7 +318,7 @@ function write_state_file(
 
         file["psi"] = psi
     end
-    return (; path, observables)
+    return (; path, state_sha256=file_sha256(path), observables, flux_history_over_pi=flux_history)
 end
 
 function read_state_file(path::AbstractString)
@@ -186,10 +338,34 @@ function read_state_file(path::AbstractString)
             Int(read(file, "geometry/minimal_mps_period")) : minimal_mps_period(geometry)
         twist_gauge = haskey(file, "model/twist_gauge") ?
             Symbol(String(read(file, "model/twist_gauge"))) : :seam
+        branch = String(read(file, "branch"))
+        preparation = haskey(file, "preparation") ?
+            String(read(file, "preparation")) : "legacy_unspecified"
+        direction = haskey(file, "direction") ?
+            Symbol(String(read(file, "direction"))) : :unknown
+        random_seed = haskey(file, "random_seed") ?
+            Int(read(file, "random_seed")) : -1
+        seed_pattern = haskey(file, "continuation/seed_pattern") ?
+            String(read(file, "continuation/seed_pattern")) : "legacy_unspecified"
+        flux_history = haskey(file, "continuation/flux_history_over_pi") ?
+            Float64.(read(file, "continuation/flux_history_over_pi")) :
+            [Float64(read(file, "theta_over_pi"))]
+        observables = read_stored_observables(file)
         return (;
             psi,
+            schema_version=haskey(file, "schema_version") ? Int(read(file, "schema_version")) : 1,
             theta_over_pi=Float64(read(file, "theta_over_pi")),
-            branch=String(read(file, "branch")),
+            branch,
+            preparation,
+            direction,
+            random_seed,
+            seed_pattern,
+            parent_state_path=haskey(file, "continuation/parent_state_path") ?
+                String(read(file, "continuation/parent_state_path")) : "",
+            parent_state_sha256=haskey(file, "continuation/parent_state_sha256") ?
+                String(read(file, "continuation/parent_state_sha256")) : "",
+            flux_history_over_pi=flux_history,
+            observables,
             circumference,
             shift,
             mps_period,
@@ -332,6 +508,9 @@ function postprocess_state_spectrum(
         file["source_state_basename"] = basename(state_path)
         file["theta_over_pi"] = state.theta_over_pi
         file["branch"] = state.branch
+        file["preparation"] = state.preparation
+        file["direction"] = string(state.direction)
+        file["random_seed"] = state.random_seed
         file["geometry/circumference"] = state.circumference
         file["geometry/shift"] = state.shift
         file["geometry/mps_period"] = state.mps_period
@@ -373,7 +552,7 @@ function postprocess_state_spectrum(
     return output_path
 end
 
-function summarize_state_files(directory::AbstractString)
+function summarize_state_files(directory::AbstractString; include_hashes::Bool=false)
     isdir(directory) || return NamedTuple[]
     rows = NamedTuple[]
     for path in sort(filter(p -> endswith(p, ".h5"), readdir(directory; join=true)))
@@ -381,9 +560,20 @@ function summarize_state_files(directory::AbstractString)
             h5open(path, "r") do file
                 haskey(file, "artifact_kind") || return nothing
                 read(file, "artifact_kind") == "project_b_vumps_state" || return nothing
+                circumference = Int(read(file, "geometry/circumference"))
+                shift = Int(read(file, "geometry/shift"))
                 return (;
                     path,
+                    geometry=string(YCGeometry(circumference, shift)),
+                    circumference,
+                    shift,
                     branch=String(read(file, "branch")),
+                    preparation=haskey(file, "preparation") ?
+                        String(read(file, "preparation")) : "legacy_unspecified",
+                    direction=haskey(file, "direction") ?
+                        String(read(file, "direction")) : "unknown",
+                    random_seed=haskey(file, "random_seed") ?
+                        Int(read(file, "random_seed")) : -1,
                     theta_over_pi=Float64(read(file, "theta_over_pi")),
                     maxlinkdim=Int(read(file, "observables/maxlinkdim")),
                     mps_period=haskey(file, "geometry/mps_period") ?
@@ -391,10 +581,25 @@ function summarize_state_files(directory::AbstractString)
                     twist_gauge=haskey(file, "model/twist_gauge") ?
                         String(read(file, "model/twist_gauge")) : "seam_legacy",
                     converged=Bool(read(file, "optimizer/converged")),
+                    continuation_accepted=Bool(read(file, "continuation_accepted")),
                     residual=Float64(read(file, "optimizer/residual")),
                     energy_density=Float64(read(file, "observables/energy_density")),
                     mean_entropy=mean(Float64.(read(file, "observables/von_neumann_entropies"))),
                     energy_term_std=Float64(read(file, "observables/energy_term_std")),
+                    parent_state_path=haskey(file, "continuation/parent_state_path") ?
+                        String(read(file, "continuation/parent_state_path")) : "",
+                    parent_state_sha256=haskey(file, "continuation/parent_state_sha256") ?
+                        String(read(file, "continuation/parent_state_sha256")) : "",
+                    continuity_checked=haskey(file, "continuation/continuity_checked") ?
+                        Bool(read(file, "continuation/continuity_checked")) : false,
+                    continuity_passed=haskey(file, "continuation/continuity_passed") ?
+                        Bool(read(file, "continuation/continuity_passed")) : true,
+                    parent_overlap_per_site=haskey(file, "continuation/overlap_per_site") ?
+                        Float64(read(file, "continuation/overlap_per_site")) : NaN,
+                    flux_history_over_pi=haskey(file, "continuation/flux_history_over_pi") ?
+                        Float64.(read(file, "continuation/flux_history_over_pi")) :
+                        [Float64(read(file, "theta_over_pi"))],
+                    state_sha256=include_hashes ? file_sha256(path) : "",
                 )
             end
         catch err

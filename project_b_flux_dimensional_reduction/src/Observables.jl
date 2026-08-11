@@ -123,6 +123,77 @@ function entanglement_observables(psi)
     return (; von_neumann, renyi2, raw_norms, schmidt_probabilities)
 end
 
+function bond_sector_profile(center_tensor)
+    _, singular_values, _ = svd(center_tensor, first(inds(center_tensor)))
+    schmidt_index = last(inds(singular_values))
+    sector_space = space(schmidt_index)
+    sector_space isa AbstractVector || error(
+        "bond-sector diagnostics require a QN-conserving virtual index",
+    )
+    raw_weights = Dict{String,Float64}()
+    multiplicities = Dict{String,Int}()
+    offset = 0
+    for entry in sector_space
+        qn = first(entry)
+        multiplicity = Int(last(entry))
+        label = string(qn)
+        weight = sum(
+            abs2(singular_values[position, position]) for
+            position in (offset + 1):(offset + multiplicity)
+        )
+        multiplicities[label] = multiplicity
+        raw_weights[label] = Float64(real(weight))
+        offset += multiplicity
+    end
+    offset == dim(schmidt_index) || error("QN sector multiplicities do not sum to bond dimension")
+    normalization = sum(values(raw_weights))
+    normalization > 0 || error("center tensor has zero Schmidt norm")
+    return Dict(
+        label => (
+            multiplicity=multiplicities[label],
+            schmidt_weight=raw_weights[label] / normalization,
+        ) for label in keys(multiplicities)
+    )
+end
+
+function compare_bond_sectors(before, after)
+    nsites(before) == nsites(after) || error("states have different MPS periods")
+    rows = NamedTuple[]
+    for cut in 1:nsites(before)
+        before_profile = bond_sector_profile(before.C[cut])
+        after_profile = bond_sector_profile(after.C[cut])
+        labels = sort!(collect(union(keys(before_profile), keys(after_profile))))
+        for label in labels
+            before_entry = get(
+                before_profile,
+                label,
+                (multiplicity=0, schmidt_weight=0.0),
+            )
+            after_entry = get(
+                after_profile,
+                label,
+                (multiplicity=0, schmidt_weight=0.0),
+            )
+            push!(
+                rows,
+                (;
+                    cut,
+                    qn_label=label,
+                    before_multiplicity=before_entry.multiplicity,
+                    after_multiplicity=after_entry.multiplicity,
+                    multiplicity_delta=
+                        after_entry.multiplicity - before_entry.multiplicity,
+                    before_schmidt_weight=before_entry.schmidt_weight,
+                    after_schmidt_weight=after_entry.schmidt_weight,
+                    schmidt_weight_delta=
+                        after_entry.schmidt_weight - before_entry.schmidt_weight,
+                ),
+            )
+        end
+    end
+    return rows
+end
+
 function local_observables(psi, hamiltonian)
     period = nsites(psi)
     energy_terms = real.(expect(psi, hamiltonian))

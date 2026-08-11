@@ -1,0 +1,58 @@
+# Phase 1 primary-forward recovery: resume only from the last accepted strict-
+# lineage state at theta/pi=0.21875. The first recovery step halves the failed
+# 0.21875 -> 0.25 interval; later intermediate targets reduce large jumps.
+[model]
+circumference = 8
+shift = 1
+mps_period = 2
+twist_gauge = "uniform"
+J1 = 1.0
+J2 = 0.12
+Delta1 = 1.0
+Delta2 = 1.0
+Bz = 0.0
+
+[optimizer]
+maxdim = 128
+cutoff = 1.0e-10
+residual_tol = 1.0e-5
+max_iterations = 100
+max_growth_steps = 16
+solver_tol_scale = 100.0
+solver_tol_floor = 1.0e-10
+multisite_update_alg = "sequential"
+require_converged = true
+divergence_patience = 8
+divergence_factor = 4.0
+
+[scan]
+branch = "primary_forward"
+preparation = "independent_theta0_alternating"
+direction = "forward"
+lineage_policy = "strict"
+fluxes_over_pi = [0.234375, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0]
+seed_pattern = "alternating"
+random_seed = 101
+adaptive_bisection = true
+minimum_step_over_pi = 0.0078125
+save_rejected = true
+require_parent_overlap = true
+minimum_parent_overlap_per_site = 0.99
+parent_overlap_tolerance = 1.0e-8
+parent_overlap_krylov_dimension = 16
+initial_state_file = "../output/phase1/yc8_1/primary_forward/seed_101/chi128/states/state_0008_yc8-1_primary_forward_independent_theta0_alternating_forward_seed101_chi128_theta_p0p21875000_accepted_c6ca08289c23.h5"
+initial_state_sha256 = "492cc6fbc578b02f30a11ff621daa96475bf717b14e75653b388dd089de5415f"
+
+[spectrum]
+physical_sz_sectors = [0.0, 1.0]
+neigs = 4
+tolerance = 1.0e-8
+krylov_dimension = 16
+random_seed = 101
+
+[runtime]
+output_directory = "../output/phase1/yc8_1/primary_forward_recovery_from_0p21875/seed_101/chi128"
+blas_threads = 1
+strided_threads = 1
+threaded_blocksparse = true
+output_level = 1

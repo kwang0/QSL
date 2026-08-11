@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# The launcher configuration validator only needs this command to succeed in
+# the staged-script regression test. The mocked srun records, rather than
+# executes, the eventual Julia command.
+exit 0

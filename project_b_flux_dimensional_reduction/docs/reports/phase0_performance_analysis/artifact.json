@@ -1,0 +1,487 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Project B Phase 0 Performance Analysis",
+    "description": "A matched comparison of the completed Project B CPU validation with the legacy YC6-1 partial flux run, including charging, threading, memory, and workflow effects.",
+    "generatedAt": "2026-08-06T12:14:30-04:00",
+    "cards": [
+      {
+        "id": "matched_cost_efficiency",
+        "description": "Projected shared-QOS node-hours per matched chi=512, theta/pi=0 VUMPS iteration, using each run's resource request.",
+        "dataset": "headline",
+        "sourceId": "derived_comparison",
+        "metrics": [
+          { "label": "Matched node-hour efficiency", "field": "matched_cost_speedup" },
+          { "label": "Legacy mean", "field": "legacy_node_hours" },
+          { "label": "Project B", "field": "project_b_node_hours" }
+        ]
+      },
+      {
+        "id": "matched_wall_speed",
+        "description": "Kernel timing at chi=512 and theta/pi=0; the Project B value is a single deliberately forced iteration.",
+        "dataset": "headline",
+        "sourceId": "derived_comparison",
+        "metrics": [
+          { "label": "Matched wall-clock speed", "field": "matched_wall_speedup" },
+          { "label": "Mean-time reduction", "field": "mean_time_reduction" },
+          { "label": "Vs. legacy last ten", "field": "last_ten_speedup" }
+        ]
+      },
+      {
+        "id": "validation_memory",
+        "description": "Peak resident memory measured by /usr/bin/time for the full chi=512 validation process.",
+        "dataset": "headline",
+        "sourceId": "phase0_recommendation",
+        "metrics": [
+          { "label": "Validation MaxRSS", "field": "validation_rss" },
+          { "label": "Recommended request", "field": "recommended_memory" },
+          { "label": "Measured headroom", "field": "memory_headroom" }
+        ]
+      },
+      {
+        "id": "calibration_spend",
+        "description": "Estimated Phase 0 spend including the failed first seed, successful retry, benchmark matrix, and validation.",
+        "dataset": "headline",
+        "sourceId": "phase0_cost_summary",
+        "metrics": [
+          { "label": "Combined Phase 0 spend", "field": "combined_phase0_spend" },
+          { "label": "Share of 150 node-h", "field": "budget_share" },
+          { "label": "Project budget remaining", "field": "budget_remaining" }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "matched_node_hour_chart",
+        "title": "The matched kernel is about 12.5x cheaper, not 12.5x faster",
+        "subtitle": "Projected shared-QOS node-hours per chi=512, theta/pi=0 VUMPS iteration; lower is better.",
+        "type": "horizontalBar",
+        "intent": "comparison",
+        "question": "How much did node-hour cost change for a matched chi=512, theta/pi=0 kernel iteration?",
+        "rationale": "A two-bar comparison separates allocation efficiency from elapsed-time claims.",
+        "dataset": "matched_chi512",
+        "sourceId": "derived_comparison",
+        "encodings": {
+          "x": { "field": "case", "type": "nominal", "label": "Run" },
+          "y": { "field": "milli_node_hours_per_iteration", "type": "quantitative", "label": "Milli-node-hours per iteration", "format": "number" },
+          "tooltip": [
+            { "field": "node_hours_display", "type": "text", "label": "Node-hours per iteration" },
+            { "field": "seconds_per_iteration", "type": "quantitative", "label": "Seconds per iteration", "format": "number" },
+            { "field": "charged_physical_cores", "type": "quantitative", "label": "Charged physical cores", "format": "number" },
+            { "field": "julia_threads", "type": "quantitative", "label": "Julia threads", "format": "number" },
+            { "field": "requested_memory_gib", "type": "quantitative", "label": "Requested memory GiB", "format": "number" }
+          ]
+        },
+        "valueFormat": "number",
+        "yAxisTitle": "Milli-node-hours per iteration",
+        "settings": { "sort": "descending", "showValues": true, "categoryLabelPolicy": "wrap" },
+        "labels": { "values": "all" },
+        "layout": "full"
+      },
+      {
+        "id": "thread_sweep_chart",
+        "title": "Two block-sparse threads are the measured sweet spot at chi=256",
+        "subtitle": "Three timed VUMPS iterations per candidate; lower seconds per iteration is better.",
+        "type": "horizontalBar",
+        "intent": "comparison",
+        "question": "Which threading configuration minimizes VUMPS kernel time on the calibration state?",
+        "rationale": "A sorted horizontal bar chart makes the non-monotonic thread scaling and backend differences visible.",
+        "dataset": "phase0_candidates",
+        "sourceId": "phase0_summary",
+        "encodings": {
+          "x": { "field": "label", "type": "nominal", "label": "Configuration" },
+          "y": { "field": "seconds_per_iteration", "type": "quantitative", "label": "Seconds per iteration", "format": "number" },
+          "tooltip": [
+            { "field": "backend", "type": "nominal", "label": "Backend" },
+            { "field": "julia_threads", "type": "quantitative", "label": "Julia threads", "format": "number" },
+            { "field": "slurm_logical_cpus", "type": "quantitative", "label": "Slurm logical CPUs", "format": "number" },
+            { "field": "max_rss_gib", "type": "quantitative", "label": "MaxRSS GiB", "format": "number" },
+            { "field": "projected_node_hours_display", "type": "text", "label": "Projected node-hours per iteration" }
+          ]
+        },
+        "valueFormat": "number",
+        "yAxisTitle": "Seconds per iteration",
+        "settings": { "sort": "ascending", "showValues": true, "categoryLabelPolicy": "wrap" },
+        "labels": { "values": "all" },
+        "layout": "full"
+      }
+    ],
+    "tables": [
+      {
+        "id": "matched_detail_table",
+        "title": "Matched chi=512 comparison",
+        "subtitle": "The timing match is useful, but the unequal sample counts and convergence states limit wall-speed conclusions.",
+        "dataset": "matched_chi512",
+        "sourceId": "derived_comparison",
+        "columns": [
+          { "field": "case", "label": "Run", "type": "text" },
+          { "field": "seconds_per_iteration", "label": "Mean sec/iter", "format": "number" },
+          { "field": "iterations", "label": "Samples", "format": "number" },
+          { "field": "residual", "label": "Ending residual", "format": "number" },
+          { "field": "mps_period", "label": "MPS period", "format": "number" },
+          { "field": "julia_threads", "label": "Julia threads", "format": "number" },
+          { "field": "slurm_logical_cpus", "label": "Slurm CPUs", "format": "number" },
+          { "field": "requested_memory_gib", "label": "Memory GiB", "format": "number" },
+          { "field": "charged_physical_cores", "label": "Charged cores", "format": "number" },
+          { "field": "node_hours_display", "label": "Node-h/iter", "type": "text" }
+        ]
+      },
+      {
+        "id": "candidate_detail_table",
+        "title": "Phase 0 candidate detail",
+        "subtitle": "All candidates completed three timed iterations at chi=256; projected costs use each candidate's right-sized 8 GiB request.",
+        "dataset": "phase0_candidates",
+        "sourceId": "phase0_summary",
+        "defaultSort": { "field": "seconds_per_iteration", "direction": "asc" },
+        "columns": [
+          { "field": "label", "label": "Configuration", "type": "text" },
+          { "field": "backend", "label": "Backend", "type": "text" },
+          { "field": "julia_threads", "label": "Threads", "format": "number" },
+          { "field": "slurm_logical_cpus", "label": "Slurm CPUs", "format": "number" },
+          { "field": "seconds_per_iteration", "label": "Sec/iter", "format": "number" },
+          { "field": "max_rss_gib", "label": "MaxRSS GiB", "format": "number" },
+          { "field": "projected_node_hours_display", "label": "Node-h/iter", "type": "text" }
+        ]
+      },
+      {
+        "id": "driver_table",
+        "title": "Efficiency-driver assessment",
+        "subtitle": "Only right-sizing and the controlled thread sweep have strong quantitative attribution; the other changes are directionally sound but not independently isolated.",
+        "dataset": "efficiency_drivers",
+        "sourceId": "efficiency_drivers_source",
+        "columns": [
+          { "field": "driver", "label": "Driver", "type": "text" },
+          { "field": "evidence", "label": "Evidence", "type": "text" },
+          { "field": "observed_effect", "label": "Observed effect", "type": "text" },
+          { "field": "causal_confidence", "label": "Confidence", "type": "text" },
+          { "field": "scope", "label": "Scope", "type": "text" }
+        ]
+      },
+      {
+        "id": "legacy_flux_table",
+        "title": "Legacy finite-flux timing context",
+        "subtitle": "Completed flux points only. These values explain why the old campaign felt slow, but they are not a Project B speedup measurement.",
+        "dataset": "legacy_flux_context",
+        "sourceId": "legacy_log",
+        "columns": [
+          { "field": "theta_over_pi", "label": "Theta/pi", "format": "number" },
+          { "field": "iterations", "label": "Iterations", "format": "number" },
+          { "field": "mean_seconds", "label": "Mean sec/iter", "format": "number" },
+          { "field": "min_seconds", "label": "Min sec", "format": "number" },
+          { "field": "max_seconds", "label": "Max sec", "format": "number" }
+        ]
+      }
+    ],
+    "sources": [
+      { "id": "derived_comparison", "label": "Derived matched performance comparison", "path": "project_b_flux_dimensional_reduction/docs/data/phase0_performance_comparison.csv" },
+      { "id": "efficiency_drivers_source", "label": "Efficiency-driver assessment", "path": "project_b_flux_dimensional_reduction/docs/data/phase0_efficiency_drivers.csv" },
+      { "id": "phase0_cost_summary", "label": "Combined Phase 0 cost summary", "path": "project_b_flux_dimensional_reduction/docs/data/phase0_cost_summary.csv" },
+      { "id": "phase0_summary", "label": "Phase 0 candidate summary", "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/summary.csv" },
+      { "id": "validation_result", "label": "Chi=512 validation result", "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/metrics/validation.result" },
+      { "id": "validation_time", "label": "Chi=512 process resource measurement", "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/metrics/validation.time" },
+      { "id": "phase0_recommendation", "label": "Phase 0 recommendation and charge summary", "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/recommendation.txt" },
+      { "id": "failed_seed_recommendation", "label": "Failed first-seed charge summary", "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/20260804T205703Z/recommendation.txt" },
+      { "id": "legacy_log", "label": "Legacy YC6-1 partial-run Slurm log", "path": "logs_cpu/ground_state_search_flux_threaded_vumps_YC6-1_J0.12_thetaPi1.0_chi512_nflux11_54370665.txt" },
+      { "id": "legacy_launcher", "label": "Legacy CPU launcher", "path": "run_flux_threaded_vumps_cpu.sh" },
+      { "id": "phase0_script", "label": "Project B Phase 0 calibration script", "path": "project_b_flux_dimensional_reduction/slurm/phase0_calibrate_cpu.sh" },
+      { "id": "geometry_code", "label": "Project B unit-cell geometry implementation", "path": "project_b_flux_dimensional_reduction/src/Geometry.jl" },
+      { "id": "scan_code", "label": "Project B scan orchestration", "path": "project_b_flux_dimensional_reduction/src/Scan.jl" },
+      { "id": "transfer_code", "label": "Project B transfer-spectrum implementation", "path": "project_b_flux_dimensional_reduction/src/TransferSpectra.jl" }
+    ],
+    "blocks": [
+      { "id": "title", "type": "markdown", "body": "# Project B Phase 0 Performance Analysis" },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "body": "## Executive Summary\n\nThe completed validation does **not** demonstrate an order-of-magnitude wall-clock speedup for the VUMPS kernel. At the only matched point available—chi=512 and theta/pi=0—the Project B iteration took **381.7 s**, versus a **409.0 s** legacy mean, a modest **1.07x** difference. Against the legacy last-ten-iteration mean of **388.8 s**, the difference is only **1.02x**.\n\nThe large gain is instead **about 12x lower node-hour cost**. The legacy allocation was charged as 35 physical cores per wall hour; the recommended 4-logical-CPU, 8-GiB request is charged as 3. That **11.67x lower charge rate** supplies almost all of the savings, while kernel wall time remains broadly similar.\n\nThe validation itself finished in 8m24s because it intentionally performed **exactly one** chi=512 iteration after bond-dimension growth. Its ending residual, **6.97e-3**, is far above a production convergence target, so the elapsed job time must not be interpreted as time to obtain a converged chi=512 ground state."
+      },
+      { "id": "headline_metrics", "type": "metric-strip", "cardIds": ["matched_cost_efficiency", "matched_wall_speed", "validation_memory", "calibration_spend"] },
+      {
+        "id": "matched_finding",
+        "type": "markdown",
+        "body": "## Matched timing: similar wall time, dramatically lower charge\n\nUsing the legacy theta/pi=0 mean gives a projected **0.03106 node-h/iteration** for the old request and **0.002485 node-h/iteration** for Project B, a **12.50x** ratio. This is a resource-efficiency result, not evidence that the numerical kernel became 12.5x faster."
+      },
+      { "id": "matched_chart_block", "type": "chart", "chartId": "matched_node_hour_chart", "layout": "full" },
+      { "id": "matched_table_block", "type": "table", "tableId": "matched_detail_table", "layout": "full" },
+      {
+        "id": "threading_finding",
+        "type": "markdown",
+        "sourceId": "phase0_summary",
+        "body": "## Why two threads beat a much larger allocation\n\nThe controlled chi=256 sweep shows negative scaling beyond two block-sparse threads. **blocksparse-t2** reached **27.77 s/iteration**, versus **36.85 s** for serial-t1 and **57.20 s** for blocksparse-t32. The 32-thread candidate was therefore **2.06x slower in wall time** and **21.97x more expensive per projected iteration** than the winner.\n\nThis is consistent with a symmetry-blocked tensor workload: many contractions consist of relatively small independent blocks, so scheduling, synchronization, cache traffic, and NUMA effects can exceed the useful parallel work. More requested cores do not imply more throughput for this kernel."
+      },
+      { "id": "thread_chart_block", "type": "chart", "chartId": "thread_sweep_chart", "layout": "full" },
+      { "id": "candidate_table_block", "type": "table", "tableId": "candidate_detail_table", "layout": "full" },
+      {
+        "id": "driver_assessment",
+        "type": "markdown",
+        "body": "## Why Project B uses fewer resources\n\nThree implementation choices reduce wasted work: the YC6-1 state now uses the symmetry-compatible **period-2** MPS cell instead of the legacy period-6 supercell; threaded block-sparse contractions are enabled at their measured two-thread sweet spot; and transfer-spectrum eigensolves are separated from optimization so rejected or unconverged states do not automatically pay for 16 eigenvalues at every flux point.\n\nThese choices are well motivated, but their individual wall-time contributions are not isolated by the present data. The right-sized Shared-QOS request is the only driver that can be assigned most of the observed node-hour gain quantitatively."
+      },
+      { "id": "driver_table_block", "type": "table", "tableId": "driver_table", "layout": "full" },
+      {
+        "id": "legacy_context",
+        "type": "markdown",
+        "sourceId": "legacy_log",
+        "body": "## Why the old campaign felt much slower\n\nThe old run's completed finite-flux points averaged roughly **980–1162 s per chi=512 iteration**, versus **409 s** at theta/pi=0. First iterations after flux changes sometimes exceeded **2200–2700 s**, and the workflow also requested 16 transfer eigenvalues at every flux. Those facts explain the 48-hour campaign experience, but they cannot yet be counted as a Project B speedup because no matched finite-flux Project B production run or spectrum benchmark exists."
+      },
+      { "id": "legacy_flux_table_block", "type": "table", "tableId": "legacy_flux_table", "layout": "full" },
+      {
+        "id": "scope",
+        "type": "markdown",
+        "body": "## Scope and Metric Definitions\n\n- **Matched kernel comparison:** chi=512, theta/pi=0 VUMPS iteration time only. Bond-dimension growth, Julia startup, I/O, and transfer-spectrum postprocessing are excluded.\n- **Validation elapsed time:** 503.73 s for the full process, including 57.91 s of growth, 381.74 s of kernel work, and startup/I/O overhead.\n- **Projected production cost:** applies the recommended 8-GiB request to measured kernel time. The validation job itself deliberately requested 64 GiB for safety and was charged an estimated 0.019727 node-hours for the whole job.\n- **Combined Phase 0 spend:** 0.661567 node-hours for the failed first seed plus 0.432866 for the successful retry, benchmark matrix, and validation, totaling 1.094433 node-hours."
+      },
+      {
+        "id": "methodology",
+        "type": "markdown",
+        "body": "## Methodology\n\nLegacy timing statistics were extracted from all 40 chi=512 VUMPS iteration records at theta/pi=0 in Slurm job 54370665. The Project B validation timing and residual came from `validation.result`; process CPU and memory came from `validation.time`.\n\nShared-QOS projection follows the Phase 0 script: `charged physical cores = ceil(max(requested logical CPUs, ceil(memory MiB / 1952)) / 2)`, and `node-hours = wall hours x charged physical cores / 128`. Thus the legacy 69-logical-CPU, 128-GiB request maps to 35 charged physical cores, while the recommended 4-logical-CPU, 8-GiB request maps to 3.\n\nAt theta/pi=0 this gives 408.951/3600 x 35/128 = **0.0310618 node-hours** for the legacy mean and 381.741/3600 x 3/128 = **0.00248529 node-hours** for Project B."
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "body": "## Limitations and Robustness\n\n- The new chi=512 kernel estimate has **n=1**; the legacy reference has n=40. No confidence interval is defensible for the new value.\n- The new validation residual was 6.97e-3, while the final legacy theta/pi=0 residual was 1.50e-5. Solver state and convergence regime differ.\n- The controlled backend sweep was performed at chi=256, not chi=512.\n- Unit-cell period, threading backend, thread count, and orchestration all changed together between legacy and Project B, so their individual causal effects cannot be separated from this comparison.\n- Legacy MaxRSS and average CPU utilization were not captured locally. The old resource request is known; its actual consumption is not.\n- No Project B finite-flux or transfer-spectrum timing is available yet. Those phases may have different scaling and memory requirements."
+      },
+      {
+        "id": "recommendations",
+        "type": "markdown",
+        "body": "## Recommendations\n\n1. Use the measured optimization setting for the next pilot: **2 Julia threads, threaded block-sparse enabled, BLAS=1, Strided=1, 4 Slurm logical CPUs, and 8 GiB**. The 1.414-GiB validation MaxRSS leaves 5.66x request headroom.\n2. Before a broad flux scan, time **3–5 chi=512 iterations at one nonzero flux** from a checkpoint. Record kernel time, residual movement, MaxRSS, elapsed time, and `sacct` charge. This is the smallest useful test of whether the 2–3x legacy finite-flux slowdown persists.\n3. Benchmark transfer-spectrum postprocessing as a separate job. Do not assume the optimization job's 8-GiB memory result automatically covers 16-eigenvalue Krylov solves in multiple spin sectors.\n4. Budget production from finite-flux measurements, not from the 8m24s validation elapsed time. Until that measurement exists, keep a **2–3x wall-time contingency** per iteration and checkpoint frequently.\n5. Treat the current configuration as selected for efficiency, but retain one matched higher-thread control only if future chi=512 finite-flux data show a clear saturation bottleneck."
+      },
+      {
+        "id": "further_questions",
+        "type": "markdown",
+        "body": "## Further Questions\n\n- Does the two-thread optimum remain stable at chi=512 away from theta=0?\n- How many iterations does the corrected period-2 state require to meet the production residual gate at each flux?\n- What are the time and MaxRSS costs of neutral and spinful transfer-matrix sectors separately?\n- Are timings stable across Perlmutter nodes, or is the single validation unusually favorable?\n- Once a full corrected scan exists, how much campaign cost is saved by adaptive flux refinement and by postprocessing only accepted states?"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-06T12:14:30-04:00",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "matched_cost_speedup": "12.50x",
+          "legacy_node_hours": "0.03106 node-h/iter",
+          "project_b_node_hours": "0.002485 node-h/iter",
+          "matched_wall_speedup": "1.07x",
+          "mean_time_reduction": "6.65%",
+          "last_ten_speedup": "1.02x",
+          "validation_rss": "1.414 GiB",
+          "recommended_memory": "8 GiB",
+          "memory_headroom": "5.66x",
+          "combined_phase0_spend": "1.094 node-h",
+          "budget_share": "0.73%",
+          "budget_remaining": "148.906 node-h"
+        }
+      ],
+      "matched_chi512": [
+        {
+          "case": "Legacy partial run",
+          "theta_over_pi": 0.0,
+          "chi": 512,
+          "mps_period": 6,
+          "julia_threads": 32,
+          "threading_backend": "serial",
+          "threaded_blocksparse": false,
+          "slurm_logical_cpus": 69,
+          "requested_memory_gib": 128,
+          "charged_physical_cores": 35,
+          "iterations": 40,
+          "seconds_per_iteration": 408.951255819,
+          "median_seconds_per_iteration": 397.950046110,
+          "last_ten_seconds_per_iteration": 388.843571302,
+          "residual": 0.000015049519006841564,
+          "node_hours_per_iteration": 0.031061835837,
+          "milli_node_hours_per_iteration": 31.061835837,
+          "node_hours_display": "0.031061836"
+        },
+        {
+          "case": "Project B validation",
+          "theta_over_pi": 0.0,
+          "chi": 512,
+          "mps_period": 2,
+          "julia_threads": 2,
+          "threading_backend": "blocksparse",
+          "threaded_blocksparse": true,
+          "slurm_logical_cpus": 4,
+          "requested_memory_gib": 8,
+          "charged_physical_cores": 3,
+          "iterations": 1,
+          "seconds_per_iteration": 381.741060556,
+          "median_seconds_per_iteration": 381.741060556,
+          "last_ten_seconds_per_iteration": null,
+          "residual": 0.006971664480788064,
+          "node_hours_per_iteration": 0.002485293363,
+          "milli_node_hours_per_iteration": 2.485293363,
+          "node_hours_display": "0.002485293"
+        }
+      ],
+      "phase0_candidates": [
+        { "rank": 1, "label": "blocksparse-t2", "backend": "blocksparse", "julia_threads": 2, "slurm_logical_cpus": 4, "iterations": 3, "seconds_per_iteration": 27.770756, "max_rss_gib": 1.368, "recommended_mem_gib": 8, "projected_physical_cores": 3, "projected_node_hours_per_iteration": 0.000180799, "projected_node_hours_display": "0.000180799" },
+        { "rank": 2, "label": "blocksparse-t4", "backend": "blocksparse", "julia_threads": 4, "slurm_logical_cpus": 8, "iterations": 3, "seconds_per_iteration": 31.183036, "max_rss_gib": 1.318, "recommended_mem_gib": 8, "projected_physical_cores": 4, "projected_node_hours_per_iteration": 0.000270686, "projected_node_hours_display": "0.000270686" },
+        { "rank": 3, "label": "serial-t1", "backend": "serial", "julia_threads": 1, "slurm_logical_cpus": 2, "iterations": 3, "seconds_per_iteration": 36.853312, "max_rss_gib": 1.410, "recommended_mem_gib": 8, "projected_physical_cores": 3, "projected_node_hours_per_iteration": 0.000239930, "projected_node_hours_display": "0.000239930" },
+        { "rank": 4, "label": "blocksparse-t8", "backend": "blocksparse", "julia_threads": 8, "slurm_logical_cpus": 16, "iterations": 3, "seconds_per_iteration": 43.259862, "max_rss_gib": 1.392, "recommended_mem_gib": 8, "projected_physical_cores": 8, "projected_node_hours_per_iteration": 0.000751039, "projected_node_hours_display": "0.000751039" },
+        { "rank": 5, "label": "serial-t8", "backend": "serial", "julia_threads": 8, "slurm_logical_cpus": 16, "iterations": 3, "seconds_per_iteration": 46.518223, "max_rss_gib": 1.207, "recommended_mem_gib": 8, "projected_physical_cores": 8, "projected_node_hours_per_iteration": 0.000807608, "projected_node_hours_display": "0.000807608" },
+        { "rank": 6, "label": "strided-t8", "backend": "strided", "julia_threads": 8, "slurm_logical_cpus": 16, "iterations": 3, "seconds_per_iteration": 48.219230, "max_rss_gib": 1.201, "recommended_mem_gib": 8, "projected_physical_cores": 8, "projected_node_hours_per_iteration": 0.000837139, "projected_node_hours_display": "0.000837139" },
+        { "rank": 7, "label": "strided-t4", "backend": "strided", "julia_threads": 4, "slurm_logical_cpus": 8, "iterations": 3, "seconds_per_iteration": 49.669079, "max_rss_gib": 1.228, "recommended_mem_gib": 8, "projected_physical_cores": 4, "projected_node_hours_per_iteration": 0.000431155, "projected_node_hours_display": "0.000431155" },
+        { "rank": 8, "label": "blocksparse-t32", "backend": "blocksparse", "julia_threads": 32, "slurm_logical_cpus": 64, "iterations": 3, "seconds_per_iteration": 57.195206, "max_rss_gib": 1.625, "recommended_mem_gib": 8, "projected_physical_cores": 32, "projected_node_hours_per_iteration": 0.003971889, "projected_node_hours_display": "0.003971889" },
+        { "rank": 9, "label": "blocksparse-t16", "backend": "blocksparse", "julia_threads": 16, "slurm_logical_cpus": 32, "iterations": 3, "seconds_per_iteration": 57.747233, "max_rss_gib": 1.414, "recommended_mem_gib": 8, "projected_physical_cores": 16, "projected_node_hours_per_iteration": 0.002005112, "projected_node_hours_display": "0.002005112" },
+        { "rank": 10, "label": "strided-t16", "backend": "strided", "julia_threads": 16, "slurm_logical_cpus": 32, "iterations": 3, "seconds_per_iteration": 78.597439, "max_rss_gib": 1.236, "recommended_mem_gib": 8, "projected_physical_cores": 16, "projected_node_hours_per_iteration": 0.002729078, "projected_node_hours_display": "0.002729078" },
+        { "rank": 11, "label": "blas-t4", "backend": "blas", "julia_threads": 4, "slurm_logical_cpus": 8, "iterations": 3, "seconds_per_iteration": 78.855609, "max_rss_gib": 1.248, "recommended_mem_gib": 8, "projected_physical_cores": 4, "projected_node_hours_per_iteration": 0.000684510, "projected_node_hours_display": "0.000684510" },
+        { "rank": 12, "label": "blas-t8", "backend": "blas", "julia_threads": 8, "slurm_logical_cpus": 16, "iterations": 3, "seconds_per_iteration": 80.111254, "max_rss_gib": 1.154, "recommended_mem_gib": 8, "projected_physical_cores": 8, "projected_node_hours_per_iteration": 0.001390820, "projected_node_hours_display": "0.001390820" },
+        { "rank": 13, "label": "blas-t16", "backend": "blas", "julia_threads": 16, "slurm_logical_cpus": 32, "iterations": 3, "seconds_per_iteration": 104.159967, "max_rss_gib": 1.169, "recommended_mem_gib": 8, "projected_physical_cores": 16, "projected_node_hours_per_iteration": 0.003616666, "projected_node_hours_display": "0.003616666" }
+      ],
+      "efficiency_drivers": [
+        { "driver": "Shared-QOS right-sizing", "evidence": "35 charged physical cores for legacy versus 3 for Project B", "observed_effect": "11.67x lower charge rate before wall-time change", "causal_confidence": "High", "scope": "Matched theta/pi=0 node-hour comparison" },
+        { "driver": "Kernel wall time", "evidence": "408.951 s legacy mean versus 381.741 s Project B", "observed_effect": "1.071x against old mean; 1.019x against old last ten", "causal_confidence": "Low-to-moderate", "scope": "New timing has n=1 and is unconverged" },
+        { "driver": "Thread-count sweet spot", "evidence": "blocksparse-t2 27.771 s versus blocksparse-t32 57.195 s", "observed_effect": "32-thread case 2.06x slower and 21.97x costlier", "causal_confidence": "High", "scope": "Controlled chi=256 sweep; n=3 each" },
+        { "driver": "Minimal symmetry-compatible cell", "evidence": "Period 2 for Project B versus period 6 legacy supercell", "observed_effect": "Less repeated tensor/environment work; isolated effect unmeasured", "causal_confidence": "High structure; low isolated effect", "scope": "Implementation and job configuration" },
+        { "driver": "Optimization/spectroscopy separation", "evidence": "Legacy requested 16 transfer eigenvalues per flux; Project B postprocesses accepted states", "observed_effect": "Avoids spectroscopy on rejected or unconverged states", "causal_confidence": "High workflow; unquantified campaign", "scope": "Full scan campaign, not kernel timing" }
+      ],
+      "legacy_flux_context": [
+        { "theta_over_pi": 0.0, "iterations": 40, "mean_seconds": 408.951255819, "min_seconds": 357.811212271, "max_seconds": 827.207102007 },
+        { "theta_over_pi": 0.1, "iterations": 20, "mean_seconds": 1012.184093869, "min_seconds": 773.854392169, "max_seconds": 2393.756488415 },
+        { "theta_over_pi": 0.2, "iterations": 20, "mean_seconds": 1085.477870087, "min_seconds": 796.913015978, "max_seconds": 2498.499650789 },
+        { "theta_over_pi": 0.3, "iterations": 20, "mean_seconds": 1162.169279454, "min_seconds": 841.183490970, "max_seconds": 2563.013317011 },
+        { "theta_over_pi": 0.4, "iterations": 20, "mean_seconds": 1115.373932133, "min_seconds": 1002.980594463, "max_seconds": 2656.708568117 },
+        { "theta_over_pi": 0.5, "iterations": 20, "mean_seconds": 1005.596316948, "min_seconds": 901.239523544, "max_seconds": 2743.695722490 },
+        { "theta_over_pi": 0.6, "iterations": 20, "mean_seconds": 997.564961185, "min_seconds": 817.585006960, "max_seconds": 2333.687427549 },
+        { "theta_over_pi": 0.7, "iterations": 20, "mean_seconds": 979.817976322, "min_seconds": 858.157805636, "max_seconds": 2218.526565685 }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "derived_comparison",
+      "label": "Derived matched performance comparison",
+      "path": "project_b_flux_dimensional_reduction/docs/data/phase0_performance_comparison.csv",
+      "query": {
+        "engine": "local_files",
+        "sql": "SELECT * FROM read_csv_auto('project_b_flux_dimensional_reduction/docs/data/phase0_performance_comparison.csv', header = true)",
+        "description": "Matched chi=512 theta/pi=0 timing and Perlmutter Shared-QOS charge calculations derived from the Project B validation and legacy Slurm log.",
+        "tables_used": [
+          "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/metrics/validation.result",
+          "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/metrics/validation.time",
+          "logs_cpu/ground_state_search_flux_threaded_vumps_YC6-1_J0.12_thetaPi1.0_chi512_nflux11_54370665.txt"
+        ],
+        "filters": ["chi=512", "theta/pi=0 for matched comparison", "completed legacy flux points for context"],
+        "metric_definitions": [
+          "Legacy mean seconds per iteration = arithmetic mean of 40 chi=512 iteration-time records at theta/pi=0.",
+          "Charged physical cores = ceil(max(requested logical CPUs, ceil(memory MiB / 1952)) / 2).",
+          "Projected node-hours per iteration = seconds per iteration / 3600 x charged physical cores / 128.",
+          "Efficiency ratio = legacy projected node-hours per iteration / Project B projected node-hours per iteration."
+        ]
+      }
+    },
+    {
+      "id": "efficiency_drivers_source",
+      "label": "Efficiency-driver assessment",
+      "path": "project_b_flux_dimensional_reduction/docs/data/phase0_efficiency_drivers.csv",
+      "query": {
+        "engine": "derived_analysis",
+        "sql": "SELECT * FROM read_csv_auto('project_b_flux_dimensional_reduction/docs/data/phase0_efficiency_drivers.csv', header = true)",
+        "description": "Evidence-to-driver assessment separating directly measured effects from implementation changes whose isolated contribution is not identified.",
+        "tables_used": [
+          "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/summary.csv",
+          "project_b_flux_dimensional_reduction/docs/data/phase0_performance_comparison.csv",
+          "project_b_flux_dimensional_reduction/src/Geometry.jl",
+          "project_b_flux_dimensional_reduction/src/Scan.jl",
+          "project_b_flux_dimensional_reduction/src/TransferSpectra.jl",
+          "run_flux_threaded_vumps_cpu.sh"
+        ],
+        "metric_definitions": ["Causal confidence is qualitative: high only when directly controlled or structurally verified; otherwise the contribution is marked unisolated."]
+      }
+    },
+    {
+      "id": "phase0_cost_summary",
+      "label": "Combined Phase 0 cost summary",
+      "path": "project_b_flux_dimensional_reduction/docs/data/phase0_cost_summary.csv",
+      "query": {
+        "engine": "local_files",
+        "sql": "SELECT * FROM read_csv_auto('project_b_flux_dimensional_reduction/docs/data/phase0_cost_summary.csv', header = true)",
+        "description": "Combined estimated charge for the failed original seed and the successful retry, candidate matrix, and validation.",
+        "tables_used": [
+          "project_b_flux_dimensional_reduction/output/phase0_calibration/20260804T205703Z/recommendation.txt",
+          "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/recommendation.txt"
+        ],
+        "metric_definitions": [
+          "Combined Phase 0 node-hours = 0.661567 + 0.432866 = 1.094433.",
+          "Budget share percent = combined node-hours / 150 x 100.",
+          "Remaining Project B budget = 150 - combined node-hours."
+        ]
+      }
+    },
+    {
+      "id": "phase0_summary",
+      "label": "Phase 0 candidate summary",
+      "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/summary.csv",
+      "query": {
+        "engine": "phase0_calibration",
+        "sql": "SELECT * FROM read_csv_auto('project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/summary.csv', header = true) WHERE state = 'COMPLETED' AND iterations = 3",
+        "description": "Thirteen completed threading candidates, each timed over three chi=256 VUMPS iterations.",
+        "filters": ["state=COMPLETED", "iterations=3"],
+        "metric_definitions": ["Seconds per iteration = measured kernel seconds / 3.", "Projected node-hours use right-sized memory with the Shared-QOS charging formula."]
+      }
+    },
+    {
+      "id": "validation_result",
+      "label": "Chi=512 validation result",
+      "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/metrics/validation.result",
+      "query": { "engine": "phase0_validation", "description": "One deliberately forced chi=512 post-expansion VUMPS iteration with backend, period, kernel timing, and residual metadata." }
+    },
+    {
+      "id": "validation_time",
+      "label": "Chi=512 process resource measurement",
+      "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/metrics/validation.time",
+      "query": { "engine": "gnu_time", "sql": "SELECT 1483016.0 / 1048576.0 AS max_rss_gib, 503.73 AS elapsed_seconds, 144 AS cpu_percent", "description": "Full-process elapsed time, CPU percentage, and maximum resident set size for the validation job.", "metric_definitions": ["MaxRSS GiB = 1483016 KiB / 1048576 = 1.414 GiB."] }
+    },
+    {
+      "id": "phase0_recommendation",
+      "label": "Phase 0 recommendation and charge summary",
+      "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/phase0_retry_80iter/recommendation.txt",
+      "query": { "engine": "phase0_report", "sql": "SELECT 1.414 AS validation_max_rss_gib, 8 AS validated_memory_gib, 0.019727 AS validation_node_hours, 0.432866 AS successful_run_node_hours", "description": "Selected configuration, right-sized memory, projected cost, validation cost, and successful retry total." }
+    },
+    {
+      "id": "failed_seed_recommendation",
+      "label": "Failed first-seed charge summary",
+      "path": "project_b_flux_dimensional_reduction/output/phase0_calibration/20260804T205703Z/recommendation.txt",
+      "query": { "engine": "phase0_report", "description": "Estimated 0.661567 node-hour charge for the original seed that stopped just above its convergence threshold." }
+    },
+    {
+      "id": "legacy_log",
+      "label": "Legacy YC6-1 partial-run Slurm log",
+      "path": "logs_cpu/ground_state_search_flux_threaded_vumps_YC6-1_J0.12_thetaPi1.0_chi512_nflux11_54370665.txt",
+      "query": { "engine": "slurm_log", "sql": "SELECT theta_over_pi, count(*) AS iterations, avg(iteration_seconds) AS mean_seconds, min(iteration_seconds) AS min_seconds, max(iteration_seconds) AS max_seconds FROM parsed_legacy_vumps_log WHERE chi = 512 AND theta_over_pi BETWEEN 0.0 AND 0.7 GROUP BY theta_over_pi ORDER BY theta_over_pi", "description": "Legacy job configuration and per-iteration VUMPS timings through theta/pi=0.7, plus two iterations at 0.8.", "filters": ["chi=512", "completed theta/pi values 0.0 through 0.7"] }
+    },
+    {
+      "id": "legacy_launcher",
+      "label": "Legacy CPU launcher",
+      "path": "run_flux_threaded_vumps_cpu.sh",
+      "query": { "engine": "source_code", "description": "Legacy defaults for CPU count, memory, Julia threads, block-sparse threading, and transfer eigenvalues." }
+    },
+    {
+      "id": "phase0_script",
+      "label": "Project B Phase 0 calibration script",
+      "path": "project_b_flux_dimensional_reduction/slurm/phase0_calibrate_cpu.sh",
+      "query": { "engine": "source_code", "description": "Calibration matrix, Shared-QOS charge model, right-sizing rules, and exactly-one-iteration chi=512 validation behavior." }
+    },
+    {
+      "id": "geometry_code",
+      "label": "Project B unit-cell geometry implementation",
+      "path": "project_b_flux_dimensional_reduction/src/Geometry.jl",
+      "query": { "engine": "source_code", "description": "Minimal symmetry-compatible MPS period and YC bond-table construction." }
+    },
+    {
+      "id": "scan_code",
+      "label": "Project B scan orchestration",
+      "path": "project_b_flux_dimensional_reduction/src/Scan.jl",
+      "query": { "engine": "source_code", "description": "Minimal-period enforcement, convergence gating, checkpointing, and adaptive flux refinement." }
+    },
+    {
+      "id": "transfer_code",
+      "label": "Project B transfer-spectrum implementation",
+      "path": "project_b_flux_dimensional_reduction/src/TransferSpectra.jl",
+      "query": { "engine": "source_code", "description": "Independent transfer-spectrum eigensolves and momentum reconstruction for accepted MPS states." }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+# Phase 1 independent basin diagnostic: prepare the theta/pi=1 endpoint from a
+# shifted product state. This config must never inherit a primary-forward file.
+[model]
+circumference = 8
+shift = 1
+mps_period = 2
+twist_gauge = "uniform"
+J1 = 1.0
+J2 = 0.12
+Delta1 = 1.0
+Delta2 = 1.0
+Bz = 0.0
+
+[optimizer]
+maxdim = 128
+cutoff = 1.0e-10
+residual_tol = 1.0e-5
+max_iterations = 100
+max_growth_steps = 16
+solver_tol_scale = 100.0
+solver_tol_floor = 1.0e-10
+multisite_update_alg = "sequential"
+require_converged = true
+divergence_patience = 8
+divergence_factor = 4.0
+
+[scan]
+branch = "competing_reverse"
+preparation = "independent_theta1_shifted_alternating"
+direction = "reverse"
+lineage_policy = "strict"
+fluxes_over_pi = [1.0, 0.875, 0.75, 0.5, 0.0]
+seed_pattern = "alternating_shifted"
+random_seed = 102
+adaptive_bisection = true
+minimum_step_over_pi = 0.03125
+save_rejected = true
+require_parent_overlap = true
+minimum_parent_overlap_per_site = 0.99
+parent_overlap_tolerance = 1.0e-8
+parent_overlap_krylov_dimension = 16
+
+[spectrum]
+physical_sz_sectors = [0.0, 1.0]
+neigs = 4
+tolerance = 1.0e-8
+krylov_dimension = 16
+random_seed = 102
+
+[runtime]
+output_directory = "../output/phase1/yc8_1/competing_reverse/seed_102/chi128"
+blas_threads = 1
+strided_threads = 1
+threaded_blocksparse = true
+output_level = 1

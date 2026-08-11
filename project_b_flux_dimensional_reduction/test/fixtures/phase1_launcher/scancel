@@ -1,0 +1,4 @@
+#!/bin/bash
+
+: "${MOCK_SCANCEL_ARGS_FILE:?MOCK_SCANCEL_ARGS_FILE must be set}"
+printf '%s\n' "$@" >"$MOCK_SCANCEL_ARGS_FILE"

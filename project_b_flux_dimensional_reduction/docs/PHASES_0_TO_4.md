@@ -12,8 +12,8 @@ the reserve and are not automatically reassigned.
 
 | Phase | Ceiling | Current status | Exit product |
 |---|---:|---|---|
-| 0 — correctness and resource calibration | 10 node-h | Initial seed failed narrowly; 80-iteration retry prepared | Correct minimal-cell timing, peak RSS, and one recommended threading configuration |
-| 1 — cheap branch discovery | 20 node-h | Not started | Forward/reverse or second-seed basins and approximate critical fluxes |
+| 0 — correctness and resource calibration | 10 node-h | **Complete**; corrected seed, 13-candidate matrix, and chi=512 validation copied locally | Correct minimal-cell timing, peak RSS, and one recommended threading configuration |
+| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; YC8-1 primary forward accepted through theta/pi=0.23828125, with an instrumented iteration-cap retry ready | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
 | 2 — moderate-chi Hu reproduction | 35 node-h | Not started | Converged entropy response and momentum-resolved physical-Sz transfer flow |
 | 3 — critical-point chi ladders | 60 node-h | Not started | Controlled `S = (c/6) log(xi) + a` analysis at selected crossings |
 | 4 — one independent validation | 15 node-h | Not started | One decisive second route, seed, geometry, or width check |
@@ -22,6 +22,114 @@ the reserve and are not automatically reassigned.
 
 Maintain a soft review at 120 node-hours and stop all automatic submission at
 140 node-hours, leaving the protected 10-node-hour contingency untouched.
+
+Current accounting snapshot (2026-08-06):
+
+- estimated failed first-attempt charge: `0.661567` node-hours;
+- estimated successful retry, matrix, and validation charge: `0.432866`
+  node-hours;
+- estimated Phase 0 total: **`1.094433` node-hours**;
+- fraction of the 150-node-hour project limit used: **`0.729622%`**;
+- remaining project allowance before any later-phase jobs: **`148.905567`
+  node-hours**.
+
+These are the Phase 0 script's Shared-QOS estimates. Reconcile them with
+`sacct` if an allocation-accounting export becomes available. Unused Phase 0
+ceiling is not automatically reassigned.
+
+## Current handoff snapshot
+
+### Data-authority rule
+
+Perlmutter is authoritative for current job state, logs, artifacts, state
+hashes, and accounting. The local checkout may be stale or only partially
+synced. Local `output/`, `output/phase1_jobs/`, and `latest_run.txt` may be used
+for compatibility tests or explicitly retrospective analysis, but never to
+infer the latest remote state. Before a run-dependent decision, obtain the
+smallest necessary Perlmutter output from the project owner or sync the
+relevant artifacts. A local launcher `plan` validates code paths only; its
+ledger is not live accounting. This rule is also recorded in `AGENTS.md` for
+future project work.
+
+Phase 0 is complete and Phase 1 is in progress. Reconciled YC8-1 job `56456634`
+accepted the primary-forward state at `theta/pi=0.23828125` and then stopped at
+the 200-iteration cap for `theta/pi=0.2421875`, at residual `1.5338554e-5`.
+That last trajectory was not plateauing: its final 100 iterations followed an
+approximately `0.995999` per-iteration contraction (`R^2 > 0.99999`), its last
+24 iterations improved by about 9.1%, and the fit projects the `1e-5` crossing
+near iteration 307. The older direct `theta/pi=0.25` attempt instead reached
+its minimum near iteration 8 and rebounded. These are distinct numerical
+outcomes, neither of which establishes a physical branch endpoint.
+
+The implementation now makes branch identity an explicit acceptance condition.
+For every child of an immutable accepted parent, schema-v4-and-newer state
+files store a
+gauge-invariant mixed-transfer overlap per site plus energy, entropy,
+local-observable, and Schmidt-spectrum jumps. A child may seed the next point
+only if it passes both the residual gate and the configured overlap threshold
+(`0.99` per site for Phase 1). An independently prepared first point has no
+parent and is therefore exempt from the overlap gate.
+
+A retrospective read-only check on the existing accepted schema-v3 branch
+found overlap per site `0.999804580663` from `0` to `0.125` and
+`0.999987222742` from `0.1875` to `0.21875`. Thus `0.99` does not falsely reject
+those known smooth steps. This check does not calibrate the score of a genuine
+basin jump, so the first continuity-gated job still requires inspection rather than an
+automatic threshold change.
+
+The next operational step is to synchronize launcher 2.2.1 and the schema-v5
+diagnostics to Perlmutter, verify the accepted parent there, and inspect the
+remote `plan` for
+`configs/phase1_yc8_1_forward_recovery_from_0p23828125_chi128.toml`. It resumes
+only from the SHA-pinned accepted `0.23828125` artifact (digest
+`b6b54e47f894158f291e0f9851bce4fdc2322e31a49d3b79155acf21059ebeee`),
+preserves the completed run's inner solver, raises only the outer cap from 200
+to 360, records every environment and center-tensor Krylov solve, and detects
+a real plateau without stopping the measured contraction. Submit only after
+the remote plan confirms the parent hash, empty destination, and current
+budget. Do not start the reverse branch until this one-at-a-time recovery has
+been inspected and reconciled.
+
+Canonical evidence:
+
+- complete source-backed report:
+  `docs/reports/phase0_performance_analysis/report.html`;
+- report payload and exact derived rows:
+  `docs/reports/phase0_performance_analysis/artifact.json` and
+  `docs/data/phase0_performance_comparison.csv`;
+- winning candidate matrix:
+  `output/phase0_calibration/phase0_retry_80iter/summary.csv`;
+- chi=512 validation:
+  `output/phase0_calibration/phase0_retry_80iter/metrics/validation.result` and
+  `metrics/validation.time` in the same run directory;
+- successful recommendation:
+  `output/phase0_calibration/phase0_retry_80iter/recommendation.txt`;
+- failed first-attempt accounting:
+  `output/phase0_calibration/20260804T205703Z/recommendation.txt`;
+- current accepted YC8-1 recovery parent:
+  `output/phase1/yc8_1/primary_forward_recovery_from_0p2265625/seed_101/chi128/states/state_0004_yc8-1_primary_forward_independent_theta0_alternating_forward_seed101_chi128_theta_p0p23828125_accepted_1f5d14a8fd65.h5`;
+- latest numerical recovery outcome:
+  `output/phase1/yc8_1/primary_forward_recovery_from_0p2265625/seed_101/chi128/scan_outcome.toml`;
+- diagnostic protocol and interpretation:
+  `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
+
+Do **not** submit either existing `configs/hu_yc8_*_forward.toml` as a Phase 1
+campaign. Use `slurm/run_scan_cpu.sh plan|submit` with one of the dedicated
+`configs/phase1_yc8_*_chi128.toml` files:
+
+- the launcher fixes two Julia threads, a four-CPU scan step, 8 GiB, Shared QOS,
+  and a one-pilot-at-a-time submission policy. Shared QOS may expose five task
+  CPUs and report six allocated logical CPUs to satisfy/round the memory
+  request; this remains the same three-physical-core charge;
+- it forecasts the new reservation together with active Project B work,
+  enforces the Phase 1 and project limits, and requires `sacct` reconciliation
+  before another Phase 1 submission;
+- the later-phase `hu_yc8_*` configs use `chi=512`, `residual_tol=1e-8`, dense flux lists,
+  `neigs=24`, and `threaded_blocksparse=false`; they are later-phase templates,
+  not the cheap Phase 1 scout;
+- `run_scan.jl` currently performs optimization and state saving only, despite
+  the `[spectrum]` table in the config. This is desirable for Phase 1.
+  Spectroscopy is invoked separately through `run_spectrum.jl`.
 
 ## Phase 0 — correctness and resource calibration
 
@@ -36,64 +144,200 @@ Goals:
   node-hours per iteration.
 - Validate the winner once at chi=512 only after inspecting the automatic report.
 
-Gate to Phase 1:
+### Completed Phase 0 result
 
-- geometry, uniform-twist, unit-cell, HDF5, and transfer-matrix tests pass;
-- the seed is converged and reports `mps_period=2`, `minimal_mps_period=2`;
-- one threading configuration has a credible memory request with a 30% margin;
-- total Phase 0 charge remains below 10 node-hours.
+All Phase 0 gates passed. The corrected seed reports `mps_period=2`,
+`minimal_mps_period=2`, `unit_cell_status=minimal`, and `twist_gauge=uniform`.
 
-If an already-started queued job produced a six-site YC6-1 seed, it is a
-compatible legacy supercell benchmark, not the corrected production benchmark.
-Keep its timing, but rerun the minimal-cell calibration before Phase 1.
+Recommended optimization allocation:
 
-### Updating the already-submitted Phase 0 jobs
+| Setting | Selected value |
+|---|---:|
+| Exclusive contraction backend | threaded block sparse |
+| Julia/compute threads | 2 |
+| BLAS threads | 1 |
+| Strided threads | 1 |
+| Slurm `--cpus-per-task` | 4 logical CPUs |
+| Production memory request | 8 GiB |
+| YC6-1 MPS period | 2 |
 
-The submitted Slurm wrapper reads the Julia payload from
-`slurm/phase0_calibrate_cpu.sh` and loads this Julia project at job start. To
-apply the correction to jobs that are still pending:
+Measured results:
 
-1. keep the same absolute remote project and script paths;
-2. overwrite the remote `src/` directory and `slurm/phase0_calibrate_cpu.sh`
-   with this version;
-3. preserve `output/phase0_calibration/`, especially its `run.env`, `jobs.tsv`,
-   and logs;
-4. do not resubmit the matrix merely because the files were updated.
+- at chi=256, `blocksparse-t2` took `27.770756 s/iteration` with
+  `1.368 GiB` MaxRSS and a projected `0.000180799 node-h/iteration`;
+- serial-t1 took `36.853312 s/iteration`;
+- blocksparse-t32 took `57.195206 s/iteration`, making it `2.06x` slower in
+  wall time and `21.97x` more expensive per projected iteration than the
+  two-thread winner;
+- the chi=512 validation grew the corrected state in `57.912413 s`, then ran
+  exactly one iteration in `381.741061 s`; full-process MaxRSS was
+  `1.414 GiB` and average CPU use was about `1.44` logical CPUs;
+- the 8-GiB production request therefore has about `5.66x` headroom over the
+  measured chi=512 MaxRSS. It remains deliberately conservative.
 
-After the seed completes, inspect `metrics/seed.result`. A corrected run says
-`mps_period=2` and `unit_cell_status=minimal`. A value of six means the seed had
-already loaded the previous code. The queued benchmark workers remain able to
-time that state, but the result is not a minimal-cell production calibration.
-Because the queued report shell itself was captured at submission, rerun
-`bash slurm/phase0_calibrate_cpu.sh report RUN_ID` after completion to include
-the new unit-cell warning and metadata in `recommendation.txt`.
+### Interpretation of the apparent speedup
 
-## Phase 1 — cheap branch discovery
+The chi=512 validation is a timing and memory smoke test, **not a convergence
+benchmark**. It deliberately stopped after one post-expansion iteration at
+residual `6.971664e-3`. Its roughly 8m24s total elapsed time must not be used as
+the expected time for a converged chi=512 state.
 
-Use chi=64–256 and only two independent preparations: forward continuation and
-either reverse continuation or a second seed.
+At the matched chi=512, theta=0 point:
+
+- legacy job 54370665 averaged `408.951256 s/iteration` over 40 iterations;
+- its median was `397.950046 s`, and its last ten iterations averaged
+  `388.843571 s`;
+- Project B's one validation iteration took `381.741061 s`.
+
+This is only a `1.071x` wall-time improvement against the legacy mean and a
+`1.019x` improvement against the legacy last-ten mean. The strong result is
+allocation efficiency: the old 69-logical-CPU, 128-GiB request was charged as
+35 physical cores, while the calibrated 4-logical-CPU, 8-GiB request is charged
+as three. Projected cost falls from `0.031061836` to `0.002485293`
+node-hours per matched iteration, a `12.50x` reduction. The `11.67x` charge-rate
+ratio supplies almost all of that gain.
+
+Do not claim that the numerical kernel or memory footprint improved by an
+order of magnitude. Legacy MaxRSS and CPU utilization were not captured; only
+the old request is known. The current result proves that the legacy allocation
+was vastly overprovisioned for this workload.
+
+The corrected period-2 cell, two-thread block-sparse backend, adaptive
+continuation, and separation of optimization from spectroscopy should reduce
+full-campaign work, but their individual contributions have not been isolated.
+New finite-flux and spectrum timings are still required.
+
+## Phase 1 — metastable branch tracking and basin diagnostics
+
+### Scientific objective
+
+The primary purpose of flux threading is to **follow an adiabatically connected
+metastable branch**, including through intervals where another variational
+state has lower energy. Phase 1 must not construct a pointwise lower-energy
+envelope.
+
+Use chi=64–256 and two independent preparations:
+
+1. **Forward continuation is the primary threaded branch.** Prepare its first
+   state independently, then use every continuation-accepted state to seed the
+   next larger flux. Continue the labeled branch even when it is not the
+   lowest-energy candidate at that flux.
+2. **Reverse continuation or a second seed is the basin diagnostic.** Prefer a
+   reverse scan from an independently prepared endpoint when practical;
+   otherwise repeat the forward scan from a different random seed or distinct
+   initial ansatz. This preparation must never inherit a checkpoint descended
+   from the primary forward branch.
+
+The second preparation identifies what the forward state is metastable
+relative to, reveals hysteresis and crossings, and distinguishes a physical
+branch from an accidental optimizer trap. It is not a replacement state chosen
+solely because its energy is lower.
 
 Initial sparse flux points:
 
 - YC8-1: `theta/pi = 0, 0.5, 0.75, 0.875, 1.0`;
 - YC8-0: `theta/pi = 0, 1.0, 1.5, 1.75, 2.0`.
 
-Optimize first and skip transfer spectroscopy for rejected states. Abort a
-point when the residual rebounds repeatedly or stagnates far above tolerance.
-Use roughly `1e-5`–`1e-6` while scouting; reserve `1e-8` for accepted production
-states whose observables have stabilized.
+### Branch-preservation rules
+
+- Give every saved state a preparation/branch label and preserve its parent
+  checkpoint, seed, direction, and flux history.
+- Never overwrite or reseed the forward branch with the competing branch merely
+  because the latter has lower energy.
+- Save every distinct, branch-continuous state. A smooth, converged,
+  higher-energy state is an intended metastable result, not a rejected state.
+- A state is `continuation_accepted` only when it passes numerical eligibility
+  and, when it has a parent, the mixed-transfer overlap gate. A rejected state
+  is numerically unconverged, branch-discontinuous, invalid, corrupted, or
+  demonstrably duplicate—not simply higher energy.
+- Compare converged candidates using energy, residual, entropy, correlation
+  length, local observables, and, when available, state overlap/fidelity.
+- Treat a sudden state jump as a possible basin change. Attempt interval
+  bisection and branch recovery before calling it a physical endpoint.
+- Stop continuation only when residuals rebound repeatedly, stagnate far above
+  tolerance, the checkpoint fails validation, or repeated refinements cannot
+  recover the labeled branch. Record whether the outcome is a numerical
+  failure, a basin jump, or a bracketed branch-loss/spinodal point.
+
+Optimize first and do not run transfer spectroscopy during the scout scan.
+Use roughly `1e-5`–`1e-6` while scouting; reserve `1e-8` for the selected
+production states in Phase 2 after observables and branch identity stabilize.
+The residual is a stationarity test, not a global-ground-state selector:
+converging a warm-started candidate more accurately does not by itself erase
+its metastable identity. Branch identity is tested separately with the parent
+overlap and stored continuity diagnostics.
+
+For a period-`p` MPS, the continuity score is
+`abs(lambda_max(T_parent,candidate))^(1/p)`, where `T_parent,candidate` is the
+mixed transfer map. Phase 1 currently requires a score of at least `0.99` per
+site. This is a configurable trust-region guard rather than a universal
+physical threshold. Review the measured overlaps and accompanying audit jumps
+after the first real job before changing it; do not loosen it merely to force
+the scan through a suspected basin jump.
+
+### Phase 1 compute protocol
+
+- Use the calibrated optimization setting: two Julia threads, BLAS=1,
+  Strided=1, threaded block sparse enabled, a four-CPU scan step, and 8 GiB.
+  Accept Shared-QOS memory-driven allocation expansion only while it remains
+  within the same three-charged-physical-core forecast.
+- Use the minimal cell and uniform gauge: period 2 for YC8-1 and period 8 for
+  YC8-0.
+- Begin at chi=64 or 128 and promote only the relevant labeled branches to
+  chi=256. Do not begin with the current chi=512 YC8 templates.
+- Submit one small pilot at a time and reconcile `sacct` before launching a
+  wider set. Do not infer wall time from the one-iteration theta=0 validation.
+- Until finite-flux data exist, allow a `2–3x` wall-time contingency per
+  iteration and checkpoint frequently. The legacy finite-flux points averaged
+  roughly 980–1162 seconds per chi=512 iteration, but this has not yet been
+  measured in the corrected implementation.
+- If a compatible corrected chi=512 checkpoint already exists, run 3–5 timed
+  iterations at one nonzero flux to calibrate finite-flux cost. If not, defer
+  that chi=512 probe until the first Phase 2 promotion rather than creating an
+  expensive state solely for benchmarking.
+- After the first immutable accepted state exists, benchmark transfer
+  spectroscopy in a separate job with only 4–6 eigenvalues. Measure neutral
+  and physical-Sz sectors separately. Do not assume the optimizer's 8-GiB
+  request is sufficient for the Krylov solves.
+
+### Implemented Phase 1 submission safeguards
+
+1. Update `slurm/run_scan_cpu.sh` so Julia uses two compute threads with four
+   Slurm logical CPUs and so the Shared-QOS memory request is explicit.
+2. Create dedicated sparse Phase 1 configs rather than repurposing the current
+   chi=512 YC8 production templates.
+3. Create a reverse-direction config for each geometry, or a clearly distinct
+   second-seed config when reverse preparation is not practical.
+4. Ensure output directories, filenames, and HDF5 metadata encode geometry,
+   branch/preparation, direction, seed, chi, and flux so branches cannot be
+   silently mixed.
+5. Add a pre-submission charge forecast and hard refusal if submitted and
+   running Project B work could exceed the 150-node-hour limit.
+6. Require a gauge-invariant parent-overlap gate in addition to the residual
+   gate, persist its Krylov diagnostics and observable jumps, and classify an
+   overlap-limited bracket separately from numerical continuation loss.
 
 Gate to Phase 2:
 
-- both sides of each proposed crossing are reached on a controlled branch;
-- at least two preparation routes agree or their hysteresis is explicitly mapped;
+- the primary forward metastable branch reaches both sides of each proposed
+  crossing, or its loss is bracketed and classified;
+- the independent preparation either reaches the same basin or establishes a
+  distinct competing basin whose hysteresis is explicitly mapped;
+- no branch is discarded merely because it is higher in energy;
+- enough timing, MaxRSS, and charged-node-hour data exist to replace the
+  temporary `2–3x` finite-flux contingency;
+- one small spectrum job has established a separate resource request before
+  Phase 2 spectroscopy expands;
 - no feature is inferred from an unconverged checkpoint.
+- no child checkpoint seeds continuation unless both numerical eligibility and
+  parent continuity pass.
 
 ## Phase 2 — moderate-chi Hu reproduction
 
 - Densify flux only near the crossing, using adaptive interval halving.
 - Use chi=256, 512, 1024 only where the lower-cost scans justify it.
-- Run transfer spectroscopy only on accepted immutable states.
+- Run transfer spectroscopy only on immutable, numerically valid,
+  branch-labeled states. Metastable states remain eligible.
 - Resolve physical `Sz=1` together with the neutral reference.
 - Use 4–6 eigenvalues for scouting and 8–12 at final selected points.
 - For YC(Ly)-0, use the mixed one-site circumference-translation transfer
@@ -107,7 +351,9 @@ Gate to Phase 3:
 - the expected two-flavor and four-flavor closing locations are reproduced;
 - momentum labels pass their stored translation-fidelity, Schmidt-diagonality,
   coverage, and coherence checks;
-- energy, entropy, and correlation lengths are stable across continuation route.
+- energy, entropy, and correlation lengths are stable under checkpoint/restart
+  and independent preparation **within each identified branch**; differences
+  between genuinely distinct branches are retained and reported.
 
 ## Phase 3 — high chi only at selected critical fluxes
 
@@ -118,7 +364,9 @@ restart safety.
 Promote to the next chi only if:
 
 - the VUMPS residual passes;
-- both continuation directions retain the same branch;
+- the selected branch can be recovered or tracked reproducibly from its stored
+  history; reverse/second-seed disagreement is allowed when it is an explicitly
+  mapped competing branch rather than an unidentified basin jump;
 - correlation length grows materially;
 - the relevant inverse-correlation-length level decreases consistently;
 - adjacent-window `c_eff` estimates agree within approximately 20–30%.
@@ -141,14 +389,21 @@ Broad YC10 scans and dynamics remain outside this 150-node-hour campaign.
 ## Operational rules and ledger
 
 Every job record must include job ID, geometry, MPS period, twist gauge, theta,
-chi, seed/direction, requested CPUs and memory, wall time, peak RSS, charged
-node-hours, final residual, accepted/rejected status, entropy, and leading
-correlation length. Do not promote automatically to a higher phase or chi.
+chi, branch ID, preparation type, direction, random seed, parent checkpoint or
+state hash, requested CPUs and memory, wall time, peak RSS, charged node-hours,
+final residual, numerical acceptance, basin classification, entropy, and
+leading correlation length. Record optimization and spectrum resources
+separately. Do not promote automatically to a higher phase or chi, and never
+mark a converged state rejected solely because another branch has lower energy.
 
 | Date | Phase | Job IDs | Estimated node-h | Charged node-h | Decision / result |
 |---|---:|---|---:|---:|---|
-| 2026-08-05 | 0 | Seed 56334122 and dependent matrix | Run report | Pending | Correct two-site seed reached residual 1.3047e-5 after 60 chi=256 iterations; downstream failures were consequential |
-| 2026-08-05 | 0 | Retry not yet submitted | <=8.5664 plus failed-run charge | Not submitted | Preserve 1e-5 gate; increase per-stage ceiling to 80 because the final residual was decreasing monotonically and should cross near iteration 64 |
+| 2026-08-04 | 0 | 56334122–56334138 | 0.661567 | Not reconciled | Correct two-site seed reached residual 1.3047e-5 after 60 chi=256 iterations; the strict calibration gate stopped it and all dependent workers exited without timing |
+| 2026-08-06 | 0 | 56387697, 56387700–56387713, 56400726–56400727 | 0.432866 | Not reconciled | Retry converged; all 13 candidates completed; blocksparse-t2 won; one chi=512 timing/memory validation completed |
+| 2026-08-06 | **0 total** | Both calibration attempts | **1.094433** | Not reconciled | Phase 0 complete; estimated project allowance remaining is 148.905567 node-hours |
+| 2026-08-07 | 1 | 56434602 | 0.050332031 | 0.050332031 | Accepted primary forward theta/pi=0.2265625 at residual 9.9814e-6; bracketed numerical continuation loss at 0.234375 |
+| 2026-08-08 | 1 | 56456634 | 0.190598958 | 0.190598958 | Accepted primary forward theta/pi=0.23828125; theta/pi=0.2421875 remained smoothly contracting at the 200-iteration cap |
+| 2026-08-11 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.368613281** | Synced local ledger after user-confirmed Perlmutter reconciliation; reverify the live remote ledger before submission |
 
 ## Decision log
 
@@ -157,3 +412,24 @@ correlation length. Do not promote automatically to a higher phase or chi.
 - 2026-08-05: uniform twist gauge is the production default; seam-gauge files remain readable as legacy artifacts.
 - 2026-08-05: full-cell phases are never silently unfolded; momentum resolution requires the geometry's minimal cell.
 - 2026-08-05: the first corrected chi=256 seed stopped at 1.3047e-5 after 60 final-stage iterations. The retry keeps the 1e-5 gate and raises the ceiling to 80; a looser calibration tolerance was rejected because the residual was converging smoothly.
+- 2026-08-06: Phase 0 completed for the corrected period-2 YC6-1 state. The selected optimization setting is threaded block sparse with two Julia threads, BLAS=1, Strided=1, four Slurm logical CPUs, and an 8-GiB production request.
+- 2026-08-06: the chi=512 validation is explicitly classified as a one-iteration timing and memory smoke test, not a converged-state benchmark. Do not extrapolate its 8m24s elapsed time to a full solve.
+- 2026-08-06: the measured wall-clock kernel is only about 1.02–1.07x faster than the matched legacy theta=0 iterations. The approximately 12.5x node-hour reduction is dominated by Shared-QOS right-sizing, not an order-of-magnitude kernel speedup.
+- 2026-08-06: Phase 1's primary observable is the forward, adiabatically threaded metastable branch. Reverse continuation or a second seed is an independent basin diagnostic; lower energy alone never authorizes replacing the primary branch.
+- 2026-08-06: a converged higher-energy branch is a valid metastable result. “Rejected” is reserved for numerical failure, invalid state data, or a verified duplicate.
+- 2026-08-06: existing chi=512 YC8 configs and the eight-thread scan launcher are not Phase 1 submission artifacts. Dedicated sparse configs, calibrated launcher resources, independent branch metadata, and budget refusal must be implemented first.
+- 2026-08-06: optimization and transfer spectroscopy remain separate jobs. Spectrum resource usage is uncalibrated and must receive its own small benchmark before Phase 2 expands it.
+- 2026-08-06: Phase 1 launch support was implemented with four independent chi=128 YC8 forward/reverse configs, schema-v3 parent/hash/history metadata, strict lineage checks, and a guarded `plan`/`submit`/`reconcile` launcher. No Phase 1 job was submitted during implementation.
+- 2026-08-06: the first Phase 1 pilot failed before Julia startup because Shared QOS raised `SLURM_CPUS_PER_TASK` from the requested four to five for the 8-GiB request. The worker guard now accepts four through six effective logical CPUs—the range covered by the existing three-physical-core forecast—while retaining two Julia threads and a four-CPU `srun` step.
+- 2026-08-06: the first retry exposed a stale empty `.submission-lock`: the EXIT trap had referenced a function-local path after the function returned. Launcher 2.0.2 keeps the lock path at script scope so both successful and failed submission checks clean it at process exit.
+- 2026-08-06: the second retry reached `srun` but resolved the Julia project as `/var/spool/slurmd`, where Slurm stages the submitted batch script. Launcher 2.0.3 passes and validates the original absolute project directory as an explicit worker argument, so the staged script invokes the repository's `Project.toml` and `scripts/run_scan.jl`.
+- 2026-08-07: the first full Phase 1 job produced a valid primary-forward lineage through theta/pi=0.21875 and bracketed numerical continuation loss at 0.25, but buffered logging obscured those artifacts and a retry recomputed theta/pi=0 before colliding with its immutable filename. Launcher 2.0.4 refuses nonempty state-output directories before submission. Minimum-step continuation loss now writes `scan_outcome.toml`, exits normally, and is explicitly classified as numerical rather than a physical endpoint.
+- 2026-08-07: the primary-forward branch is not abandoned at the first bracket. A dedicated strict-lineage recovery config resumes from the accepted theta/pi=0.21875 artifact, first targets 0.234375, permits refinement down to 1/128 of pi, inserts intermediate targets through the crossing, and writes to a distinct output directory. Rejected theta/pi=0.25 artifacts remain excluded from continuation.
+- 2026-08-07: job 56434602 accepted the recovered primary-forward state at theta/pi=0.2265625 with residual 9.9814e-6. Its theta/pi=0.234375 corrector remained above tolerance after 100 iterations, narrowing numerical continuation loss to [0.2265625, 0.234375]. Smooth energy and entropy do not turn that numerical bracket into a physical endpoint.
+- 2026-08-07: residual convergence and adiabatic branch identity are now separate gates. Schema-v4 states store the dominant mixed parent-candidate transfer eigenvalue, overlap per unit cell and per site, Krylov convergence data, and energy/entropy/local-observable/Schmidt-spectrum jumps. Phase 1 requires overlap per site >=0.99 before a child can seed continuation; overlap failure is classified as a possible basin jump, not a physical endpoint.
+- 2026-08-07: retrospective overlap checks on accepted schema-v3 neighbors gave 0.999804580663 per site for theta/pi 0 -> 0.125 and 0.999987222742 for 0.1875 -> 0.21875. Both clear the 0.99 gate; no genuine basin-jump example has yet calibrated its discriminating power.
+- 2026-08-07: the next forward corrector resumes from the immutable accepted theta/pi=0.2265625 parent, keeps residual_tol=1e-5, raises max_iterations to 200, permits refinement to 1/256 of pi, and writes to a distinct output directory. The forward pass remains the primary branch.
+- 2026-08-07: launcher 2.1.1 and the Julia restart loader require strict restart configs to pin `initial_state_sha256`. Both verify the digest before optimization, closing the gap where a same-path parent could have been replaced before job startup.
+- 2026-08-11: reconciled job 56456634 accepted the chi-128 primary-forward branch through theta/pi=0.23828125. Its final theta/pi=0.2421875 attempt was still contracting at iteration 200, with a log-linear projection near iteration 307, so it is classified as iteration-limited rather than plateaued.
+- 2026-08-11: launcher 2.2.1 and schema-v5 states restore environment/C/AC Krylov instrumentation, a conservative plateau detector, residual-trend projections, and distinct contracting/stalled/plateau outcome labels. The next recovery preserves the original inner solver and raises only the outer cap to 360; tighter inner solves and chi expansion remain separate controls.
+- 2026-08-11: the Hu et al. comparison does not establish a 0.1-pi internal continuation step. Their calculations used iDMRG and much larger reported bond dimensions (m=6144 for YC8 gap data and m=12288 for YC8-1 correlation spectra), so figure-point spacing is not evidence that chi-128 VUMPS should traverse the same interval without slowing.
