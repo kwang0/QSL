@@ -88,7 +88,8 @@ bash slurm/run_scan_cpu.sh cancel-plateau "$(basename "$run_dir")"
 ```
 
 See [`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`](docs/PHASE1_PLATEAU_DIAGNOSTICS.md)
-for the inner-Krylov, smaller-step, chi-expansion, and U(1)-sector tests.
+for the current fixed-flux chi-expansion test, exact Perlmutter submission
+steps, inner-Krylov diagnostics, and U(1)-sector comparisons.
 
 Direct `sbatch` use is intentionally unsupported. The submit path fixes the
 calibrated compute setting at two Julia threads, a four-CPU scan step, and 8 GiB;
@@ -108,6 +109,10 @@ as a residual failure, but is classified separately as a possible basin jump.
 
 When adaptive continuation reaches `minimum_step_over_pi` without satisfying a
 gate, the scan writes an immutable `scan_outcome.toml` and exits normally.
+A same-flux increase in bond dimension is classified separately: if the
+expanded state is not accepted, `scan_outcome.toml` records a
+`project_b_fixed_flux_expansion_outcome` rather than inventing a zero-width
+continuation bracket.
 Residual failure is `numerical_continuation_loss_bracketed`; overlap failure is
 `branch_continuity_loss_bracketed`. Neither classification alone establishes a
 physical endpoint.

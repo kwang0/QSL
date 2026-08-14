@@ -11,11 +11,10 @@ The supplied files cover the first Project B calculations:
   strict-lineage corrector from the accepted theta/pi=0.2265625 state. It keeps
   the 1e-5 residual gate, allows 200 iterations, requires parent overlap per
   site of at least 0.99, and refines down to 1/256 of pi.
-- `phase1_yc8_1_forward_recovery_from_0p23828125_chi128.toml`: current
-  strict-lineage continuation from the accepted theta/pi=0.23828125 state. The
-  synchronized theta/pi=0.2421875 residual was still contracting at iteration
-  200, so this config preserves the inner solver, permits 360 outer iterations,
-  records every inner Krylov solve, and enables plateau detection.
+- `phase1_yc8_1_forward_recovery_from_0p23828125_chi128.toml`: completed
+  strict-lineage continuation from the accepted theta/pi=0.23828125 state. It
+  accepted theta/pi=0.2421875 after 308 iterations, then bracketed a chi-128
+  numerical plateau at theta/pi=0.24609375.
 - `phase1_yc8_1_reverse_chi128.toml`: independently prepared two-flavor reverse basin diagnostic.
 - `phase1_yc8_0_forward_chi128.toml`: primary four-flavor threaded branch.
 - `phase1_yc8_0_reverse_chi128.toml`: independently prepared four-flavor reverse basin diagnostic.
@@ -35,13 +34,22 @@ same branch/preparation/direction/seed. `lineage_policy = "strict"` rejects a
 checkpoint descended from the primary forward preparation.
 
 The YC8-1 recovery configs are deliberately not independent preparations. Each
-must resolve its exact accepted parent artifact; the current third recovery is
-pinned to theta/pi=0.23828125 with SHA-256
-`b6b54e47f894158f291e0f9851bce4fdc2322e31a49d3b79155acf21059ebeee`.
-They fail closed if the immutable parent hash or strict lineage metadata does
-not match the primary-forward branch. A strict restart must set both
-`initial_state_file` and the known `initial_state_sha256`; the launcher and the
-Julia scan independently verify that digest before optimization.
+must resolve its exact accepted parent artifact and fails closed if the
+immutable parent hash or strict-lineage metadata does not match the
+primary-forward branch. The current accepted frontier is theta/pi=0.2421875,
+chi 128, with SHA-256
+`37fdbca9e3c5d1089085b709948cfbf854593301bb242c46c93c7895e76e7caf`.
+A strict restart must set both `initial_state_file` and the known
+`initial_state_sha256`; the launcher and Julia scan independently verify that
+digest before optimization.
+
+The next diagnostic is generated rather than checked in because its absolute
+parent path must be verified on Perlmutter. Use
+`scripts/prepare_phase1_fixed_flux_expansion.jl` to expand the accepted
+theta/pi=0.2421875 state from chi 128 to chi 192 without changing flux. The
+generated config disables generic plateau termination for a 360-iteration
+settling test and writes to a unique immutable output directory. Exact commands
+and decision rules are in `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
 
 All Phase 1 configs set `require_parent_overlap = true`. Once a point has an
 accepted parent, continuation acceptance requires both the optimizer residual

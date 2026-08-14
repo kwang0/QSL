@@ -1,6 +1,7 @@
 using HDF5
 using ITensors
 using Test
+using TOML
 using TriangularJ1J2ProjectB
 
 const PB = TriangularJ1J2ProjectB
@@ -220,6 +221,92 @@ end
     @test PB.minimum_step_bracket_reached(0.21875, 0.25, 0.03125)
     @test PB.minimum_step_bracket_reached(0.25, 0.21875, 0.03125)
     @test !PB.minimum_step_bracket_reached(0.1875, 0.25, 0.03125)
+end
+
+@testset "Fixed-flux expansion classification" begin
+    @test PB.fixed_flux_expansion_requested(0.2421875, 0.2421875, 128, 192)
+    @test PB.fixed_flux_expansion_requested(0.2421875, 0.2421875 + 1e-13, 128, 192)
+    @test !PB.fixed_flux_expansion_requested(nothing, 0.2421875, 128, 192)
+    @test !PB.fixed_flux_expansion_requested(0.2421875, 0.24609375, 128, 192)
+    @test !PB.fixed_flux_expansion_requested(0.2421875, 0.2421875, 192, 192)
+
+    base = load_settings(joinpath(PROJECT_ROOT, "configs", "phase1_yc8_1_forward_chi128.toml"))
+    diagnostic = PB.VumpsDiagnostics(
+        converged=false,
+        stop_reason="maximum_iterations_stalled",
+        iterations=360,
+        residual=3e-5,
+        minimum_residual=2e-5,
+        residual_history=[2e-5, 3e-5],
+        energy_left_history=zeros(2, 2),
+        energy_right_history=zeros(2, 2),
+        growth_dimensions=[128, 192],
+        growth_stage_ends=[360],
+        residual_tolerance=1e-5,
+    )
+    continuity = PB.skipped_branch_continuity(
+        "VUMPS residual gate failed before parent-overlap evaluation";
+        passed=false,
+        parent_theta_over_pi=0.2421875,
+        candidate_theta_over_pi=0.2421875,
+        minimum_overlap_per_site=0.99,
+    )
+    mktempdir() do directory
+        settings = ProjectSettings(
+            model=base.model,
+            optimizer=OptimizerSettings(
+                maxdim=192,
+                residual_tol=1e-5,
+                max_iterations=360,
+                record_krylov_diagnostics=true,
+                plateau_detection=false,
+            ),
+            scan=base.scan,
+            spectrum=base.spectrum,
+            runtime=RuntimeSettings(output_directory=directory),
+            config_path="/test/fixed-flux.toml",
+            config_text="# fixed-flux test fixture\n",
+        )
+        path = PB.write_fixed_flux_expansion_outcome(
+            settings,
+            diagnostic,
+            continuity,
+            0.2421875,
+            1,
+            128,
+            192,
+            "/test/accepted-parent.h5",
+            repeat("a", 64),
+            "/test/rejected-candidate.h5",
+            repeat("b", 64),
+        )
+        outcome = TOML.parsefile(path)
+        @test outcome["artifact_kind"] == "project_b_fixed_flux_expansion_outcome"
+        @test outcome["status"] == "fixed_flux_expansion_numerical_failure"
+        @test outcome["classification"] ==
+            "iteration_limit_stalled_not_physical_endpoint"
+        @test outcome["theta_over_pi"] == 0.2421875
+        @test outcome["source_maxdim"] == 128
+        @test outcome["requested_maxdim"] == 192
+        @test outcome["result_maxdim"] == 192
+        @test outcome["optimizer_max_iterations"] == 360
+        @test !outcome["optimizer_plateau_detection"]
+        @test !outcome["physical_endpoint"]
+        @test !outcome["continuation_accepted"]
+        @test_throws ErrorException PB.write_fixed_flux_expansion_outcome(
+            settings,
+            diagnostic,
+            continuity,
+            0.2421875,
+            1,
+            128,
+            192,
+            "/test/accepted-parent.h5",
+            repeat("a", 64),
+            "/test/rejected-candidate.h5",
+            repeat("b", 64),
+        )
+    end
 end
 
 @testset "Residual trend and plateau classification" begin

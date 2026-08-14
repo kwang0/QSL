@@ -184,6 +184,22 @@ function minimum_step_bracket_reached(
     return width <= Float64(minimum_step_over_pi) + tolerance
 end
 
+function fixed_flux_expansion_requested(
+    last_accepted_theta,
+    candidate_theta::Real,
+    source_maxdim::Integer,
+    requested_maxdim::Integer,
+)
+    last_accepted_theta === nothing && return false
+    requested_maxdim > source_maxdim || return false
+    return isapprox(
+        Float64(candidate_theta),
+        Float64(last_accepted_theta);
+        atol=1e-12,
+        rtol=0,
+    )
+end
+
 function numerical_continuation_classification(diagnostic::VumpsDiagnostics)
     diagnostic.stop_reason == "residual_plateau" &&
         return "numerical_plateau_not_physical_endpoint"
@@ -279,6 +295,91 @@ function write_bracketed_scan_outcome(
     return output_path
 end
 
+function write_fixed_flux_expansion_outcome(
+    settings::ProjectSettings,
+    diagnostic::VumpsDiagnostics,
+    continuity::BranchContinuityDiagnostics,
+    theta_over_pi::Real,
+    point_index::Integer,
+    source_maxdim::Integer,
+    result_maxdim::Integer,
+    source_state_path::AbstractString,
+    source_state_sha256::AbstractString,
+    candidate_state_path::AbstractString,
+    candidate_state_sha256::AbstractString,
+)
+    output_path = joinpath(settings.runtime.output_directory, "scan_outcome.toml")
+    ispath(output_path) && error("refusing to overwrite immutable scan outcome: $output_path")
+    temporary_path = output_path * ".tmp"
+    ispath(temporary_path) && error("stale temporary scan outcome exists: $temporary_path")
+    continuity_loss = diagnostic.converged && continuity.checked && !continuity.passed
+    data = Dict{String,Any}(
+        "schema_version" => 1,
+        "artifact_kind" => "project_b_fixed_flux_expansion_outcome",
+        "created_at_utc" => string(now(UTC)),
+        "status" => continuity_loss ?
+            "fixed_flux_expansion_continuity_rejected" :
+            "fixed_flux_expansion_numerical_failure",
+        "classification" => continuity_loss ?
+            "possible_basin_jump_not_physical_endpoint" :
+            numerical_continuation_classification(diagnostic),
+        "physical_endpoint" => false,
+        "continuation_accepted" => false,
+        "config_id" => config_identifier(settings),
+        "config_path" => settings.config_path,
+        "geometry" => string(settings.model.geometry),
+        "branch" => settings.scan.branch,
+        "preparation" => settings.scan.preparation,
+        "direction" => string(settings.scan.direction),
+        "random_seed" => settings.scan.random_seed,
+        "point_index" => Int(point_index),
+        "theta_over_pi" => Float64(theta_over_pi),
+        "source_maxdim" => Int(source_maxdim),
+        "requested_maxdim" => settings.optimizer.maxdim,
+        "result_maxdim" => Int(result_maxdim),
+        "residual" => diagnostic.residual,
+        "minimum_residual" => diagnostic.minimum_residual,
+        "residual_tolerance" => settings.optimizer.residual_tol,
+        "optimizer_stop_reason" => diagnostic.stop_reason,
+        "optimizer_iterations" => diagnostic.iterations,
+        "optimizer_max_iterations" => settings.optimizer.max_iterations,
+        "optimizer_plateau_detection" => settings.optimizer.plateau_detection,
+        "optimizer_trend_window" => diagnostic.trend_window,
+        "optimizer_recent_relative_improvement" =>
+            diagnostic.recent_relative_improvement,
+        "optimizer_log_residual_slope" => diagnostic.log_residual_slope,
+        "optimizer_log_residual_r_squared" => diagnostic.log_residual_r_squared,
+        "optimizer_projected_total_iterations" => diagnostic.projected_total_iterations,
+        "optimizer_krylov_solve_count" => length(diagnostic.krylov_solves),
+        "continuity_checked" => continuity.checked,
+        "continuity_passed" => continuity.passed,
+        "continuity_reason" => continuity.reason,
+        "parent_overlap_per_unit_cell" => continuity.overlap_per_unit_cell,
+        "parent_overlap_per_site" => continuity.overlap_per_site,
+        "minimum_parent_overlap_per_site" => continuity.minimum_overlap_per_site,
+        "energy_density_delta" => continuity.energy_density_delta,
+        "mean_entropy_delta" => continuity.mean_entropy_delta,
+        "maximum_cut_entropy_jump" => continuity.maximum_cut_entropy_jump,
+        "energy_term_rms_jump" => continuity.energy_term_rms_jump,
+        "magnetization_rms_jump" => continuity.magnetization_rms_jump,
+        "mean_schmidt_total_variation" => continuity.mean_schmidt_total_variation,
+        "source_state_path" => String(source_state_path),
+        "source_state_sha256" => String(source_state_sha256),
+        "candidate_state_path" => String(candidate_state_path),
+        "candidate_state_sha256" => String(candidate_state_sha256),
+    )
+    try
+        open(temporary_path, "w") do io
+            TOML.print(io, data; sorted=true)
+        end
+        Base.Filesystem.rename(temporary_path, output_path)
+    catch
+        isfile(temporary_path) && rm(temporary_path; force=true)
+        rethrow()
+    end
+    return output_path
+end
+
 function run_flux_scan(settings::ProjectSettings)
     configure_threading!(settings.runtime)
     mkpath(settings.runtime.output_directory)
@@ -300,6 +401,13 @@ function run_flux_scan(settings::ProjectSettings)
     while !isempty(queue)
         theta_over_pi = popfirst!(queue)
         point_index += 1
+        source_maxdim = maxlinkdim(psi)
+        fixed_flux_expansion = fixed_flux_expansion_requested(
+            last_accepted_theta,
+            theta_over_pi,
+            source_maxdim,
+            settings.optimizer.maxdim,
+        )
         println(
             "\nPoint $point_index: branch=$(settings.scan.branch), geometry=$(settings.model.geometry), " *
             "preparation=$(settings.scan.preparation), direction=$(settings.scan.direction), " *
@@ -386,6 +494,31 @@ function run_flux_scan(settings::ProjectSettings)
                 push!(flux_history, theta_over_pi)
             end
             continue
+        end
+
+        if fixed_flux_expansion
+            saved === nothing && error(
+                "cannot classify a fixed-flux expansion failure without a saved candidate state",
+            )
+            outcome_path = write_fixed_flux_expansion_outcome(
+                settings,
+                diagnostic,
+                continuity,
+                theta_over_pi,
+                point_index,
+                source_maxdim,
+                maxlinkdim(candidate),
+                parent_state_path,
+                parent_state_sha256,
+                saved.path,
+                saved.state_sha256,
+            )
+            if diagnostic.converged && continuity.checked && !continuity.passed
+                @warn "Fixed-flux expansion failed the branch-continuity gate" theta_over_pi source_maxdim requested_maxdim=settings.optimizer.maxdim result_maxdim=maxlinkdim(candidate) overlap_per_site=continuity.overlap_per_site minimum_overlap_per_site=continuity.minimum_overlap_per_site outcome_path
+            else
+                @warn "Fixed-flux expansion ended without numerical acceptance" theta_over_pi source_maxdim requested_maxdim=settings.optimizer.maxdim result_maxdim=maxlinkdim(candidate) residual=diagnostic.residual tolerance=settings.optimizer.residual_tol stop_reason=diagnostic.stop_reason outcome_path
+            end
+            break
         end
 
         can_refine = settings.scan.adaptive_bisection && last_accepted_theta !== nothing &&

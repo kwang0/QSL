@@ -13,7 +13,7 @@ the reserve and are not automatically reassigned.
 | Phase | Ceiling | Current status | Exit product |
 |---|---:|---|---|
 | 0 — correctness and resource calibration | 10 node-h | **Complete**; corrected seed, 13-candidate matrix, and chi=512 validation copied locally | Correct minimal-cell timing, peak RSS, and one recommended threading configuration |
-| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; YC8-1 primary forward accepted through theta/pi=0.23828125, with an instrumented iteration-cap retry ready | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
+| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; YC8-1 primary forward accepted through theta/pi=0.2421875; fixed-flux chi-128 to chi-192 initialization is next | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
 | 2 — moderate-chi Hu reproduction | 35 node-h | Not started | Converged entropy response and momentum-resolved physical-Sz transfer flow |
 | 3 — critical-point chi ladders | 60 node-h | Not started | Controlled `S = (c/6) log(xi) + a` analysis at selected crossings |
 | 4 — one independent validation | 15 node-h | Not started | One decisive second route, seed, geometry, or width check |
@@ -51,15 +51,18 @@ relevant artifacts. A local launcher `plan` validates code paths only; its
 ledger is not live accounting. This rule is also recorded in `AGENTS.md` for
 future project work.
 
-Phase 0 is complete and Phase 1 is in progress. Reconciled YC8-1 job `56456634`
-accepted the primary-forward state at `theta/pi=0.23828125` and then stopped at
-the 200-iteration cap for `theta/pi=0.2421875`, at residual `1.5338554e-5`.
-That last trajectory was not plateauing: its final 100 iterations followed an
-approximately `0.995999` per-iteration contraction (`R^2 > 0.99999`), its last
-24 iterations improved by about 9.1%, and the fit projects the `1e-5` crossing
-near iteration 307. The older direct `theta/pi=0.25` attempt instead reached
-its minimum near iteration 8 and rebounded. These are distinct numerical
-outcomes, neither of which establishes a physical branch endpoint.
+Phase 0 is complete and Phase 1 is in progress. Reconciled YC8-1 job `56675925`
+confirmed the earlier residual projection and accepted the chi-128
+primary-forward state at `theta/pi=0.2421875` after 308 iterations, with
+residual `9.994862e-6` and parent overlap per site `0.9999951622`. Its next
+chi-128 point, `theta/pi=0.24609375`, plateaued near residual `3.43e-5`.
+
+Reconciled job `56712061` changed both theta (`0.2421875` to `0.24609375`) and
+chi (128 to 192). All 710 recorded inner solves converged, but the outer
+residual reached `2.865161e-5` at iteration 39 and rebounded before the generic
+plateau detector stopped it at iteration 71. That is not a clean test of
+whether the expanded representation can settle, and neither numerical result
+establishes a physical branch endpoint.
 
 The implementation now makes branch identity an explicit acceptance condition.
 For every child of an immutable accepted parent, schema-v4-and-newer state
@@ -77,18 +80,19 @@ those known smooth steps. This check does not calibrate the score of a genuine
 basin jump, so the first continuity-gated job still requires inspection rather than an
 automatic threshold change.
 
-The next operational step is to synchronize launcher 2.2.1 and the schema-v5
-diagnostics to Perlmutter, verify the accepted parent there, and inspect the
-remote `plan` for
-`configs/phase1_yc8_1_forward_recovery_from_0p23828125_chi128.toml`. It resumes
-only from the SHA-pinned accepted `0.23828125` artifact (digest
-`b6b54e47f894158f291e0f9851bce4fdc2322e31a49d3b79155acf21059ebeee`),
-preserves the completed run's inner solver, raises only the outer cap from 200
-to 360, records every environment and center-tensor Krylov solve, and detects
-a real plateau without stopping the measured contraction. Submit only after
-the remote plan confirms the parent hash, empty destination, and current
-budget. Do not start the reverse branch until this one-at-a-time recovery has
-been inspected and reconciled.
+The next operational step is to synchronize the fixed-flux expansion generator
+and scan-outcome handling to Perlmutter, verify the accepted `0.2421875`
+parent there (digest
+`37fdbca9e3c5d1089085b709948cfbf854593301bb242c46c93c7895e76e7caf`),
+and generate one chi-128 to chi-192 test at exactly the same theta. The test
+keeps the `1e-5` residual and `0.99` overlap gates, records every environment
+and center-tensor Krylov solve, allows 360 iterations, and disables generic
+plateau termination during the expansion transient. Submit only after the
+remote plan confirms the parent hash, one-point fixed-flux schedule, empty
+destination, and current budget. Exact commands are in
+`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`. Do not advance theta, promote to chi 256,
+or start the reverse branch until this one-at-a-time diagnostic is inspected
+and reconciled.
 
 Canonical evidence:
 
@@ -107,15 +111,18 @@ Canonical evidence:
 - failed first-attempt accounting:
   `output/phase0_calibration/20260804T205703Z/recommendation.txt`;
 - current accepted YC8-1 recovery parent:
-  `output/phase1/yc8_1/primary_forward_recovery_from_0p2265625/seed_101/chi128/states/state_0004_yc8-1_primary_forward_independent_theta0_alternating_forward_seed101_chi128_theta_p0p23828125_accepted_1f5d14a8fd65.h5`;
+  `output/phase1/yc8_1/primary_forward_recovery_from_0p23828125/seed_101/chi128/states/state_0001_yc8-1_primary_forward_independent_theta0_alternating_forward_seed101_chi128_theta_p0p24218750_accepted_0a7c9cba9e2c.h5`;
 - latest numerical recovery outcome:
-  `output/phase1/yc8_1/primary_forward_recovery_from_0p2265625/seed_101/chi128/scan_outcome.toml`;
+  `output/phase1/yc8_1/primary_forward_recovery_from_0p23828125/seed_101/chi128/scan_outcome.toml`;
+- completed step-and-expand chi-192 control:
+  `output/phase1_tests/yc8_1/from_p0p24218750_to_p0p24609375_37fdbca9e3c5/bond_expansion/chi192/scan_outcome.toml`;
 - diagnostic protocol and interpretation:
   `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
 
 Do **not** submit either existing `configs/hu_yc8_*_forward.toml` as a Phase 1
-campaign. Use `slurm/run_scan_cpu.sh plan|submit` with one of the dedicated
-`configs/phase1_yc8_*_chi128.toml` files:
+campaign. Use `slurm/run_scan_cpu.sh plan|submit` with a dedicated checked-in
+Phase 1 config, or with the SHA-pinned fixed-flux config produced by the
+documented generator:
 
 - the launcher fixes two Julia threads, a four-CPU scan step, 8 GiB, Shared QOS,
   and a one-pilot-at-a-time submission policy. Shared QOS may expose five task
@@ -404,6 +411,9 @@ mark a converged state rejected solely because another branch has lower energy.
 | 2026-08-07 | 1 | 56434602 | 0.050332031 | 0.050332031 | Accepted primary forward theta/pi=0.2265625 at residual 9.9814e-6; bracketed numerical continuation loss at 0.234375 |
 | 2026-08-08 | 1 | 56456634 | 0.190598958 | 0.190598958 | Accepted primary forward theta/pi=0.23828125; theta/pi=0.2421875 remained smoothly contracting at the 200-iteration cap |
 | 2026-08-11 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.368613281** | Synced local ledger after user-confirmed Perlmutter reconciliation; reverify the live remote ledger before submission |
+| 2026-08-12 | 1 | 56675925 | 0.117122396 | 0.117122396 | Accepted chi-128 primary forward theta/pi=0.2421875 after 308 iterations; bracketed a numerical plateau at theta/pi=0.24609375 |
+| 2026-08-12 | 1 | 56712061 | 0.029934896 | 0.029934896 | Step-and-expand chi-192 control stopped at iteration 71; all 710 inner solves converged, but simultaneous theta/chi changes and early plateau termination make it inconclusive as a representation test |
+| 2026-08-12 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.515670573** | Latest locally synced reconciled total; verify the live Perlmutter ledger before the next submission |
 
 ## Decision log
 
@@ -433,3 +443,6 @@ mark a converged state rejected solely because another branch has lower energy.
 - 2026-08-11: reconciled job 56456634 accepted the chi-128 primary-forward branch through theta/pi=0.23828125. Its final theta/pi=0.2421875 attempt was still contracting at iteration 200, with a log-linear projection near iteration 307, so it is classified as iteration-limited rather than plateaued.
 - 2026-08-11: launcher 2.2.1 and schema-v5 states restore environment/C/AC Krylov instrumentation, a conservative plateau detector, residual-trend projections, and distinct contracting/stalled/plateau outcome labels. The next recovery preserves the original inner solver and raises only the outer cap to 360; tighter inner solves and chi expansion remain separate controls.
 - 2026-08-11: the Hu et al. comparison does not establish a 0.1-pi internal continuation step. Their calculations used iDMRG and much larger reported bond dimensions (m=6144 for YC8 gap data and m=12288 for YC8-1 correlation spectra), so figure-point spacing is not evidence that chi-128 VUMPS should traverse the same interval without slowing.
+- 2026-08-12: job 56675925 accepted the chi-128 primary-forward state at theta/pi=0.2421875 after 308 iterations, validating the earlier contracting-trend diagnosis without loosening the 1e-5 residual gate. The subsequent theta/pi=0.24609375 point plateaued near residual 3.43e-5.
+- 2026-08-12: job 56712061 expanded to chi 192 and stepped to theta/pi=0.24609375 simultaneously. Its 710 inner Krylov solves all converged, but the generic plateau detector stopped an irregular post-expansion trajectory at iteration 71, so the job does not establish that chi 192 itself is unable to converge.
+- 2026-08-13: the next controlled test expands the exact accepted theta/pi=0.2421875 parent from chi 128 to chi 192 without changing flux. Generic plateau termination is disabled for the 360-iteration settling window; residual and parent-overlap gates remain strict. Same-flux failures now receive a dedicated immutable outcome rather than a zero-width continuation bracket.
