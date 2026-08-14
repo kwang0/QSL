@@ -189,6 +189,36 @@ end
     )
     @test recovery_3.scan.initial_state_sha256 ==
         "b6b54e47f894158f291e0f9851bce4fdc2322e31a49d3b79155acf21059ebeee"
+
+    mktempdir() do directory
+        raw = TOML.parsefile(joinpath(
+            PROJECT_ROOT,
+            "configs",
+            "phase1_yc8_1_forward_chi128.toml",
+        ))
+        raw["scan"]["fluxes_over_pi"] = [0.2421875]
+        raw["scan"]["initial_state_file"] = "accepted.h5"
+        raw["scan"]["initial_state_sha256"] = repeat("a", 64)
+        raw["scan"]["optimizer_checkpoint_file"] = "checkpoint.h5"
+        raw["scan"]["optimizer_checkpoint_sha256"] = repeat("b", 64)
+        raw["runtime"]["output_directory"] = "resume-output"
+        config_path = joinpath(directory, "resume.toml")
+        open(config_path, "w") do io
+            TOML.print(io, raw; sorted=true)
+        end
+        resume = load_settings(config_path)
+        @test resume.scan.optimizer_checkpoint_file ==
+            joinpath(directory, "checkpoint.h5")
+        @test resume.scan.optimizer_checkpoint_sha256 == repeat("b", 64)
+        @test resume.scan.initial_state_file == joinpath(directory, "accepted.h5")
+
+        delete!(raw["scan"], "optimizer_checkpoint_sha256")
+        invalid_path = joinpath(directory, "invalid-resume.toml")
+        open(invalid_path, "w") do io
+            TOML.print(io, raw; sorted=true)
+        end
+        @test_throws ArgumentError load_settings(invalid_path)
+    end
 end
 
 @testset "Finite-entanglement scaling" begin
@@ -229,6 +259,17 @@ end
     @test !PB.fixed_flux_expansion_requested(nothing, 0.2421875, 128, 192)
     @test !PB.fixed_flux_expansion_requested(0.2421875, 0.24609375, 128, 192)
     @test !PB.fixed_flux_expansion_requested(0.2421875, 0.2421875, 192, 192)
+    @test PB.fixed_flux_optimizer_resume_requested(
+        0.2421875,
+        0.2421875,
+        "/test/rejected-checkpoint.h5",
+    )
+    @test !PB.fixed_flux_optimizer_resume_requested(
+        0.2421875,
+        0.24609375,
+        "/test/rejected-checkpoint.h5",
+    )
+    @test !PB.fixed_flux_optimizer_resume_requested(0.2421875, 0.2421875, "")
 
     base = load_settings(joinpath(PROJECT_ROOT, "configs", "phase1_yc8_1_forward_chi128.toml"))
     diagnostic = PB.VumpsDiagnostics(
@@ -306,6 +347,49 @@ end
             "/test/rejected-candidate.h5",
             repeat("b", 64),
         )
+
+        resume_directory = joinpath(directory, "resume")
+        mkpath(resume_directory)
+        resume_settings = ProjectSettings(
+            model=settings.model,
+            optimizer=settings.optimizer,
+            scan=settings.scan,
+            spectrum=settings.spectrum,
+            runtime=RuntimeSettings(output_directory=resume_directory),
+            config_path="/test/fixed-flux-resume.toml",
+            config_text="# fixed-flux optimizer resume fixture\n",
+        )
+        resume_path = PB.write_fixed_flux_optimizer_resume_outcome(
+            resume_settings,
+            diagnostic,
+            continuity,
+            0.2421875,
+            1,
+            128,
+            192,
+            192,
+            360,
+            2.332663e-5,
+            2.332663e-5,
+            "maximum_iterations_contracting",
+            "/test/accepted-parent.h5",
+            repeat("a", 64),
+            "/test/rejected-checkpoint.h5",
+            repeat("b", 64),
+            "/test/rejected-resume.h5",
+            repeat("c", 64),
+        )
+        resume_outcome = TOML.parsefile(resume_path)
+        @test resume_outcome["artifact_kind"] ==
+            "project_b_fixed_flux_optimizer_resume_outcome"
+        @test resume_outcome["status"] ==
+            "fixed_flux_optimizer_resume_numerical_failure"
+        @test resume_outcome["checkpoint_cumulative_iterations"] == 360
+        @test resume_outcome["result_maxdim"] == 192
+        @test resume_outcome["optimizer_additional_iterations"] == 360
+        @test resume_outcome["optimizer_cumulative_iterations"] == 720
+        @test resume_outcome["optimizer_checkpoint_sha256"] == repeat("b", 64)
+        @test !resume_outcome["physical_endpoint"]
     end
 end
 
@@ -366,6 +450,15 @@ end
     @test PB.parent_overlap_passes(0.99, 0.99)
     @test !PB.parent_overlap_passes(0.989999, 0.99)
     @test !PB.parent_overlap_passes(NaN, 0.99)
+    @test iszero(PB.distribution_total_variation(
+        [0.7, 0.2, 0.1],
+        [0.1, 0.7, 0.2, 0.0],
+    ))
+    @test isapprox(
+        PB.distribution_total_variation([0.7, 0.2, 0.1], [0.6, 0.3, 0.1]),
+        0.1;
+        atol=1e-12,
+    )
 end
 
 @testset "Product-state construction and immutable HDF5 state" begin
@@ -474,6 +567,61 @@ end
         @test isempty(state.parent_state_sha256)
         parent_sha256 = PB.file_sha256(path)
         @test length(parent_sha256) == 64
+        checkpoint_diagnostic = PB.VumpsDiagnostics(
+            converged=false,
+            stop_reason="maximum_iterations_contracting",
+            iterations=360,
+            residual=2.3e-5,
+            minimum_residual=2.3e-5,
+            residual_history=[3.0e-5, 2.3e-5],
+            energy_left_history=zeros(2, 2),
+            energy_right_history=zeros(2, 2),
+            growth_dimensions=[1],
+            growth_stage_ends=[360],
+            residual_tolerance=1e-5,
+            trend_window=2,
+            recent_relative_improvement=0.2,
+            log_residual_slope=-0.01,
+            log_residual_r_squared=1.0,
+            projected_total_iterations=484.0,
+        )
+        checkpoint_settings = ProjectSettings(
+            model=settings.model,
+            optimizer=OptimizerSettings(
+                maxdim=1,
+                residual_tol=1e-5,
+                max_iterations=360,
+                record_krylov_diagnostics=true,
+                plateau_detection=false,
+            ),
+            scan=settings.scan,
+            spectrum=settings.spectrum,
+            runtime=settings.runtime,
+            config_path=settings.config_path,
+            config_text=settings.config_text * "\n# contracting checkpoint fixture\n",
+        )
+        checkpoint_path = joinpath(directory, "checkpoint.h5")
+        PB.write_state_file(
+            checkpoint_path,
+            checkpoint_settings,
+            psi,
+            hamiltonian,
+            checkpoint_diagnostic,
+            0.0,
+            1;
+            continuation_accepted=false,
+            parent_state_path=path,
+            parent_state_sha256=parent_sha256,
+            parent_flux_history_over_pi=[0.0],
+            precomputed_observables=observables,
+        )
+        checkpoint_sha256 = PB.file_sha256(checkpoint_path)
+        checkpoint_state = PB.read_state_file(checkpoint_path)
+        @test !checkpoint_state.converged
+        @test !checkpoint_state.continuation_accepted
+        @test checkpoint_state.optimizer_stop_reason == "maximum_iterations_contracting"
+        @test checkpoint_state.optimizer_iterations == 360
+        @test checkpoint_state.optimizer_requested_maxdim == 1
         strict_scan = ScanSettings(
             branch=settings.scan.branch,
             preparation="default",
@@ -498,6 +646,65 @@ end
         @test initial.initial_theta == 0.0
         @test initial.parent_state_path == path
         @test initial.flux_history_over_pi == [0.0]
+        resume_scan = ScanSettings(
+            branch=settings.scan.branch,
+            preparation="default",
+            direction=:forward,
+            lineage_policy=:strict,
+            fluxes_over_pi=[0.0],
+            seed_pattern="alternating",
+            random_seed=1,
+            initial_state_file=path,
+            initial_state_sha256=parent_sha256,
+            optimizer_checkpoint_file=checkpoint_path,
+            optimizer_checkpoint_sha256=checkpoint_sha256,
+        )
+        resume_settings = ProjectSettings(
+            model=settings.model,
+            optimizer=OptimizerSettings(
+                maxdim=1,
+                residual_tol=1e-5,
+                max_iterations=180,
+                record_krylov_diagnostics=true,
+                plateau_detection=false,
+            ),
+            scan=resume_scan,
+            spectrum=settings.spectrum,
+            runtime=settings.runtime,
+            config_path=settings.config_path,
+            config_text=settings.config_text * "\n# optimizer resume fixture\n",
+        )
+        resumed_initial = PB.load_or_build_initial_state(resume_settings)
+        @test resumed_initial.parent_state_path == path
+        @test resumed_initial.parent_state_sha256 == parent_sha256
+        @test resumed_initial.parent_maxdim == 1
+        @test resumed_initial.optimizer_checkpoint_path == checkpoint_path
+        @test resumed_initial.optimizer_checkpoint_sha256 == checkpoint_sha256
+        @test resumed_initial.optimizer_checkpoint_iterations == 360
+        @test resumed_initial.optimizer_checkpoint_residual == 2.3e-5
+        wrong_checkpoint_scan = ScanSettings(
+            branch=resume_scan.branch,
+            preparation=resume_scan.preparation,
+            direction=resume_scan.direction,
+            lineage_policy=resume_scan.lineage_policy,
+            fluxes_over_pi=resume_scan.fluxes_over_pi,
+            seed_pattern=resume_scan.seed_pattern,
+            random_seed=resume_scan.random_seed,
+            initial_state_file=path,
+            initial_state_sha256=parent_sha256,
+            optimizer_checkpoint_file=checkpoint_path,
+            optimizer_checkpoint_sha256=repeat("0", 64),
+        )
+        wrong_checkpoint_settings = ProjectSettings(
+            model=resume_settings.model,
+            optimizer=resume_settings.optimizer,
+            scan=wrong_checkpoint_scan,
+            spectrum=resume_settings.spectrum,
+            runtime=resume_settings.runtime,
+            config_path=resume_settings.config_path,
+            config_text=resume_settings.config_text * "\n# wrong checkpoint hash\n",
+        )
+        @test_throws ErrorException PB.load_or_build_initial_state(wrong_checkpoint_settings)
         mismatched_scan = ScanSettings(
             branch=settings.scan.branch,
             preparation="different_preparation",
@@ -561,7 +768,7 @@ end
         )
         @test_throws ErrorException PB.load_or_build_initial_state(missing_hash_settings)
         h5open(path, "r") do file
-            @test read(file, "schema_version") == 5
+            @test read(file, "schema_version") == 6
             @test haskey(file, "geometry/bonds")
             @test read(file, "geometry/mps_period") == 2
             @test read(file, "geometry/minimal_mps_period") == 2
@@ -579,6 +786,7 @@ end
             @test read(file, "continuation/seed_pattern") == "alternating"
             @test read(file, "continuation/preparation_source") ==
                 "independent_product_state"
+            @test isempty(read(file, "optimizer/restart_checkpoint_path"))
             @test read(file, "continuation/flux_history_over_pi") == [0.0]
             @test read(file, "continuation/continuity_checked")
             @test read(file, "continuation/continuity_passed")
@@ -603,8 +811,44 @@ end
         @test child.parent_state_path == path
         @test child.parent_state_sha256 == parent_sha256
         @test child.flux_history_over_pi == [0.0, 0.25]
+        resumed_path = joinpath(directory, "resumed.h5")
+        PB.write_state_file(
+            resumed_path,
+            resume_settings,
+            psi,
+            hamiltonian,
+            diagnostic,
+            0.0,
+            1;
+            parent_state_path=path,
+            parent_state_sha256=parent_sha256,
+            parent_flux_history_over_pi=[0.0],
+            optimizer_checkpoint_path=checkpoint_path,
+            optimizer_checkpoint_sha256=checkpoint_sha256,
+            optimizer_checkpoint_iterations=
+                resumed_initial.optimizer_checkpoint_iterations,
+            optimizer_checkpoint_residual=
+                resumed_initial.optimizer_checkpoint_residual,
+            optimizer_checkpoint_minimum_residual=
+                resumed_initial.optimizer_checkpoint_minimum_residual,
+            optimizer_checkpoint_stop_reason=
+                resumed_initial.optimizer_checkpoint_stop_reason,
+            continuity,
+            precomputed_observables=observables,
+        )
+        resumed_state = PB.read_state_file(resumed_path)
+        @test resumed_state.optimizer_checkpoint_path == checkpoint_path
+        @test resumed_state.optimizer_checkpoint_sha256 == checkpoint_sha256
+        @test resumed_state.optimizer_checkpoint_iterations == 360
+        h5open(resumed_path, "r") do file
+            @test read(file, "continuation/preparation_source") ==
+                "optimizer_checkpoint_resume"
+            @test read(file, "optimizer/restart_checkpoint_iterations") == 360
+            @test read(file, "optimizer/restart_checkpoint_stop_reason") ==
+                "maximum_iterations_contracting"
+        end
         summary_rows = summarize_state_files(directory; include_hashes=true)
-        @test length(summary_rows) == 2
+        @test length(summary_rows) == 4
         @test all(row -> row.geometry == "YC6-1", summary_rows)
         @test all(row -> length(row.state_sha256) == 64, summary_rows)
         spectroscopy_settings = ProjectSettings(

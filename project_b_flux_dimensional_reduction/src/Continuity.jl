@@ -94,11 +94,20 @@ function distribution_total_variation(
     left::AbstractVector{<:Real},
     right::AbstractVector{<:Real},
 )
-    common = min(length(left), length(right))
+    # Schmidt values have no stable position across a symmetry-sector bond
+    # expansion: increasing a block multiplicity can shift every later entry
+    # in the serialized vector without changing the physical ordering of the
+    # spectrum. Compare the unlabeled distributions by descending Schmidt
+    # rank, padding the shorter spectrum with zero weight.
+    left_ranked = sort(Float64.(left); rev=true)
+    right_ranked = sort(Float64.(right); rev=true)
+    common = min(length(left_ranked), length(right_ranked))
     distance = common == 0 ? 0.0 :
-        sum(abs, Float64.(left[1:common]) .- Float64.(right[1:common]))
-    common < length(left) && (distance += sum(abs, Float64.(left[(common + 1):end])))
-    common < length(right) && (distance += sum(abs, Float64.(right[(common + 1):end])))
+        sum(abs, left_ranked[1:common] .- right_ranked[1:common])
+    common < length(left_ranked) &&
+        (distance += sum(abs, left_ranked[(common + 1):end]))
+    common < length(right_ranked) &&
+        (distance += sum(abs, right_ranked[(common + 1):end]))
     return distance / 2
 end
 

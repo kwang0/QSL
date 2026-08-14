@@ -207,6 +207,12 @@ function write_state_file(
     parent_state_path::AbstractString="",
     parent_state_sha256::AbstractString="",
     parent_flux_history_over_pi::AbstractVector{<:Real}=Float64[],
+    optimizer_checkpoint_path::AbstractString="",
+    optimizer_checkpoint_sha256::AbstractString="",
+    optimizer_checkpoint_iterations::Integer=0,
+    optimizer_checkpoint_residual::Real=NaN,
+    optimizer_checkpoint_minimum_residual::Real=NaN,
+    optimizer_checkpoint_stop_reason::AbstractString="",
     continuity::BranchContinuityDiagnostics=skipped_branch_continuity(
         "continuity check not requested";
         passed=true,
@@ -217,6 +223,26 @@ function write_state_file(
     isempty(parent_state_path) == isempty(parent_state_sha256) || error(
         "parent state path and SHA-256 must either both be set or both be empty",
     )
+    isempty(optimizer_checkpoint_path) == isempty(optimizer_checkpoint_sha256) || error(
+        "optimizer checkpoint path and SHA-256 must either both be set or both be empty",
+    )
+    if !isempty(optimizer_checkpoint_path)
+        occursin(r"^[0-9a-f]{64}$", optimizer_checkpoint_sha256) || error(
+            "optimizer checkpoint SHA-256 must contain 64 lowercase hexadecimal digits",
+        )
+        optimizer_checkpoint_iterations >= 1 || error(
+            "optimizer checkpoint iterations must be positive",
+        )
+        isfinite(optimizer_checkpoint_residual) || error(
+            "optimizer checkpoint residual must be finite",
+        )
+        isfinite(optimizer_checkpoint_minimum_residual) || error(
+            "optimizer checkpoint minimum residual must be finite",
+        )
+        isempty(optimizer_checkpoint_stop_reason) && error(
+            "optimizer checkpoint stop reason cannot be empty",
+        )
+    end
     all(isfinite, parent_flux_history_over_pi) || error("parent flux history is non-finite")
     flux_history = Float64.(parent_flux_history_over_pi)
     if isempty(flux_history) || !isapprox(last(flux_history), theta_over_pi; atol=1e-12, rtol=0)
@@ -232,7 +258,7 @@ function write_state_file(
         create_group(file, "optimizer")
         create_group(file, "observables")
         create_group(file, "continuation")
-        file["schema_version"] = 5
+        file["schema_version"] = 6
         file["artifact_kind"] = "project_b_vumps_state"
         file["created_at_utc"] = string(now(UTC))
         file["config_id"] = config_identifier(settings)
@@ -254,8 +280,9 @@ function write_state_file(
         file["continuation/lineage_policy"] = string(settings.scan.lineage_policy)
         file["continuation/seed_pattern"] = settings.scan.seed_pattern
         file["continuation/random_seed"] = settings.scan.random_seed
-        file["continuation/preparation_source"] = isempty(parent_state_path) ?
-            "independent_product_state" : "checkpoint_continuation"
+        file["continuation/preparation_source"] = !isempty(optimizer_checkpoint_path) ?
+            "optimizer_checkpoint_resume" :
+            (isempty(parent_state_path) ? "independent_product_state" : "checkpoint_continuation")
         file["continuation/parent_state_path"] = String(parent_state_path)
         file["continuation/parent_state_basename"] =
             isempty(parent_state_path) ? "" : basename(parent_state_path)
@@ -300,6 +327,19 @@ function write_state_file(
         file["optimizer/plateau_patience"] = settings.optimizer.plateau_patience
         file["optimizer/plateau_min_relative_improvement"] =
             settings.optimizer.plateau_min_relative_improvement
+        file["optimizer/restart_checkpoint_path"] = String(optimizer_checkpoint_path)
+        file["optimizer/restart_checkpoint_basename"] =
+            isempty(optimizer_checkpoint_path) ? "" : basename(optimizer_checkpoint_path)
+        file["optimizer/restart_checkpoint_sha256"] =
+            String(optimizer_checkpoint_sha256)
+        file["optimizer/restart_checkpoint_iterations"] =
+            Int(optimizer_checkpoint_iterations)
+        file["optimizer/restart_checkpoint_residual"] =
+            Float64(optimizer_checkpoint_residual)
+        file["optimizer/restart_checkpoint_minimum_residual"] =
+            Float64(optimizer_checkpoint_minimum_residual)
+        file["optimizer/restart_checkpoint_stop_reason"] =
+            String(optimizer_checkpoint_stop_reason)
         write_optimizer_diagnostics!(
             file,
             diagnostic;
@@ -373,6 +413,35 @@ function read_state_file(path::AbstractString)
             unit_cell_is_minimal=mps_period == minimum_period,
             twist_gauge,
             maxlinkdim=Int(read(file, "observables/maxlinkdim")),
+            optimizer_requested_maxdim=haskey(file, "optimizer/requested_maxdim") ?
+                Int(read(file, "optimizer/requested_maxdim")) :
+                Int(read(file, "observables/maxlinkdim")),
+            optimizer_stop_reason=haskey(file, "optimizer/stop_reason") ?
+                String(read(file, "optimizer/stop_reason")) : "legacy_unspecified",
+            optimizer_iterations=haskey(file, "optimizer/iterations") ?
+                Int(read(file, "optimizer/iterations")) : 0,
+            optimizer_residual=haskey(file, "optimizer/residual") ?
+                Float64(read(file, "optimizer/residual")) : NaN,
+            optimizer_minimum_residual=haskey(file, "optimizer/minimum_residual") ?
+                Float64(read(file, "optimizer/minimum_residual")) : NaN,
+            optimizer_residual_tolerance=haskey(file, "optimizer/residual_tolerance") ?
+                Float64(read(file, "optimizer/residual_tolerance")) : NaN,
+            optimizer_checkpoint_path=haskey(file, "optimizer/restart_checkpoint_path") ?
+                String(read(file, "optimizer/restart_checkpoint_path")) : "",
+            optimizer_checkpoint_sha256=haskey(file, "optimizer/restart_checkpoint_sha256") ?
+                String(read(file, "optimizer/restart_checkpoint_sha256")) : "",
+            optimizer_checkpoint_iterations=haskey(file, "optimizer/restart_checkpoint_iterations") ?
+                Int(read(file, "optimizer/restart_checkpoint_iterations")) : 0,
+            optimizer_checkpoint_residual=haskey(file, "optimizer/restart_checkpoint_residual") ?
+                Float64(read(file, "optimizer/restart_checkpoint_residual")) : NaN,
+            optimizer_checkpoint_minimum_residual=haskey(
+                file,
+                "optimizer/restart_checkpoint_minimum_residual",
+            ) ? Float64(read(file, "optimizer/restart_checkpoint_minimum_residual")) : NaN,
+            optimizer_checkpoint_stop_reason=haskey(
+                file,
+                "optimizer/restart_checkpoint_stop_reason",
+            ) ? String(read(file, "optimizer/restart_checkpoint_stop_reason")) : "",
             converged=Bool(read(file, "optimizer/converged")),
             continuation_accepted=Bool(read(file, "continuation_accepted")),
             J1=Float64(read(file, "model/J1")),

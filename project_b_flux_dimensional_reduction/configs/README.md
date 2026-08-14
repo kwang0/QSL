@@ -43,13 +43,23 @@ A strict restart must set both `initial_state_file` and the known
 `initial_state_sha256`; the launcher and Julia scan independently verify that
 digest before optimization.
 
-The next diagnostic is generated rather than checked in because its absolute
-parent path must be verified on Perlmutter. Use
-`scripts/prepare_phase1_fixed_flux_expansion.jl` to expand the accepted
-theta/pi=0.2421875 state from chi 128 to chi 192 without changing flux. The
-generated config disables generic plateau termination for a 360-iteration
-settling test and writes to a unique immutable output directory. Exact commands
-and decision rules are in `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
+The fixed-flux chi-128 to chi-192 expansion completed without reaching the
+residual gate, but its final 277 iterations contracted monotonically and project
+the `1e-5` crossing near cumulative iteration 484. The next diagnostic is
+generated rather than checked in because both absolute state paths must be
+verified on Perlmutter. Use `scripts/prepare_phase1_fixed_flux_resume.jl` with
+the accepted chi-128 parent and the SHA-pinned rejected chi-192 artifact. The
+generated config permits 180 additional iterations at the same theta and keeps
+generic plateau termination disabled. `initial_state_file` remains the accepted
+branch parent; `optimizer_checkpoint_file` is a numerical seed only. Exact
+commands and decision rules are in `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
+
+An optimizer checkpoint is intentionally more restrictive than an ordinary
+restart. It requires strict lineage, exactly one fixed flux, both SHA-256
+digests, the same model and branch metadata, the same accepted-parent hash, the
+requested chi already present in the checkpoint MPS, and
+`stop_reason=maximum_iterations_contracting`. A rejected artifact must never be
+placed in `initial_state_file` or have its acceptance flag edited.
 
 All Phase 1 configs set `require_parent_overlap = true`. Once a point has an
 accepted parent, continuation acceptance requires both the optimizer residual

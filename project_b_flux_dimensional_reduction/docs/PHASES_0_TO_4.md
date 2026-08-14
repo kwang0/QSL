@@ -64,6 +64,16 @@ plateau detector stopped it at iteration 71. That is not a clean test of
 whether the expanded representation can settle, and neither numerical result
 establishes a physical branch endpoint.
 
+Reconciled fixed-flux job `56890262` then changed chi only, expanding the exact
+accepted `theta/pi=0.2421875` parent from 128 to 192. The expansion transient
+rebounded through iteration 83, after which the residual decreased on every
+iteration to `2.332663382e-5` at the 360-iteration cap. Its final-100 trend
+improved by `19.4287%` with log-fit `R^2=0.99997398` and projected the `1e-5`
+gate near cumulative iteration `483.816`. All 3600 inner Krylov solves
+converged. This is an iteration-limited contracting solve, not evidence that
+chi-192 VUMPS lacks a self-consistent solution. The rejected candidate SHA-256
+is `b34fc59421524efb509c0801cfdbac4c30c77ebac59d947985a88f6e2a5bafa3`.
+
 The implementation now makes branch identity an explicit acceptance condition.
 For every child of an immutable accepted parent, schema-v4-and-newer state
 files store a
@@ -80,19 +90,18 @@ those known smooth steps. This check does not calibrate the score of a genuine
 basin jump, so the first continuity-gated job still requires inspection rather than an
 automatic threshold change.
 
-The next operational step is to synchronize the fixed-flux expansion generator
-and scan-outcome handling to Perlmutter, verify the accepted `0.2421875`
-parent there (digest
-`37fdbca9e3c5d1089085b709948cfbf854593301bb242c46c93c7895e76e7caf`),
-and generate one chi-128 to chi-192 test at exactly the same theta. The test
-keeps the `1e-5` residual and `0.99` overlap gates, records every environment
-and center-tensor Krylov solve, allows 360 iterations, and disables generic
-plateau termination during the expansion transient. Submit only after the
-remote plan confirms the parent hash, one-point fixed-flux schedule, empty
-destination, and current budget. Exact commands are in
-`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`. Do not advance theta, promote to chi 256,
-or start the reverse branch until this one-at-a-time diagnostic is inspected
-and reconciled.
+The next operational step is to synchronize launcher 2.3.0, schema-v6 storage,
+and `scripts/prepare_phase1_fixed_flux_resume.jl` to Perlmutter. Generate one
+fixed-flux chi-192 resume using two SHA-pinned artifacts: the accepted chi-128
+state remains the branch/overlap parent, while the rejected chi-192 state is a
+numerical MPS seed only. The test keeps the `1e-5` residual and `0.99` overlap
+gates, records every environment and center-tensor Krylov solve, allows 180
+additional iterations, and disables generic plateau termination. Submit only
+after the remote plan shows both distinct paths and hashes, the one-point
+`0.2421875` schedule, empty destination, and current budget. Exact commands are
+in `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`. Do not advance theta, promote to chi
+256, or start the reverse branch until this one-at-a-time diagnostic is
+inspected and reconciled.
 
 Canonical evidence:
 
@@ -116,6 +125,8 @@ Canonical evidence:
   `output/phase1/yc8_1/primary_forward_recovery_from_0p23828125/seed_101/chi128/scan_outcome.toml`;
 - completed step-and-expand chi-192 control:
   `output/phase1_tests/yc8_1/from_p0p24218750_to_p0p24609375_37fdbca9e3c5/bond_expansion/chi192/scan_outcome.toml`;
+- completed fixed-flux chi-192 contraction:
+  `output/phase1_tests/yc8_1/fixed_flux_p0p24218750_chi128_to_chi192_37fdbca9e3c5/chi192/scan_outcome.toml`;
 - diagnostic protocol and interpretation:
   `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
 
@@ -414,6 +425,8 @@ mark a converged state rejected solely because another branch has lower energy.
 | 2026-08-12 | 1 | 56675925 | 0.117122396 | 0.117122396 | Accepted chi-128 primary forward theta/pi=0.2421875 after 308 iterations; bracketed a numerical plateau at theta/pi=0.24609375 |
 | 2026-08-12 | 1 | 56712061 | 0.029934896 | 0.029934896 | Step-and-expand chi-192 control stopped at iteration 71; all 710 inner solves converged, but simultaneous theta/chi changes and early plateau termination make it inconclusive as a representation test |
 | 2026-08-12 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.515670573** | Latest locally synced reconciled total; verify the live Perlmutter ledger before the next submission |
+| 2026-08-13 | 1 | 56890262 | 0.140957031 | 0.140957031 | Fixed-flux chi-128 to chi-192 expansion reached the 360-iteration cap while smoothly contracting; residual `2.332663e-5`, projected `1e-5` crossing near cumulative iteration 484, all 3600 inner solves converged |
+| 2026-08-13 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.656627604** | Latest locally synced reconciled total; Project B total including the Phase 0 baseline is `1.751060604` node-hours; verify live Perlmutter accounting before submission |
 
 ## Decision log
 
@@ -446,3 +459,6 @@ mark a converged state rejected solely because another branch has lower energy.
 - 2026-08-12: job 56675925 accepted the chi-128 primary-forward state at theta/pi=0.2421875 after 308 iterations, validating the earlier contracting-trend diagnosis without loosening the 1e-5 residual gate. The subsequent theta/pi=0.24609375 point plateaued near residual 3.43e-5.
 - 2026-08-12: job 56712061 expanded to chi 192 and stepped to theta/pi=0.24609375 simultaneously. Its 710 inner Krylov solves all converged, but the generic plateau detector stopped an irregular post-expansion trajectory at iteration 71, so the job does not establish that chi 192 itself is unable to converge.
 - 2026-08-13: the next controlled test expands the exact accepted theta/pi=0.2421875 parent from chi 128 to chi 192 without changing flux. Generic plateau termination is disabled for the 360-iteration settling window; residual and parent-overlap gates remain strict. Same-flux failures now receive a dedicated immutable outcome rather than a zero-width continuation bracket.
+- 2026-08-14: fixed-flux job 56890262 showed a long, exceptionally smooth chi-192 contraction after the expansion transient. It stopped at residual 2.332663e-5 solely because of the 360-iteration cap; the final trend projected tolerance near cumulative iteration 484. The next test reuses that rejected MPS only as a numerical seed for 180 more iterations at the identical flux.
+- 2026-08-14: launcher 2.3.0 and schema-v6 states separate optimizer-restart provenance from accepted continuation lineage. A resume requires SHA-pinned accepted-parent and rejected-checkpoint files, identical model/flux/branch metadata, checkpoint chi equal to requested chi, and `maximum_iterations_contracting`; it is restricted to one fixed flux. The accepted parent remains the overlap reference. Failed retries receive a dedicated nonphysical-endpoint outcome.
+- 2026-08-14: schema-v6 rank-aligns Schmidt probabilities before total-variation comparison so symmetry-block multiplicity changes do not create a spurious near-unity distance merely by shifting serialized positions. Sector-resolved multiplicities and weights remain a separate diagnostic.

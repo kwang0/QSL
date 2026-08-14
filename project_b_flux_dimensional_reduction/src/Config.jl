@@ -53,6 +53,8 @@ Base.@kwdef struct ScanSettings
     parent_overlap_krylov_dimension::Int = 16
     initial_state_file::Union{Nothing,String} = nothing
     initial_state_sha256::Union{Nothing,String} = nothing
+    optimizer_checkpoint_file::Union{Nothing,String} = nothing
+    optimizer_checkpoint_sha256::Union{Nothing,String} = nothing
 end
 
 function inferred_scan_direction(fluxes::AbstractVector{<:Real})
@@ -215,6 +217,14 @@ function load_settings(config_path::AbstractString)
         value = table_value(scan_table, "initial_state_sha256", nothing)
         value === nothing ? nothing : lowercase(String(value))
     end
+    optimizer_checkpoint_file = resolve_config_path(
+        absolute_config,
+        table_value(scan_table, "optimizer_checkpoint_file", nothing),
+    )
+    optimizer_checkpoint_sha256 = begin
+        value = table_value(scan_table, "optimizer_checkpoint_sha256", nothing)
+        value === nothing ? nothing : lowercase(String(value))
+    end
     scan = ScanSettings(
         branch=String(required_value(scan_table, "branch", "scan")),
         preparation=String(table_value(scan_table, "preparation", "default")),
@@ -248,6 +258,8 @@ function load_settings(config_path::AbstractString)
         )),
         initial_state_file=initial_state_file,
         initial_state_sha256=initial_state_sha256,
+        optimizer_checkpoint_file=optimizer_checkpoint_file,
+        optimizer_checkpoint_sha256=optimizer_checkpoint_sha256,
     )
 
     spectrum_table = table_value(raw, "spectrum", Dict{String,Any}())
@@ -334,6 +346,29 @@ function load_settings(config_path::AbstractString)
                 "strict restart lineage requires initial_state_sha256",
             ))
         end
+    end
+    if scan.optimizer_checkpoint_file === nothing
+        scan.optimizer_checkpoint_sha256 === nothing || throw(ArgumentError(
+            "optimizer_checkpoint_sha256 requires optimizer_checkpoint_file",
+        ))
+    else
+        scan.optimizer_checkpoint_sha256 === nothing && throw(ArgumentError(
+            "optimizer_checkpoint_file requires optimizer_checkpoint_sha256",
+        ))
+        occursin(r"^[0-9a-f]{64}$", scan.optimizer_checkpoint_sha256) || throw(
+            ArgumentError(
+                "optimizer_checkpoint_sha256 must contain 64 hexadecimal digits",
+            ),
+        )
+        scan.initial_state_file === nothing && throw(ArgumentError(
+            "an optimizer checkpoint requires a separate accepted initial_state_file",
+        ))
+        scan.lineage_policy === :strict || throw(ArgumentError(
+            "an optimizer checkpoint requires lineage_policy='strict'",
+        ))
+        length(scan.fluxes_over_pi) == 1 || throw(ArgumentError(
+            "an optimizer-checkpoint resume must contain exactly one fixed flux",
+        ))
     end
     isempty(spectrum.physical_sz_sectors) &&
         throw(ArgumentError("at least one physical Sz sector is required"))

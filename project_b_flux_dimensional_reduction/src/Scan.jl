@@ -108,6 +108,161 @@ function validate_initial_schedule(settings::ProjectSettings, initial_theta::Rea
     return true
 end
 
+function validate_state_model_compatibility(
+    settings::ProjectSettings,
+    state,
+    label::AbstractString,
+)
+    state.circumference == settings.model.geometry.circumference ||
+        error("$label circumference does not match configuration")
+    state.shift == settings.model.geometry.shift ||
+        error("$label YC shift does not match configuration")
+    expected_period = model_mps_period(settings.model)
+    state.mps_period == expected_period || error(
+        "$label uses MPS period $(state.mps_period), but the configuration requires " *
+        "$expected_period; legacy supercell states must not seed a minimal-cell production scan",
+    )
+    state.twist_gauge == settings.model.twist_gauge || error(
+        "$label twist gauge $(state.twist_gauge) does not match configured gauge " *
+        "$(settings.model.twist_gauge)",
+    )
+    for field in (:J1, :J2, :Delta1, :Delta2, :Bz)
+        actual = getproperty(state, field)
+        expected = getproperty(settings.model, field)
+        isapprox(actual, expected; atol=1e-12, rtol=1e-12) ||
+            error("$label $field=$actual does not match configured value $expected")
+    end
+    return true
+end
+
+function validate_state_flux_history(state, label::AbstractString)
+    isempty(state.flux_history_over_pi) && error("$label has an empty flux history")
+    isapprox(
+        last(state.flux_history_over_pi),
+        state.theta_over_pi;
+        atol=1e-12,
+        rtol=0,
+    ) || error("$label flux history does not terminate at its saved flux")
+    return true
+end
+
+function flux_histories_match(left, right)
+    length(left) == length(right) || return false
+    return all(isapprox.(left, right; atol=1e-12, rtol=0))
+end
+
+function load_optimizer_checkpoint(
+    settings::ProjectSettings,
+    accepted_state,
+    accepted_path::AbstractString,
+    accepted_sha256::AbstractString,
+)
+    checkpoint_path = abspath(something(settings.scan.optimizer_checkpoint_file))
+    expected_checkpoint_sha256 = something(settings.scan.optimizer_checkpoint_sha256)
+    actual_checkpoint_sha256 = file_sha256(checkpoint_path)
+    actual_checkpoint_sha256 == expected_checkpoint_sha256 || error(
+        "optimizer checkpoint SHA-256 mismatch: expected $expected_checkpoint_sha256, " *
+        "got $actual_checkpoint_sha256 for $checkpoint_path",
+    )
+    checkpoint = read_state_file(checkpoint_path)
+    checkpoint.schema_version >= 5 || error(
+        "optimizer-checkpoint resume requires a schema-v5-or-newer rejected state: " *
+        checkpoint_path,
+    )
+    checkpoint.converged && error("optimizer checkpoint is already numerically converged")
+    checkpoint.continuation_accepted && error(
+        "optimizer checkpoint is already accepted for continuation; use it as initial_state_file",
+    )
+    validate_state_model_compatibility(settings, checkpoint, "optimizer checkpoint")
+    validate_strict_lineage(settings, checkpoint, checkpoint_path)
+    validate_state_flux_history(checkpoint, "optimizer checkpoint")
+    isapprox(
+        checkpoint.theta_over_pi,
+        accepted_state.theta_over_pi;
+        atol=1e-12,
+        rtol=0,
+    ) || error(
+        "optimizer checkpoint theta/pi=$(checkpoint.theta_over_pi) differs from the accepted " *
+        "parent theta/pi=$(accepted_state.theta_over_pi)",
+    )
+    isapprox(
+        only(settings.scan.fluxes_over_pi),
+        checkpoint.theta_over_pi;
+        atol=1e-12,
+        rtol=0,
+    ) || error("optimizer-checkpoint resume flux must equal the checkpoint Hamiltonian flux")
+    checkpoint.parent_state_sha256 == accepted_sha256 || error(
+        "optimizer checkpoint does not name the configured accepted parent SHA-256",
+    )
+    isempty(checkpoint.parent_state_path) && error(
+        "optimizer checkpoint lacks accepted-parent path metadata",
+    )
+    basename(checkpoint.parent_state_path) == basename(accepted_path) || error(
+        "optimizer checkpoint parent basename $(basename(checkpoint.parent_state_path)) " *
+        "does not match $(basename(accepted_path))",
+    )
+    flux_histories_match(
+        checkpoint.flux_history_over_pi,
+        accepted_state.flux_history_over_pi,
+    ) || error("optimizer checkpoint flux history differs from the accepted parent lineage")
+    actual_checkpoint_maxdim = maxlinkdim(checkpoint.psi)
+    checkpoint.maxlinkdim == actual_checkpoint_maxdim || error(
+        "optimizer checkpoint maxlinkdim metadata $(checkpoint.maxlinkdim) disagrees with " *
+        "its MPS ($actual_checkpoint_maxdim)",
+    )
+    checkpoint.optimizer_requested_maxdim == settings.optimizer.maxdim || error(
+        "optimizer checkpoint requested chi=$(checkpoint.optimizer_requested_maxdim), but " *
+        "the resume configuration requests chi=$(settings.optimizer.maxdim)",
+    )
+    actual_checkpoint_maxdim == settings.optimizer.maxdim || error(
+        "optimizer checkpoint has chi=$actual_checkpoint_maxdim, but the resume configuration " *
+        "requests chi=$(settings.optimizer.maxdim)",
+    )
+    checkpoint.optimizer_stop_reason == "maximum_iterations_contracting" || error(
+        "optimizer-checkpoint resume is restricted to maximum_iterations_contracting; got " *
+        checkpoint.optimizer_stop_reason,
+    )
+    checkpoint.optimizer_iterations >= 1 || error(
+        "optimizer checkpoint has no recorded outer iterations",
+    )
+    isfinite(checkpoint.optimizer_residual) || error(
+        "optimizer checkpoint residual is not finite",
+    )
+    checkpoint.optimizer_residual > settings.optimizer.residual_tol || error(
+        "optimizer checkpoint residual already satisfies the configured tolerance",
+    )
+    isapprox(
+        checkpoint.optimizer_residual_tolerance,
+        settings.optimizer.residual_tol;
+        atol=0,
+        rtol=1e-12,
+    ) || error(
+        "optimizer checkpoint residual tolerance " *
+        "$(checkpoint.optimizer_residual_tolerance) differs from configured tolerance " *
+        "$(settings.optimizer.residual_tol)",
+    )
+    isfinite(checkpoint.optimizer_minimum_residual) || error(
+        "optimizer checkpoint minimum residual is not finite",
+    )
+    prior_iterations = checkpoint.optimizer_checkpoint_iterations
+    prior_iterations >= 0 || error("optimizer checkpoint prior-iteration count is negative")
+    cumulative_iterations = prior_iterations + checkpoint.optimizer_iterations
+    cumulative_minimum_residual = isfinite(checkpoint.optimizer_checkpoint_minimum_residual) ?
+        min(
+            checkpoint.optimizer_minimum_residual,
+            checkpoint.optimizer_checkpoint_minimum_residual,
+        ) : checkpoint.optimizer_minimum_residual
+    return (;
+        checkpoint,
+        path=checkpoint_path,
+        sha256=actual_checkpoint_sha256,
+        cumulative_iterations,
+        residual=checkpoint.optimizer_residual,
+        minimum_residual=cumulative_minimum_residual,
+        stop_reason=checkpoint.optimizer_stop_reason,
+    )
+end
+
 function load_or_build_initial_state(settings::ProjectSettings)
     if settings.scan.initial_state_file === nothing
         return (;
@@ -115,7 +270,14 @@ function load_or_build_initial_state(settings::ProjectSettings)
             initial_theta=nothing,
             parent_state_path="",
             parent_state_sha256="",
+            parent_maxdim=0,
             flux_history_over_pi=Float64[],
+            optimizer_checkpoint_path="",
+            optimizer_checkpoint_sha256="",
+            optimizer_checkpoint_iterations=0,
+            optimizer_checkpoint_residual=NaN,
+            optimizer_checkpoint_minimum_residual=NaN,
+            optimizer_checkpoint_stop_reason="",
         )
     end
     initial_path = abspath(settings.scan.initial_state_file)
@@ -133,37 +295,29 @@ function load_or_build_initial_state(settings::ProjectSettings)
     state = read_state_file(initial_path)
     state.converged || error("initial state is not converged")
     state.continuation_accepted || error("initial state was not accepted for continuation")
-    state.circumference == settings.model.geometry.circumference ||
-        error("initial state circumference does not match configuration")
-    state.shift == settings.model.geometry.shift ||
-        error("initial state YC shift does not match configuration")
-    expected_period = model_mps_period(settings.model)
-    state.mps_period == expected_period || error(
-        "initial state uses MPS period $(state.mps_period), but the configuration requires " *
-        "$expected_period; legacy supercell states must not seed a minimal-cell production scan",
-    )
-    state.twist_gauge == settings.model.twist_gauge || error(
-        "initial state twist gauge $(state.twist_gauge) does not match configured gauge " *
-        "$(settings.model.twist_gauge)",
-    )
-    for field in (:J1, :J2, :Delta1, :Delta2, :Bz)
-        actual = getproperty(state, field)
-        expected = getproperty(settings.model, field)
-        isapprox(actual, expected; atol=1e-12, rtol=1e-12) ||
-            error("initial state $field=$actual does not match configured value $expected")
-    end
+    validate_state_model_compatibility(settings, state, "initial state")
     settings.scan.lineage_policy === :strict &&
         validate_strict_lineage(settings, state, initial_path)
-    isempty(state.flux_history_over_pi) && error("initial state has an empty flux history")
-    isapprox(last(state.flux_history_over_pi), state.theta_over_pi; atol=1e-12, rtol=0) ||
-        error("initial state's flux history does not terminate at its saved flux")
+    validate_state_flux_history(state, "initial state")
     validate_initial_schedule(settings, state.theta_over_pi)
+    checkpoint = settings.scan.optimizer_checkpoint_file === nothing ? nothing :
+        load_optimizer_checkpoint(settings, state, initial_path, actual_initial_sha256)
     return (;
-        psi=state.psi,
+        psi=checkpoint === nothing ? state.psi : checkpoint.checkpoint.psi,
         initial_theta=state.theta_over_pi,
         parent_state_path=initial_path,
         parent_state_sha256=actual_initial_sha256,
+        parent_maxdim=maxlinkdim(state.psi),
         flux_history_over_pi=copy(state.flux_history_over_pi),
+        optimizer_checkpoint_path=checkpoint === nothing ? "" : checkpoint.path,
+        optimizer_checkpoint_sha256=checkpoint === nothing ? "" : checkpoint.sha256,
+        optimizer_checkpoint_iterations=checkpoint === nothing ? 0 :
+            checkpoint.cumulative_iterations,
+        optimizer_checkpoint_residual=checkpoint === nothing ? NaN : checkpoint.residual,
+        optimizer_checkpoint_minimum_residual=checkpoint === nothing ? NaN :
+            checkpoint.minimum_residual,
+        optimizer_checkpoint_stop_reason=checkpoint === nothing ? "" :
+            checkpoint.stop_reason,
     )
 end
 
@@ -192,6 +346,21 @@ function fixed_flux_expansion_requested(
 )
     last_accepted_theta === nothing && return false
     requested_maxdim > source_maxdim || return false
+    return isapprox(
+        Float64(candidate_theta),
+        Float64(last_accepted_theta);
+        atol=1e-12,
+        rtol=0,
+    )
+end
+
+function fixed_flux_optimizer_resume_requested(
+    last_accepted_theta,
+    candidate_theta::Real,
+    optimizer_checkpoint_path::AbstractString,
+)
+    last_accepted_theta === nothing && return false
+    isempty(optimizer_checkpoint_path) && return false
     return isapprox(
         Float64(candidate_theta),
         Float64(last_accepted_theta);
@@ -380,6 +549,111 @@ function write_fixed_flux_expansion_outcome(
     return output_path
 end
 
+function write_fixed_flux_optimizer_resume_outcome(
+    settings::ProjectSettings,
+    diagnostic::VumpsDiagnostics,
+    continuity::BranchContinuityDiagnostics,
+    theta_over_pi::Real,
+    point_index::Integer,
+    accepted_parent_maxdim::Integer,
+    checkpoint_maxdim::Integer,
+    result_maxdim::Integer,
+    checkpoint_iterations::Integer,
+    checkpoint_residual::Real,
+    checkpoint_minimum_residual::Real,
+    checkpoint_stop_reason::AbstractString,
+    accepted_parent_state_path::AbstractString,
+    accepted_parent_state_sha256::AbstractString,
+    optimizer_checkpoint_path::AbstractString,
+    optimizer_checkpoint_sha256::AbstractString,
+    candidate_state_path::AbstractString,
+    candidate_state_sha256::AbstractString,
+)
+    output_path = joinpath(settings.runtime.output_directory, "scan_outcome.toml")
+    ispath(output_path) && error("refusing to overwrite immutable scan outcome: $output_path")
+    temporary_path = output_path * ".tmp"
+    ispath(temporary_path) && error("stale temporary scan outcome exists: $temporary_path")
+    continuity_loss = diagnostic.converged && continuity.checked && !continuity.passed
+    data = Dict{String,Any}(
+        "schema_version" => 1,
+        "artifact_kind" => "project_b_fixed_flux_optimizer_resume_outcome",
+        "created_at_utc" => string(now(UTC)),
+        "status" => continuity_loss ?
+            "fixed_flux_optimizer_resume_continuity_rejected" :
+            "fixed_flux_optimizer_resume_numerical_failure",
+        "classification" => continuity_loss ?
+            "possible_basin_jump_not_physical_endpoint" :
+            numerical_continuation_classification(diagnostic),
+        "physical_endpoint" => false,
+        "continuation_accepted" => false,
+        "config_id" => config_identifier(settings),
+        "config_path" => settings.config_path,
+        "geometry" => string(settings.model.geometry),
+        "branch" => settings.scan.branch,
+        "preparation" => settings.scan.preparation,
+        "direction" => string(settings.scan.direction),
+        "random_seed" => settings.scan.random_seed,
+        "point_index" => Int(point_index),
+        "theta_over_pi" => Float64(theta_over_pi),
+        "accepted_parent_maxdim" => Int(accepted_parent_maxdim),
+        "checkpoint_maxdim" => Int(checkpoint_maxdim),
+        "requested_maxdim" => settings.optimizer.maxdim,
+        "result_maxdim" => Int(result_maxdim),
+        "checkpoint_cumulative_iterations" => Int(checkpoint_iterations),
+        "checkpoint_residual" => Float64(checkpoint_residual),
+        "checkpoint_minimum_residual" => Float64(checkpoint_minimum_residual),
+        "checkpoint_stop_reason" => String(checkpoint_stop_reason),
+        "optimizer_additional_iterations" => diagnostic.iterations,
+        "optimizer_cumulative_iterations" => checkpoint_iterations + diagnostic.iterations,
+        "residual" => diagnostic.residual,
+        "minimum_residual" => min(
+            Float64(checkpoint_minimum_residual),
+            diagnostic.minimum_residual,
+        ),
+        "residual_tolerance" => settings.optimizer.residual_tol,
+        "optimizer_stop_reason" => diagnostic.stop_reason,
+        "optimizer_max_iterations" => settings.optimizer.max_iterations,
+        "optimizer_plateau_detection" => settings.optimizer.plateau_detection,
+        "optimizer_trend_window" => diagnostic.trend_window,
+        "optimizer_recent_relative_improvement" =>
+            diagnostic.recent_relative_improvement,
+        "optimizer_log_residual_slope" => diagnostic.log_residual_slope,
+        "optimizer_log_residual_r_squared" => diagnostic.log_residual_r_squared,
+        "optimizer_projected_total_iterations" => diagnostic.projected_total_iterations,
+        "optimizer_projected_cumulative_iterations" =>
+            checkpoint_iterations + diagnostic.projected_total_iterations,
+        "optimizer_krylov_solve_count" => length(diagnostic.krylov_solves),
+        "continuity_checked" => continuity.checked,
+        "continuity_passed" => continuity.passed,
+        "continuity_reason" => continuity.reason,
+        "parent_overlap_per_unit_cell" => continuity.overlap_per_unit_cell,
+        "parent_overlap_per_site" => continuity.overlap_per_site,
+        "minimum_parent_overlap_per_site" => continuity.minimum_overlap_per_site,
+        "energy_density_delta" => continuity.energy_density_delta,
+        "mean_entropy_delta" => continuity.mean_entropy_delta,
+        "maximum_cut_entropy_jump" => continuity.maximum_cut_entropy_jump,
+        "energy_term_rms_jump" => continuity.energy_term_rms_jump,
+        "magnetization_rms_jump" => continuity.magnetization_rms_jump,
+        "mean_schmidt_total_variation" => continuity.mean_schmidt_total_variation,
+        "accepted_parent_state_path" => String(accepted_parent_state_path),
+        "accepted_parent_state_sha256" => String(accepted_parent_state_sha256),
+        "optimizer_checkpoint_path" => String(optimizer_checkpoint_path),
+        "optimizer_checkpoint_sha256" => String(optimizer_checkpoint_sha256),
+        "candidate_state_path" => String(candidate_state_path),
+        "candidate_state_sha256" => String(candidate_state_sha256),
+    )
+    try
+        open(temporary_path, "w") do io
+            TOML.print(io, data; sorted=true)
+        end
+        Base.Filesystem.rename(temporary_path, output_path)
+    catch
+        isfile(temporary_path) && rm(temporary_path; force=true)
+        rethrow()
+    end
+    return output_path
+end
+
 function run_flux_scan(settings::ProjectSettings)
     configure_threading!(settings.runtime)
     mkpath(settings.runtime.output_directory)
@@ -388,7 +662,22 @@ function run_flux_scan(settings::ProjectSettings)
     initial_theta = initial.initial_theta
     parent_state_path = initial.parent_state_path
     parent_state_sha256 = initial.parent_state_sha256
+    parent_maxdim = initial.parent_maxdim
     flux_history = initial.flux_history_over_pi
+    optimizer_checkpoint_path = initial.optimizer_checkpoint_path
+    optimizer_checkpoint_sha256 = initial.optimizer_checkpoint_sha256
+    optimizer_checkpoint_iterations = initial.optimizer_checkpoint_iterations
+    optimizer_checkpoint_residual = initial.optimizer_checkpoint_residual
+    optimizer_checkpoint_minimum_residual =
+        initial.optimizer_checkpoint_minimum_residual
+    optimizer_checkpoint_stop_reason = initial.optimizer_checkpoint_stop_reason
+    if !isempty(optimizer_checkpoint_path)
+        println(
+            "Optimizer-checkpoint resume: accepted parent=$(parent_state_path), " *
+            "numerical seed=$(optimizer_checkpoint_path), " *
+            "prior outer iterations=$optimizer_checkpoint_iterations",
+        )
+    end
     queue = copy(settings.scan.fluxes_over_pi)
     if initial_theta !== nothing && !isapprox(first(queue), initial_theta; atol=1e-12, rtol=0)
         @warn "Initial-state flux differs from first scheduled flux" initial_theta first_flux=first(queue)
@@ -407,6 +696,11 @@ function run_flux_scan(settings::ProjectSettings)
             theta_over_pi,
             source_maxdim,
             settings.optimizer.maxdim,
+        )
+        fixed_flux_optimizer_resume = fixed_flux_optimizer_resume_requested(
+            last_accepted_theta,
+            theta_over_pi,
+            optimizer_checkpoint_path,
         )
         println(
             "\nPoint $point_index: branch=$(settings.scan.branch), geometry=$(settings.model.geometry), " *
@@ -455,6 +749,12 @@ function run_flux_scan(settings::ProjectSettings)
                 parent_state_path,
                 parent_state_sha256,
                 parent_flux_history_over_pi=flux_history,
+                optimizer_checkpoint_path,
+                optimizer_checkpoint_sha256,
+                optimizer_checkpoint_iterations,
+                optimizer_checkpoint_residual,
+                optimizer_checkpoint_minimum_residual,
+                optimizer_checkpoint_stop_reason,
                 continuity,
                 precomputed_observables=candidate_observables,
             )
@@ -481,6 +781,13 @@ function run_flux_scan(settings::ProjectSettings)
                 continuity.mean_entropy_delta,
             )
         end
+        if fixed_flux_optimizer_resume
+            println(
+                "Optimizer-checkpoint progress: prior=$optimizer_checkpoint_iterations, " *
+                "additional=$(diagnostic.iterations), cumulative=" *
+                "$(optimizer_checkpoint_iterations + diagnostic.iterations)",
+            )
+        end
 
         if accepted
             psi = candidate
@@ -494,6 +801,39 @@ function run_flux_scan(settings::ProjectSettings)
                 push!(flux_history, theta_over_pi)
             end
             continue
+        end
+
+        if fixed_flux_optimizer_resume
+            saved === nothing && error(
+                "cannot classify a fixed-flux optimizer-resume failure without a saved " *
+                "candidate state",
+            )
+            outcome_path = write_fixed_flux_optimizer_resume_outcome(
+                settings,
+                diagnostic,
+                continuity,
+                theta_over_pi,
+                point_index,
+                parent_maxdim,
+                source_maxdim,
+                maxlinkdim(candidate),
+                optimizer_checkpoint_iterations,
+                optimizer_checkpoint_residual,
+                optimizer_checkpoint_minimum_residual,
+                optimizer_checkpoint_stop_reason,
+                parent_state_path,
+                parent_state_sha256,
+                optimizer_checkpoint_path,
+                optimizer_checkpoint_sha256,
+                saved.path,
+                saved.state_sha256,
+            )
+            if diagnostic.converged && continuity.checked && !continuity.passed
+                @warn "Fixed-flux optimizer resume failed the branch-continuity gate" theta_over_pi checkpoint_iterations=optimizer_checkpoint_iterations additional_iterations=diagnostic.iterations overlap_per_site=continuity.overlap_per_site minimum_overlap_per_site=continuity.minimum_overlap_per_site outcome_path
+            else
+                @warn "Fixed-flux optimizer resume ended without numerical acceptance" theta_over_pi checkpoint_iterations=optimizer_checkpoint_iterations additional_iterations=diagnostic.iterations cumulative_iterations=optimizer_checkpoint_iterations + diagnostic.iterations residual=diagnostic.residual tolerance=settings.optimizer.residual_tol stop_reason=diagnostic.stop_reason outcome_path
+            end
+            break
         end
 
         if fixed_flux_expansion
@@ -577,6 +917,9 @@ function run_chi_ladder(settings::ProjectSettings, maxdims::AbstractVector{<:Int
     issorted(maxdims) || throw(ArgumentError("chi ladder must be sorted in increasing order"))
     length(settings.scan.fluxes_over_pi) == 1 ||
         throw(ArgumentError("chi-ladder configuration must contain exactly one flux"))
+    settings.scan.optimizer_checkpoint_file === nothing || throw(ArgumentError(
+        "optimizer checkpoints are supported only by an isolated flux scan, not a chi ladder",
+    ))
     configure_threading!(settings.runtime)
     initial = load_or_build_initial_state(settings)
     psi = initial.psi

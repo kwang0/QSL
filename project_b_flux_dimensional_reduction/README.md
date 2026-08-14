@@ -16,6 +16,9 @@ Dirac crossing.
 - Every selected flux has an immutable HDF5 state artifact containing `psi`.
 - Phase 1 states encode geometry, branch, independent preparation, direction,
   seed, chi, flux, accepted-parent SHA-256, and full flux ancestry.
+- A contracting rejected state may be used only through the separate,
+  SHA-pinned optimizer-checkpoint field at the identical flux; it never
+  replaces the accepted continuation parent.
 - The exact VUMPS residual history is stored, and unconverged points cannot seed
   later flux points.
 - A numerically converged child must also pass a gauge-invariant mixed-transfer
@@ -88,7 +91,7 @@ bash slurm/run_scan_cpu.sh cancel-plateau "$(basename "$run_dir")"
 ```
 
 See [`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`](docs/PHASE1_PLATEAU_DIAGNOSTICS.md)
-for the current fixed-flux chi-expansion test, exact Perlmutter submission
+for the current fixed-flux chi-192 optimizer resume, exact Perlmutter submission
 steps, inner-Krylov diagnostics, and U(1)-sector comparisons.
 
 Direct `sbatch` use is intentionally unsupported. The submit path fixes the
@@ -113,20 +116,23 @@ A same-flux increase in bond dimension is classified separately: if the
 expanded state is not accepted, `scan_outcome.toml` records a
 `project_b_fixed_flux_expansion_outcome` rather than inventing a zero-width
 continuation bracket.
+An isolated retry from a contracting rejected MPS is classified separately as
+`project_b_fixed_flux_optimizer_resume_outcome` and records the accepted parent,
+numerical checkpoint, and new candidate as three distinct immutable artifacts.
 Residual failure is `numerical_continuation_loss_bracketed`; overlap failure is
 `branch_continuity_loss_bracketed`. Neither classification alone establishes a
 physical endpoint.
 
-The reconciled YC8-1 recovery has now accepted the primary-forward branch
-through `theta/pi=0.23828125`. Its closest `theta/pi=0.2421875` attempt ended at
-residual `1.5339e-5` after 200 iterations, but the residual was still smoothly
-contracting and projects to cross `1e-5` near iteration 307. The next attempt is
-therefore
-`configs/phase1_yc8_1_forward_recovery_from_0p23828125_chi128.toml`. It pins the
-accepted parent's known SHA-256, preserves the original inner-solver settings,
-raises only the outer cap to 360, records all inner Krylov solves, and stops a
-genuine plateau without misclassifying the measured contraction. Never seed it
-from a rejected state at `theta/pi=0.2421875` or `0.25`.
+The reconciled YC8-1 recovery has accepted the chi-128 primary-forward branch
+through `theta/pi=0.2421875`. Fixed-flux job `56890262` expanded that accepted
+parent to chi 192; after the expansion transient, its residual decreased on
+every iteration from 83 through the 360-iteration cap and ended at
+`2.332663e-5`. The final trend projects the unchanged `1e-5` gate near
+cumulative iteration 484, so the next isolated test resumes the rejected
+chi-192 MPS for at most 180 additional iterations at the same theta. Generate
+it on Perlmutter with `scripts/prepare_phase1_fixed_flux_resume.jl`; keep the
+accepted chi-128 file as `initial_state_file` and the rejected chi-192 file only
+as `optimizer_checkpoint_file`.
 
 The launcher passes the submission-side absolute project directory into the
 private worker entry point. This is required because Slurm executes a staged
@@ -164,7 +170,7 @@ bash test/test_phase1_launcher.sh
 
 The normal suite tests minimal/supercell geometry, uniform twist charges,
 configuration, momentum formulas, identical-state mixed-transfer fidelity,
-central-charge analysis, diagnostics, and a schema-v5 infinite-MPS HDF5 round
+central-charge analysis, diagnostics, and a schema-v6 infinite-MPS HDF5 round
 trip. The opt-in test also performs one VUMPS iteration and neutral plus
 physical-`S^z=1` transfer eigensolves. The shell regression runs a staged copy
 of the Phase 1 launcher and verifies that it still invokes the original Julia
