@@ -130,6 +130,30 @@ end
         @test occursin("seed$(phase1.scan.random_seed)", state_path)
         @test occursin("chi128", state_path)
     end
+    chi512 = load_settings(joinpath(
+        PROJECT_ROOT,
+        "configs",
+        "phase1_yc8_1_forward_chi512_legacy_0p1.toml",
+    ))
+    @test chi512.model.geometry == YCGeometry(8, 1)
+    @test model_mps_period(chi512.model) == 2
+    @test chi512.optimizer.maxdim == 512
+    @test chi512.optimizer.residual_tol == 1e-5
+    @test chi512.optimizer.max_iterations == 180
+    @test chi512.optimizer.max_growth_steps == 20
+    @test chi512.optimizer.record_krylov_diagnostics
+    @test chi512.optimizer.plateau_detection
+    @test chi512.optimizer.plateau_warmup_iterations == 40
+    @test chi512.optimizer.plateau_patience == 32
+    @test chi512.scan.branch == "primary_forward_chi512_legacy_0p1"
+    @test chi512.scan.preparation == "independent_theta0_alternating_chi512"
+    @test chi512.scan.direction === :forward
+    @test chi512.scan.fluxes_over_pi == Float64.(0:10) ./ 10
+    @test chi512.scan.minimum_step_over_pi == 0.1
+    @test chi512.scan.require_parent_overlap
+    @test chi512.scan.minimum_parent_overlap_per_site == 0.99
+    @test chi512.runtime.threaded_blocksparse
+    @test occursin("chi512", chi512.runtime.output_directory)
     recovery = load_settings(joinpath(
         PROJECT_ROOT,
         "configs",
@@ -250,6 +274,7 @@ end
 @testset "Adaptive continuation bracket classification" begin
     @test PB.minimum_step_bracket_reached(0.21875, 0.25, 0.03125)
     @test PB.minimum_step_bracket_reached(0.25, 0.21875, 0.03125)
+    @test PB.minimum_step_bracket_reached(0.3, 0.4, 0.1)
     @test !PB.minimum_step_bracket_reached(0.1875, 0.25, 0.03125)
 end
 

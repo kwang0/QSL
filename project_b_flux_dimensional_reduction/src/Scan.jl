@@ -862,7 +862,11 @@ function run_flux_scan(settings::ProjectSettings)
         end
 
         can_refine = settings.scan.adaptive_bisection && last_accepted_theta !== nothing &&
-            abs(theta_over_pi - last_accepted_theta) > settings.scan.minimum_step_over_pi
+            !minimum_step_bracket_reached(
+                last_accepted_theta,
+                theta_over_pi,
+                settings.scan.minimum_step_over_pi,
+            )
         interval = last_accepted_theta === nothing ? (NaN, theta_over_pi) :
             (Float64(last_accepted_theta), Float64(theta_over_pi))
         if can_refine && !(interval in attempted)

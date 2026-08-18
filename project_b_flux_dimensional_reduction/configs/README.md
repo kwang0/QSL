@@ -16,6 +16,10 @@ The supplied files cover the first Project B calculations:
   accepted theta/pi=0.2421875 after 308 iterations, then bracketed a chi-128
   numerical plateau at theta/pi=0.24609375.
 - `phase1_yc8_1_reverse_chi128.toml`: independently prepared two-flavor reverse basin diagnostic.
+- `phase1_yc8_1_forward_chi512_legacy_0p1.toml`: fresh high-bond-dimension
+  primary-forward restart on the requested `0.0,0.1,...,1.0` grid. It retains
+  the strict `1e-5` residual and `0.99` overlap gates, records Krylov solves,
+  and uses a distinct lineage and output directory.
 - `phase1_yc8_0_forward_chi128.toml`: primary four-flavor threaded branch.
 - `phase1_yc8_0_reverse_chi128.toml`: independently prepared four-flavor reverse basin diagnostic.
 - `hu_yc8_1_forward.toml`: the two-flavor Hu geometry, with the expected crossing at `theta/pi=1`.
@@ -37,22 +41,20 @@ The YC8-1 recovery configs are deliberately not independent preparations. Each
 must resolve its exact accepted parent artifact and fails closed if the
 immutable parent hash or strict-lineage metadata does not match the
 primary-forward branch. The current accepted frontier is theta/pi=0.2421875,
-chi 128, with SHA-256
-`37fdbca9e3c5d1089085b709948cfbf854593301bb242c46c93c7895e76e7caf`.
+chi 192, with SHA-256
+`312f08abf8c78f15382fac8165ebf138866be06bf0456fddd0d46995f272fc86`.
 A strict restart must set both `initial_state_file` and the known
 `initial_state_sha256`; the launcher and Julia scan independently verify that
 digest before optimization.
 
-The fixed-flux chi-128 to chi-192 expansion completed without reaching the
-residual gate, but its final 277 iterations contracted monotonically and project
-the `1e-5` crossing near cumulative iteration 484. The next diagnostic is
-generated rather than checked in because both absolute state paths must be
-verified on Perlmutter. Use `scripts/prepare_phase1_fixed_flux_resume.jl` with
-the accepted chi-128 parent and the SHA-pinned rejected chi-192 artifact. The
-generated config permits 180 additional iterations at the same theta and keeps
-generic plateau termination disabled. `initial_state_file` remains the accepted
-branch parent; `optimizer_checkpoint_file` is a numerical seed only. Exact
-commands and decision rules are in `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
+Fixed-chi job `56994767` did not pass the `1e-5` gate at theta/pi=0.24609375:
+chi 192 reached a minimum residual `2.254667e-5` after the corresponding chi-128
+minimum was `3.424244e-5`. The low-chi corrector sequence is now closed. Submit
+the checked-in fresh chi-512 config above. If an allocation ends because of
+wall time after saving accepted points, use
+`scripts/prepare_phase1_chi512_legacy_resume.jl` with the highest-index accepted
+state and the SHA-256 verified on Perlmutter. The generator validates the exact
+0.1-grid history and writes a distinct continuation config and output directory.
 
 An optimizer checkpoint is intentionally more restrictive than an ordinary
 restart. It requires strict lineage, exactly one fixed flux, both SHA-256
@@ -71,8 +73,9 @@ The default `0.99` threshold is a configurable branch trust-region guard, not a
 claim about a universal physical fidelity cutoff; inspect the stored overlaps
 and audit metrics after the first real continuation job.
 
-The `hu_yc8_*_forward.toml` files remain later-phase chi=512 templates; do not
-substitute them for the sparse chi=128 Phase 1 configs.
+The `hu_yc8_*_forward.toml` files remain later-phase templates with different
+tolerance, spectrum, and threading settings; do not substitute them for the
+dedicated chi-512 Phase 1 campaign.
 
 The built-in product seeds are `alternating`, `alternating_shifted`, `block`,
 and `random_balanced`. The latter is reproducible through `random_seed`.

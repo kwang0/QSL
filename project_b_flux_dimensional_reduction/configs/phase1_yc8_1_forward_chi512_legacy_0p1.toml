@@ -1,0 +1,65 @@
+# Fresh high-bond-dimension primary-forward restart. The scheduled spacing
+# matches the requested legacy-style 0.1*pi grid, while numerical convergence,
+# immutable lineage, and parent-overlap acceptance remain Project B strict.
+[model]
+circumference = 8
+shift = 1
+mps_period = 2
+twist_gauge = "uniform"
+J1 = 1.0
+J2 = 0.12
+Delta1 = 1.0
+Delta2 = 1.0
+Bz = 0.0
+
+[optimizer]
+maxdim = 512
+cutoff = 1.0e-10
+residual_tol = 1.0e-5
+max_iterations = 180
+max_growth_steps = 20
+solver_tol_scale = 100.0
+solver_tol_floor = 1.0e-10
+solver_krylov_dimension = 30
+solver_max_iterations = 100
+record_krylov_diagnostics = true
+multisite_update_alg = "sequential"
+require_converged = true
+divergence_patience = 8
+divergence_factor = 4.0
+plateau_detection = true
+plateau_warmup_iterations = 40
+plateau_patience = 32
+plateau_min_relative_improvement = 0.005
+
+[scan]
+branch = "primary_forward_chi512_legacy_0p1"
+preparation = "independent_theta0_alternating_chi512"
+direction = "forward"
+lineage_policy = "strict"
+fluxes_over_pi = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+seed_pattern = "alternating"
+random_seed = 101
+adaptive_bisection = true
+# Equal to the scheduled spacing: a rejected point is recorded and bracketed
+# without silently replacing the requested grid with lower-chi-style refinements.
+minimum_step_over_pi = 0.1
+save_rejected = true
+require_parent_overlap = true
+minimum_parent_overlap_per_site = 0.99
+parent_overlap_tolerance = 1.0e-8
+parent_overlap_krylov_dimension = 16
+
+[spectrum]
+physical_sz_sectors = [0.0, 1.0]
+neigs = 4
+tolerance = 1.0e-8
+krylov_dimension = 16
+random_seed = 101
+
+[runtime]
+output_directory = "../output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512"
+blas_threads = 1
+strided_threads = 1
+threaded_blocksparse = true
+output_level = 1

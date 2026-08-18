@@ -13,7 +13,7 @@ the reserve and are not automatically reassigned.
 | Phase | Ceiling | Current status | Exit product |
 |---|---:|---|---|
 | 0 — correctness and resource calibration | 10 node-h | **Complete**; corrected seed, 13-candidate matrix, and chi=512 validation copied locally | Correct minimal-cell timing, peak RSS, and one recommended threading configuration |
-| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; YC8-1 primary forward accepted through theta/pi=0.2421875; fixed-flux chi-128 to chi-192 initialization is next | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
+| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; low-chi YC8-1 correctors ended after the chi-192 plateau at 0.24609375; fresh chi-512 0.1-pi forward restart is next | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
 | 2 — moderate-chi Hu reproduction | 35 node-h | Not started | Converged entropy response and momentum-resolved physical-Sz transfer flow |
 | 3 — critical-point chi ladders | 60 node-h | Not started | Controlled `S = (c/6) log(xi) + a` analysis at selected crossings |
 | 4 — one independent validation | 15 node-h | Not started | One decisive second route, seed, geometry, or width check |
@@ -74,6 +74,35 @@ converged. This is an iteration-limited contracting solve, not evidence that
 chi-192 VUMPS lacks a self-consistent solution. The rejected candidate SHA-256
 is `b34fc59421524efb509c0801cfdbac4c30c77ebac59d947985a88f6e2a5bafa3`.
 
+Reconciled job `56978073` resumed that contracting chi-192 MPS at the identical
+Hamiltonian while retaining the accepted chi-128 state as its lineage and
+overlap reference. All 130 new residuals decreased monotonically from
+`2.313835e-5` to `9.953697e-6`, so acceptance occurred after 490 cumulative
+outer iterations, only 6.2 iterations beyond the prior projection. All 1300
+inner Krylov solves converged. The candidate passed the continuity gate with
+overlap per site `0.9994664352` and is now accepted primary-forward lineage at
+chi 192. Its SHA-256 is
+`312f08abf8c78f15382fac8165ebf138866be06bf0456fddd0d46995f272fc86`.
+
+Relative to the accepted chi-128 state at the same theta, the accepted chi-192
+state lowers the energy density by `0.0021320968` and raises mean entropy by
+`0.1476169210`. It has the same seven and eight U(1) sectors on the two cuts,
+with larger multiplicities rather than new charge labels. The sector-weight
+total-variation distances are `0.01616689` and `0.02843619`. This identifies a
+finite-representation change within the same symmetry support, not a missing
+U(1) sector or an inner-solver failure.
+
+Reconciled job `56994767` then changed only theta, using that accepted chi-192
+state for a `1/256*pi` step to `0.24609375`. Its residual decreased from
+`8.097135e-5` to `2.254667e-5` at iteration 352 and ended at `2.256008e-5`
+after 360 iterations. Although the final 100-iteration fit remained negative,
+the final eight residual changes were nondecreasing, so the projected crossing
+near iteration 1613 is not a responsible basis for extending chi 192. All 3600
+inner solves converged, and the two cuts retained identical U(1) sector labels
+and multiplicities. Relative to the chi-128 minimum `3.424244e-5` at the same
+theta, chi 192 improved the floor by `34.2%` but did not pass `1e-5`. The state
+was not continuity-tested because numerical eligibility failed first.
+
 The implementation now makes branch identity an explicit acceptance condition.
 For every child of an immutable accepted parent, schema-v4-and-newer state
 files store a
@@ -90,18 +119,16 @@ those known smooth steps. This check does not calibrate the score of a genuine
 basin jump, so the first continuity-gated job still requires inspection rather than an
 automatic threshold change.
 
-The next operational step is to synchronize launcher 2.3.0, schema-v6 storage,
-and `scripts/prepare_phase1_fixed_flux_resume.jl` to Perlmutter. Generate one
-fixed-flux chi-192 resume using two SHA-pinned artifacts: the accepted chi-128
-state remains the branch/overlap parent, while the rejected chi-192 state is a
-numerical MPS seed only. The test keeps the `1e-5` residual and `0.99` overlap
-gates, records every environment and center-tensor Krylov solve, allows 180
-additional iterations, and disables generic plateau termination. Submit only
-after the remote plan shows both distinct paths and hashes, the one-point
-`0.2421875` schedule, empty destination, and current budget. Exact commands are
-in `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`. Do not advance theta, promote to chi
-256, or start the reverse branch until this one-at-a-time diagnostic is
-inspected and reconciled.
+The project owner has ended further low-chi correctors. The next operational
+step is the independently prepared
+`configs/phase1_yc8_1_forward_chi512_legacy_0p1.toml` campaign. It grows a new
+alternating theta-zero state to chi 512 and schedules `0.0,0.1,...,1.0` under a
+distinct branch label. The user-requested chi and spacing are the only legacy
+features: the minimal cell, uniform gauge, `1e-5` residual gate, `0.99` overlap
+gate, diagnostics, and guarded accounting remain. The minimum continuation
+step is `0.1`, so a failed scheduled point is recorded without automatic
+low-step bisection. Exact submission and 24-hour recovery commands are in
+`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
 
 Canonical evidence:
 
@@ -119,7 +146,7 @@ Canonical evidence:
   `output/phase0_calibration/phase0_retry_80iter/recommendation.txt`;
 - failed first-attempt accounting:
   `output/phase0_calibration/20260804T205703Z/recommendation.txt`;
-- current accepted YC8-1 recovery parent:
+- accepted chi-128 YC8-1 fixed-flux source:
   `output/phase1/yc8_1/primary_forward_recovery_from_0p23828125/seed_101/chi128/states/state_0001_yc8-1_primary_forward_independent_theta0_alternating_forward_seed101_chi128_theta_p0p24218750_accepted_0a7c9cba9e2c.h5`;
 - latest numerical recovery outcome:
   `output/phase1/yc8_1/primary_forward_recovery_from_0p23828125/seed_101/chi128/scan_outcome.toml`;
@@ -127,13 +154,21 @@ Canonical evidence:
   `output/phase1_tests/yc8_1/from_p0p24218750_to_p0p24609375_37fdbca9e3c5/bond_expansion/chi192/scan_outcome.toml`;
 - completed fixed-flux chi-192 contraction:
   `output/phase1_tests/yc8_1/fixed_flux_p0p24218750_chi128_to_chi192_37fdbca9e3c5/chi192/scan_outcome.toml`;
+- current accepted chi-192 YC8-1 parent:
+  `output/phase1_tests/yc8_1/fixed_flux_resume_p0p24218750_chi192_b34fc5942152/chi192/states/state_0001_yc8-1_primary_forward_independent_theta0_alternating_forward_seed101_chi192_theta_p0p24218750_accepted_ee45b7d8c9af.h5`;
+- chi-128 to chi-192 U(1)-sector comparison:
+  `docs/data/phase1_yc8_1_0p242_chi128_to_chi192_bond_sectors.tsv`;
+- completed fixed-chi chi-192 forward-step outcome:
+  `output/phase1_tests/yc8_1/forward_step_p0p24218750_to_p0p24609375_chi192_312f08abf8c7/chi192/scan_outcome.toml`;
+- fresh chi-512 campaign config:
+  `configs/phase1_yc8_1_forward_chi512_legacy_0p1.toml`;
 - diagnostic protocol and interpretation:
   `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
 
 Do **not** submit either existing `configs/hu_yc8_*_forward.toml` as a Phase 1
-campaign. Use `slurm/run_scan_cpu.sh plan|submit` with a dedicated checked-in
-Phase 1 config, or with the SHA-pinned fixed-flux config produced by the
-documented generator:
+campaign. Use `slurm/run_scan_cpu.sh plan|submit` with the dedicated checked-in
+chi-512 Phase 1 config, or with the SHA-pinned remaining-schedule config
+produced by the documented generator:
 
 - the launcher fixes two Julia threads, a four-CPU scan step, 8 GiB, Shared QOS,
   and a one-pilot-at-a-time submission policy. Shared QOS may expose five task
@@ -142,7 +177,7 @@ documented generator:
 - it forecasts the new reservation together with active Project B work,
   enforces the Phase 1 and project limits, and requires `sacct` reconciliation
   before another Phase 1 submission;
-- the later-phase `hu_yc8_*` configs use `chi=512`, `residual_tol=1e-8`, dense flux lists,
+- the later-phase `hu_yc8_*` configs use `chi=512`, `residual_tol=1e-8`, different flux lists,
   `neigs=24`, and `threaded_blocksparse=false`; they are later-phase templates,
   not the cheap Phase 1 scout;
 - `run_scan.jl` currently performs optimization and state saving only, despite
@@ -301,8 +336,11 @@ the scan through a suspected basin jump.
   within the same three-charged-physical-core forecast.
 - Use the minimal cell and uniform gauge: period 2 for YC8-1 and period 8 for
   YC8-0.
-- Begin at chi=64 or 128 and promote only the relevant labeled branches to
-  chi=256. Do not begin with the current chi=512 YC8 templates.
+- The original scout began at chi 128 and diagnosed the local continuation
+  failure through chi 192. As an explicit project-owner override, the new
+  primary-forward restart begins independently at chi 512. Do not extrapolate
+  this authorization to chi above 512 or to the incompatible `hu_yc8_*`
+  templates.
 - Submit one small pilot at a time and reconcile `sacct` before launching a
   wider set. Do not infer wall time from the one-iteration theta=0 validation.
 - Until finite-flux data exist, allow a `2–3x` wall-time contingency per
@@ -427,6 +465,10 @@ mark a converged state rejected solely because another branch has lower energy.
 | 2026-08-12 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.515670573** | Latest locally synced reconciled total; verify the live Perlmutter ledger before the next submission |
 | 2026-08-13 | 1 | 56890262 | 0.140957031 | 0.140957031 | Fixed-flux chi-128 to chi-192 expansion reached the 360-iteration cap while smoothly contracting; residual `2.332663e-5`, projected `1e-5` crossing near cumulative iteration 484, all 3600 inner solves converged |
 | 2026-08-13 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.656627604** | Latest locally synced reconciled total; Project B total including the Phase 0 baseline is `1.751060604` node-hours; verify live Perlmutter accounting before submission |
+| 2026-08-14 | 1 | 56978073 | 0.043235677 | 0.043235677 | Fixed-flux chi-192 resume converged after 130 additional and 490 cumulative iterations; residual `9.953697e-6`, overlap/site `0.9994664352`, all 1300 inner solves converged |
+| 2026-08-14 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.699863281** | Latest locally synced reconciled total; Project B total including the Phase 0 baseline is `1.794296281` node-hours; verify live Perlmutter accounting before submission |
+| 2026-08-15 | 1 | 56994767 | 0.120058594 | 0.120058594 | Fixed-chi 192 step to theta/pi=0.24609375 reached minimum residual `2.254667e-5` at iteration 352 and flattened; all 3600 inner solves converged, but the point was not numerically eligible for continuity testing |
+| 2026-08-15 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.819921875** | Locally synced total through job 56994767; Project B total including the Phase 0 baseline is `1.914354875` node-hours; verify live Perlmutter accounting before submission |
 
 ## Decision log
 
@@ -462,3 +504,7 @@ mark a converged state rejected solely because another branch has lower energy.
 - 2026-08-14: fixed-flux job 56890262 showed a long, exceptionally smooth chi-192 contraction after the expansion transient. It stopped at residual 2.332663e-5 solely because of the 360-iteration cap; the final trend projected tolerance near cumulative iteration 484. The next test reuses that rejected MPS only as a numerical seed for 180 more iterations at the identical flux.
 - 2026-08-14: launcher 2.3.0 and schema-v6 states separate optimizer-restart provenance from accepted continuation lineage. A resume requires SHA-pinned accepted-parent and rejected-checkpoint files, identical model/flux/branch metadata, checkpoint chi equal to requested chi, and `maximum_iterations_contracting`; it is restricted to one fixed flux. The accepted parent remains the overlap reference. Failed retries receive a dedicated nonphysical-endpoint outcome.
 - 2026-08-14: schema-v6 rank-aligns Schmidt probabilities before total-variation comparison so symmetry-block multiplicity changes do not create a spurious near-unity distance merely by shifting serialized positions. Sector-resolved multiplicities and weights remain a separate diagnostic.
+- 2026-08-14: fixed-flux resume job 56978073 validated the prior contracting-trend projection. It accepted chi 192 at theta/pi=0.2421875 after 490 cumulative iterations without loosening the residual gate; all 1300 new inner solves converged and parent overlap per site was 0.9994664352.
+- 2026-08-14: the next controlled test uses the accepted chi-192 state itself as the strict-lineage parent and changes only theta by 1/256 of pi to 0.24609375. Chi remains 192, the residual and overlap gates are unchanged, inner diagnostics stay enabled, and no rejected optimizer checkpoint participates.
+- 2026-08-15: job 56994767 established that a converged chi-192 parent and a 1/256-pi step still flatten near residual 2.255e-5 at theta/pi=0.24609375. The 34.2% improvement over chi 128 confirms a bond-dimension effect, while converged inner solves and stable sector multiplicities exclude the tested inner-solver and missing-sector explanations.
+- 2026-08-17: the project owner ended further low-chi correctors and authorized a fresh chi-512 YC8-1 primary-forward restart on the exact 0.1-pi grid. Launcher 2.4.0 admits chi through 512 and recognizes only the dedicated fresh campaign metadata for this alternate schedule. The `1e-5` residual, `0.99` overlap, minimal-cell, uniform-gauge, immutable-output, and budget safeguards remain unchanged.

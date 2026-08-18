@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-readonly LAUNCHER_VERSION="2.3.0"
+readonly LAUNCHER_VERSION="2.4.0"
 readonly PROJECT_B_HARD_BUDGET_NODE_HOURS=150
 readonly PROJECT_B_AUTOMATIC_SUBMISSION_CAP_NODE_HOURS=140
 readonly PHASE1_BUDGET_NODE_HOURS=20
@@ -206,7 +206,7 @@ config_record() {
     Int(required(model, "mps_period")) == expected_period || error("Phase 1 requires the minimal MPS period $expected_period")
     lowercase(String(get(model, "twist_gauge", ""))) == "uniform" || error("Phase 1 requires twist_gauge=uniform")
     chi = Int(required(optimizer, "maxdim"))
-    64 <= chi <= 256 || error("Phase 1 chi must lie in 64:256")
+    64 <= chi <= 512 || error("Phase 1 chi must lie in 64:512")
     tolerance = Float64(required(optimizer, "residual_tol"))
     1e-6 <= tolerance <= 1e-5 || error("Phase 1 scout residual_tol must lie in [1e-6, 1e-5]")
     max_iterations = Int(get(optimizer, "max_iterations", 100))
@@ -237,7 +237,12 @@ config_record() {
     seed_pattern = String(required(scan, "seed_pattern"))
     random_seed = Int(required(scan, "random_seed"))
     fluxes = Float64.(required(scan, "fluxes_over_pi"))
-    expected_fluxes = shift == 1 ? [0.0, 0.5, 0.75, 0.875, 1.0] : [0.0, 1.0, 1.5, 1.75, 2.0]
+    sparse_fluxes = shift == 1 ? [0.0, 0.5, 0.75, 0.875, 1.0] : [0.0, 1.0, 1.5, 1.75, 2.0]
+    legacy_chi512_campaign = shift == 1 && chi == 512 && direction == "forward" &&
+      branch == "primary_forward_chi512_legacy_0p1" &&
+      preparation == "independent_theta0_alternating_chi512" &&
+      seed_pattern == "alternating" && random_seed == 101
+    expected_fluxes = legacy_chi512_campaign ? Float64.(0:10) ./ 10 : sparse_fluxes
     direction == "reverse" && reverse!(expected_fluxes)
     initial_value = String(get(scan, "initial_state_file", ""))
     initial_state = isempty(initial_value) ? "" :
@@ -250,7 +255,7 @@ config_record() {
       isempty(initial_state_sha256) || error(
         "initial_state_sha256 cannot be set without initial_state_file")
       length(fluxes) == length(expected_fluxes) && all(isapprox.(fluxes, expected_fluxes; atol=1e-12, rtol=0)) ||
-        error("an independently prepared Phase 1 config must use the full documented sparse flux schedule")
+        error("an independently prepared Phase 1 config must use its full documented flux schedule")
     else
       occursin(r"^[0-9a-f]{64}$", initial_state_sha256) || error(
         "a resumed Phase 1 config requires a 64-digit initial_state_sha256")
@@ -422,7 +427,7 @@ Outer iteration cap:            $max_iterations
 Inner Krylov setting:           dimension $solver_krylov, max restarts $solver_max_iterations, record=$record_krylov
 Plateau detector:               $plateau_detection (warmup $plateau_warmup, window $plateau_patience, minimum improvement $plateau_improvement)
 Parent-overlap continuity gate: $require_overlap (minimum/site $minimum_overlap, eigensolve tol $overlap_tolerance, Krylov $overlap_krylov)
-Sparse flux schedule:           $fluxes
+Flux schedule:                  $fluxes
 Initial state:                  ${initial:-independent product state}
 Initial state SHA-256:          ${initial_sha:-none}
 Optimizer checkpoint:          ${optimizer_checkpoint:-none}

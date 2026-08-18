@@ -91,8 +91,9 @@ bash slurm/run_scan_cpu.sh cancel-plateau "$(basename "$run_dir")"
 ```
 
 See [`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`](docs/PHASE1_PLATEAU_DIAGNOSTICS.md)
-for the current fixed-flux chi-192 optimizer resume, exact Perlmutter submission
-steps, inner-Krylov diagnostics, and U(1)-sector comparisons.
+for the fresh chi-512, 0.1-pi primary-forward campaign, exact Perlmutter
+submission and wall-time recovery steps, inner-Krylov diagnostics, and U(1)
+sector comparisons.
 
 Direct `sbatch` use is intentionally unsupported. The submit path fixes the
 calibrated compute setting at two Julia threads, a four-CPU scan step, and 8 GiB;
@@ -123,16 +124,15 @@ Residual failure is `numerical_continuation_loss_bracketed`; overlap failure is
 `branch_continuity_loss_bracketed`. Neither classification alone establishes a
 physical endpoint.
 
-The reconciled YC8-1 recovery has accepted the chi-128 primary-forward branch
-through `theta/pi=0.2421875`. Fixed-flux job `56890262` expanded that accepted
-parent to chi 192; after the expansion transient, its residual decreased on
-every iteration from 83 through the 360-iteration cap and ended at
-`2.332663e-5`. The final trend projects the unchanged `1e-5` gate near
-cumulative iteration 484, so the next isolated test resumes the rejected
-chi-192 MPS for at most 180 additional iterations at the same theta. Generate
-it on Perlmutter with `scripts/prepare_phase1_fixed_flux_resume.jl`; keep the
-accepted chi-128 file as `initial_state_file` and the rejected chi-192 file only
-as `optimizer_checkpoint_file`.
+Reconciled job `56994767` showed that the fixed-chi 192 step to
+`theta/pi=0.24609375` improved on chi 128 but flattened near residual
+`2.255e-5`, with every inner Krylov solve converged. The next campaign therefore
+restarts independently at chi 512 and schedules `theta/pi=0.0,0.1,...,1.0`.
+Use `configs/phase1_yc8_1_forward_chi512_legacy_0p1.toml`; the legacy-like
+spacing does not loosen the modern `1e-5` residual or `0.99` overlap gates.
+If 24 hours ends after one or more accepted points, use
+`scripts/prepare_phase1_chi512_legacy_resume.jl` with the highest-index accepted
+Perlmutter state and its verified SHA-256.
 
 The launcher passes the submission-side absolute project directory into the
 private worker entry point. This is required because Slurm executes a staged
