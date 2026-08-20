@@ -716,7 +716,11 @@ function run_flux_scan(settings::ProjectSettings)
             output_level=settings.runtime.output_level,
         )
         candidate_observables = local_observables(candidate, hamiltonian)
-        numerically_eligible = diagnostic.converged || !settings.optimizer.require_converged
+        inner_solver_eligible = !settings.optimizer.record_krylov_diagnostics ||
+            all_recorded_krylov_solves_converged(diagnostic)
+        numerically_eligible =
+            (diagnostic.converged || !settings.optimizer.require_converged) &&
+            inner_solver_eligible
         continuity = numerically_eligible ? evaluate_branch_continuity(
             settings,
             candidate,
@@ -727,7 +731,9 @@ function run_flux_scan(settings::ProjectSettings)
             parent_state_sha256,
             point_index,
         ) : skipped_branch_continuity(
-            "VUMPS residual gate failed before parent-overlap evaluation";
+            inner_solver_eligible ?
+                "VUMPS residual gate failed before parent-overlap evaluation" :
+                "an inner Krylov solve failed before parent-overlap evaluation";
             passed=false,
             parent_theta_over_pi=something(last_accepted_theta, NaN),
             candidate_theta_over_pi=theta_over_pi,
@@ -762,7 +768,8 @@ function run_flux_scan(settings::ProjectSettings)
             @printf(
                 "Saved %s point: E=%.12f, mean(S)=%.8f, residual=%.4e -> %s\n",
                 accepted ? "converged" :
-                    (diagnostic.converged ? "continuity-rejected" : "rejected"),
+                    (!inner_solver_eligible ? "inner-solver-rejected" :
+                     (diagnostic.converged ? "continuity-rejected" : "rejected")),
                 saved.observables.energy_density,
                 mean(saved.observables.entropy.von_neumann),
                 diagnostic.residual,
@@ -861,7 +868,8 @@ function run_flux_scan(settings::ProjectSettings)
             break
         end
 
-        can_refine = settings.scan.adaptive_bisection && last_accepted_theta !== nothing &&
+        can_refine = inner_solver_eligible && settings.scan.adaptive_bisection &&
+            last_accepted_theta !== nothing &&
             !minimum_step_bracket_reached(
                 last_accepted_theta,
                 theta_over_pi,
@@ -907,6 +915,11 @@ function run_flux_scan(settings::ProjectSettings)
             end
             break
         end
+        inner_solver_eligible || error(
+            "continuation rejected at theta/pi=$theta_over_pi because at least one " *
+            "recorded inner Krylov solve did not converge; refusing automatic " *
+            "refinement or continuation",
+        )
         error(
             "continuation rejected at theta/pi=$theta_over_pi " *
             "(residual=$(diagnostic.residual), tolerance=$(settings.optimizer.residual_tol), " *

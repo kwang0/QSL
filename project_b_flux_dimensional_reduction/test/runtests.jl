@@ -275,7 +275,148 @@ end
     @test PB.minimum_step_bracket_reached(0.21875, 0.25, 0.03125)
     @test PB.minimum_step_bracket_reached(0.25, 0.21875, 0.03125)
     @test PB.minimum_step_bracket_reached(0.3, 0.4, 0.1)
+    @test PB.minimum_step_bracket_reached(0.1, 0.15, 0.05)
+    @test PB.minimum_step_bracket_reached(0.15, 0.2, 0.05)
     @test !PB.minimum_step_bracket_reached(0.1875, 0.25, 0.03125)
+end
+
+@testset "Guarded chi-512 campaign automation" begin
+    @test PB.phase1_next_nominal_fluxes(0.1) == Float64.(2:10) ./ 10
+    @test PB.phase1_next_nominal_fluxes(0.15) == Float64.(2:10) ./ 10
+    @test PB.phase1_next_nominal_fluxes(1.0) == Float64[]
+    @test PB.phase1_refined_forward_schedule(0.1, 0.2) ==
+        vcat([0.15], Float64.(2:10) ./ 10)
+    @test PB.phase1_refined_forward_schedule(0.2, 0.3) ==
+        vcat([0.25], Float64.(3:10) ./ 10)
+    @test_throws ArgumentError PB.phase1_refined_forward_schedule(0.2, 0.1)
+    @test PB.phase1_contracting_retry_cap(180, 308.0) == 360
+    @test PB.phase1_contracting_retry_cap(360, 650.0) == 720
+    @test PB.phase1_contracting_retry_cap(180, NaN) == 360
+    converged_record = PB.KrylovSolveDiagnostic(
+        outer_iteration=1,
+        solve_kind="environment_left",
+        site=1,
+        requested_tolerance=1e-8,
+        krylov_dimension=30,
+        maximum_iterations=100,
+        converged_count=1,
+        residual_norm=1e-10,
+        iterations=4,
+        operations=7,
+        elapsed_seconds=0.1,
+    )
+    failed_record = PB.KrylovSolveDiagnostic(
+        outer_iteration=1,
+        solve_kind="center_C",
+        site=1,
+        requested_tolerance=1e-8,
+        krylov_dimension=30,
+        maximum_iterations=100,
+        converged_count=0,
+        residual_norm=1e-4,
+        iterations=100,
+        operations=130,
+        elapsed_seconds=1.0,
+    )
+    diagnostic_with(records) = PB.VumpsDiagnostics(
+        converged=true,
+        stop_reason="converged",
+        iterations=1,
+        residual=1e-6,
+        minimum_residual=1e-6,
+        residual_history=[1e-6],
+        energy_left_history=zeros(2, 1),
+        energy_right_history=zeros(2, 1),
+        growth_dimensions=[512],
+        growth_stage_ends=[1],
+        residual_tolerance=1e-5,
+        krylov_solves=records,
+    )
+    @test PB.all_recorded_krylov_solves_converged(diagnostic_with([converged_record]))
+    @test !PB.all_recorded_krylov_solves_converged(diagnostic_with(KrylovSolveDiagnostic[]))
+    @test !PB.all_recorded_krylov_solves_converged(
+        diagnostic_with([converged_record, failed_record]),
+    )
+
+    common = (
+        scheduler_state="COMPLETED",
+        job_exit_code=0,
+        has_accepted_parent=true,
+        parent_theta_over_pi=0.1,
+        parent_inner_solves_converged=true,
+        candidate_inner_solves_converged=true,
+    )
+    clean = PB.phase1_advance_policy(; common...)
+    @test clean.action === :continue_schedule
+    completed = PB.phase1_advance_policy(; common..., parent_theta_over_pi=1.0)
+    @test completed.action === :complete
+    refined = PB.phase1_advance_policy(
+        ;
+        common...,
+        outcome_kind="flux_scan",
+        outcome_status="numerical_continuation_loss_bracketed",
+        classification="numerical_divergence_not_physical_endpoint",
+        optimizer_stop_reason="diverging_residual",
+        bracket_width_over_pi=0.1,
+    )
+    @test refined.action === :refine_interval
+    floor = PB.phase1_advance_policy(
+        ;
+        common...,
+        outcome_kind="flux_scan",
+        outcome_status="numerical_continuation_loss_bracketed",
+        classification="numerical_divergence_not_physical_endpoint",
+        optimizer_stop_reason="diverging_residual",
+        bracket_width_over_pi=0.05,
+    )
+    @test floor.action === :manual_review
+    contracting = PB.phase1_advance_policy(
+        ;
+        common...,
+        outcome_kind="flux_scan",
+        outcome_status="numerical_continuation_loss_bracketed",
+        classification="iteration_limit_while_contracting_not_physical_endpoint",
+        optimizer_stop_reason="maximum_iterations_contracting",
+        bracket_width_over_pi=0.05,
+        current_max_iterations=180,
+    )
+    @test contracting.action === :retry_contracting
+    continuity = PB.phase1_advance_policy(
+        ;
+        common...,
+        outcome_kind="flux_scan",
+        outcome_status="branch_continuity_loss_bracketed",
+        classification="possible_basin_jump_not_physical_endpoint",
+        optimizer_stop_reason="converged",
+        bracket_width_over_pi=0.1,
+    )
+    @test continuity.action === :manual_review
+    inner_failure = PB.phase1_advance_policy(
+        ;
+        common...,
+        outcome_kind="flux_scan",
+        outcome_status="numerical_continuation_loss_bracketed",
+        classification="numerical_divergence_not_physical_endpoint",
+        optimizer_stop_reason="diverging_residual",
+        bracket_width_over_pi=0.1,
+        candidate_inner_solves_converged=false,
+    )
+    @test inner_failure.action === :manual_review
+    timeout = PB.phase1_advance_policy(
+        scheduler_state="TIMEOUT",
+        job_exit_code=nothing,
+        has_accepted_parent=true,
+        parent_theta_over_pi=0.4,
+        parent_inner_solves_converged=true,
+    )
+    @test timeout.action === :continue_schedule
+    failed = PB.phase1_advance_policy(
+        scheduler_state="FAILED",
+        job_exit_code=1,
+        has_accepted_parent=true,
+        parent_theta_over_pi=0.4,
+    )
+    @test failed.action === :manual_review
 end
 
 @testset "Fixed-flux expansion classification" begin

@@ -23,6 +23,7 @@ include("TransferSpectra.jl")
 include("Continuity.jl")
 include("Storage.jl")
 include("Scan.jl")
+include("Automation.jl")
 include("Scaling.jl")
 include("Diagnostics.jl")
 
@@ -54,6 +55,14 @@ export YCGeometry,
     build_product_state,
     run_flux_scan,
     run_chi_ladder,
+    PHASE1_CHI512_NOMINAL_GRID,
+    PHASE1_CHI512_MINIMUM_STEP_OVER_PI,
+    PHASE1_CHI512_MAX_AUTOMATIC_ITERATIONS,
+    phase1_next_nominal_fluxes,
+    phase1_refined_forward_schedule,
+    phase1_contracting_retry_cap,
+    phase1_advance_policy,
+    all_recorded_krylov_solves_converged,
     compute_transfer_spectrum,
     momentum_from_minimal_phase,
     mixed_translation_transfer_matrix,

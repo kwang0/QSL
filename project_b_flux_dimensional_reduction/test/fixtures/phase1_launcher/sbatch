@@ -1,0 +1,6 @@
+#!/bin/bash
+
+if [[ -n "${MOCK_SBATCH_ARGS_FILE:-}" ]]; then
+  printf '%s\n' "$@" >"$MOCK_SBATCH_ARGS_FILE"
+fi
+printf '%s\n' "${MOCK_SBATCH_JOB_ID:-789}"

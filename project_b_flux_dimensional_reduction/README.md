@@ -94,6 +94,9 @@ See [`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`](docs/PHASE1_PLATEAU_DIAGNOSTICS.md)
 for the fresh chi-512, 0.1-pi primary-forward campaign, exact Perlmutter
 submission and wall-time recovery steps, inner-Krylov diagnostics, and U(1)
 sector comparisons.
+See [`docs/PHASE1_AUTOMATION.md`](docs/PHASE1_AUTOMATION.md) for launcher 2.5.0
+`advance` and `advance-submit`, the encoded recovery state machine, and every
+condition that deliberately stops for manual review.
 
 Direct `sbatch` use is intentionally unsupported. The submit path fixes the
 calibrated compute setting at two Julia threads, a four-CPU scan step, and 8 GiB;
@@ -110,6 +113,9 @@ also have mixed-transfer overlap per site at least `0.99` with that parent.
 The independently prepared first point has no parent, so only the numerical
 gate applies there. A failed overlap gate triggers the same interval refinement
 as a residual failure, but is classified separately as a possible basin jump.
+When Krylov diagnostics are enabled, every recorded inner solve must also
+report convergence before a candidate is numerically eligible or an interval
+may be refined automatically.
 
 When adaptive continuation reaches `minimum_step_over_pi` without satisfying a
 gate, the scan writes an immutable `scan_outcome.toml` and exits normally.
@@ -124,15 +130,20 @@ Residual failure is `numerical_continuation_loss_bracketed`; overlap failure is
 `branch_continuity_loss_bracketed`. Neither classification alone establishes a
 physical endpoint.
 
-Reconciled job `56994767` showed that the fixed-chi 192 step to
-`theta/pi=0.24609375` improved on chi 128 but flattened near residual
-`2.255e-5`, with every inner Krylov solve converged. The next campaign therefore
-restarts independently at chi 512 and schedules `theta/pi=0.0,0.1,...,1.0`.
-Use `configs/phase1_yc8_1_forward_chi512_legacy_0p1.toml`; the legacy-like
-spacing does not loosen the modern `1e-5` residual or `0.99` overlap gates.
-If 24 hours ends after one or more accepted points, use
-`scripts/prepare_phase1_chi512_legacy_resume.jl` with the highest-index accepted
-Perlmutter state and its verified SHA-256.
+Reconciled job `57192723` ran the fresh chi-512 grid. It accepted
+`theta/pi=0.0` and `0.1`, with residuals `9.5007e-6` and `9.0650e-6`; the latter
+passed parent overlap per site at `0.99991735`. The direct `0.1 -> 0.2` step
+then reached residual `1.0134e-4` before diverging to `2.0110e-3`. All 3550
+recorded inner solves converged, and a retrospective read-only overlap remained
+`0.99988969`, so this is a step-size/outer-update diagnostic rather than a
+physical endpoint or established basin jump. Generate the next exact-parent
+chi-512 recovery through launcher `advance`: it inserts `0.15`, retains
+`0.2,0.3,...,1.0`, and allows one 0.05-pi midpoint on each later nominal
+interval. It rechecks state hashes and all recorded inner solves and never uses
+the rejected `0.2` state as a parent. After a terminal chi-512 campaign job,
+`advance-submit` reconciles, classifies, plans, and submits only an encoded safe
+transition; continuity loss, inner-solver failure, or failure at the step floor
+stops without submission.
 
 The launcher passes the submission-side absolute project directory into the
 private worker entry point. This is required because Slurm executes a staged

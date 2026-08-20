@@ -35,3 +35,15 @@ These instructions apply to every task under this directory.
   convergence/continuity gate, or selecting the next restart parent.
 - Use the guarded `slurm/run_scan_cpu.sh plan|submit|status|reconcile` workflow;
   do not bypass its one-job and node-hour checks.
+- For the dedicated YC8-1 chi-512 campaign, prefer launcher 2.5.0
+  `advance|advance-submit` after a terminal run. The automatic policy may
+  resume infrastructure failures from an accepted hash, continue remaining
+  nominal targets, bisect only to `0.05*pi`, or retry a demonstrably
+  contracting corrector up to 720 iterations. It must stop for continuity
+  loss, inner-solver failure, a failure at the step floor, unsupported
+  scheduler failure, changed evidence, or any proposed solver/chi/tolerance
+  change. `advance-submit` is an explicit submission authorization, not a
+  background daemon.
+- When a launcher command omits `RUN_ID`, resolve the greatest job ID recorded
+  in remote `job.tsv` files rather than trusting `latest_run.txt`; the latter
+  may have been overwritten by a stale local-to-Perlmutter sync.

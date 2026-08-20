@@ -13,7 +13,7 @@ the reserve and are not automatically reassigned.
 | Phase | Ceiling | Current status | Exit product |
 |---|---:|---|---|
 | 0 — correctness and resource calibration | 10 node-h | **Complete**; corrected seed, 13-candidate matrix, and chi=512 validation copied locally | Correct minimal-cell timing, peak RSS, and one recommended threading configuration |
-| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; low-chi YC8-1 correctors ended after the chi-192 plateau at 0.24609375; fresh chi-512 0.1-pi forward restart is next | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
+| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; fresh chi-512 forward lineage is accepted through theta/pi=0.1; launcher 2.5.0 can advance the adaptive remaining grid from the reconciled run | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
 | 2 — moderate-chi Hu reproduction | 35 node-h | Not started | Converged entropy response and momentum-resolved physical-Sz transfer flow |
 | 3 — critical-point chi ladders | 60 node-h | Not started | Controlled `S = (c/6) log(xi) + a` analysis at selected crossings |
 | 4 — one independent validation | 15 node-h | Not started | One decisive second route, seed, geometry, or width check |
@@ -103,6 +103,24 @@ and multiplicities. Relative to the chi-128 minimum `3.424244e-5` at the same
 theta, chi 192 improved the floor by `34.2%` but did not pass `1e-5`. The state
 was not continuity-tested because numerical eligibility failed first.
 
+Reconciled job `57192723` independently grew the alternating theta-zero state
+to chi 512 and attempted the requested `0.0,0.1,...,1.0` grid. Theta zero
+converged after 306 cumulative growth-stage iterations, including 117 at chi
+512, to residual `9.5006856e-6`. The `0.1` child then converged in 19 iterations
+to residual `9.0649938e-6` and passed parent overlap per site at
+`0.9999173509`. Its accepted SHA-256 is
+`f71fc084883ea98535e012801d47c2c0b3c0b5ce58e08c72592e46410a27b7cc`.
+
+The direct `0.1 -> 0.2` update decreased to residual `1.013369e-4` at iteration
+14, then grew monotonically to `2.011009e-3` at iteration 30. It stopped as
+`diverging_residual`. All 3550 recorded inner solves in the job converged. A
+retrospective, non-acceptance overlap calculation on the rejected candidate
+gave `0.9998896923` per site; both cuts retained identical U(1) labels and
+multiplicities, with only small sector-weight shifts. This establishes an outer
+VUMPS/continuation instability, not a physical endpoint, inner-solver failure,
+or demonstrated basin jump. Job `57192723` ran for `14:49:53`, used about
+`1.90 GiB` MaxRSS in the Julia step, and cost `0.347610677` node-hours.
+
 The implementation now makes branch identity an explicit acceptance condition.
 For every child of an immutable accepted parent, schema-v4-and-newer state
 files store a
@@ -119,16 +137,18 @@ those known smooth steps. This check does not calibrate the score of a genuine
 basin jump, so the first continuity-gated job still requires inspection rather than an
 automatic threshold change.
 
-The project owner has ended further low-chi correctors. The next operational
-step is the independently prepared
-`configs/phase1_yc8_1_forward_chi512_legacy_0p1.toml` campaign. It grows a new
-alternating theta-zero state to chi 512 and schedules `0.0,0.1,...,1.0` under a
-distinct branch label. The user-requested chi and spacing are the only legacy
-features: the minimal cell, uniform gauge, `1e-5` residual gate, `0.99` overlap
-gate, diagnostics, and guarded accounting remain. The minimum continuation
-step is `0.1`, so a failed scheduled point is recorded without automatic
-low-step bisection. Exact submission and 24-hour recovery commands are in
-`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
+The project owner has ended further low-chi correctors. Launcher 2.5.0 now
+automates the repeated terminal-job workflow for the dedicated chi-512 branch.
+From reconciled job `57192723`, `advance` verifies the submitted snapshot,
+accepted/rejected hashes, lineage, and every recorded inner solve, then plans
+`0.15,0.2,0.3,...,1.0` from the accepted `0.1` parent. The `0.05` minimum step
+lets later nominal failures bisect once in the same allocation while forbidding
+smaller automatic refinement. `advance-submit` is the only one-command path
+that may reconcile and submit; it retains all ordinary live budget and
+one-pilot guards. Continuity loss, an inner-solver failure, a numerical failure
+at the step floor, changed evidence, or an unsupported outcome stops for manual
+review. Exact commands and the transition table are in
+`docs/PHASE1_AUTOMATION.md` and `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
 
 Canonical evidence:
 
@@ -162,13 +182,26 @@ Canonical evidence:
   `output/phase1_tests/yc8_1/forward_step_p0p24218750_to_p0p24609375_chi192_312f08abf8c7/chi192/scan_outcome.toml`;
 - fresh chi-512 campaign config:
   `configs/phase1_yc8_1_forward_chi512_legacy_0p1.toml`;
+- completed fresh chi-512 numerical outcome:
+  `output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512/scan_outcome.toml`;
+- accepted chi-512 `theta/pi=0.1` bridge parent:
+  `output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512/states/state_0002_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p10000000_accepted_12126bd1b66b.h5`;
+- chi-512 accepted-0.1 to rejected-0.2 sector comparison:
+  `docs/data/phase1_yc8_1_chi512_0p1_to_0p2_bond_sectors.tsv`;
+- exact-parent chi-512 bridge generator:
+  `scripts/prepare_phase1_chi512_bridge_from_0p1.jl`;
+- guarded chi-512 automatic advance implementation:
+  `src/Automation.jl`, `scripts/prepare_phase1_automatic_advance.jl`, and
+  launcher `slurm/run_scan_cpu.sh`;
+- automatic transition contract and commands:
+  `docs/PHASE1_AUTOMATION.md`;
 - diagnostic protocol and interpretation:
   `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
 
 Do **not** submit either existing `configs/hu_yc8_*_forward.toml` as a Phase 1
-campaign. Use `slurm/run_scan_cpu.sh plan|submit` with the dedicated checked-in
-chi-512 Phase 1 config, or with the SHA-pinned remaining-schedule config
-produced by the documented generator:
+campaign. Use launcher `advance|advance-submit` for the dedicated chi-512
+lineage, or ordinary `plan|submit` only for a configuration that the automatic
+decision artifact generated:
 
 - the launcher fixes two Julia threads, a four-CPU scan step, 8 GiB, Shared QOS,
   and a one-pilot-at-a-time submission policy. Shared QOS may expose five task
@@ -469,6 +502,8 @@ mark a converged state rejected solely because another branch has lower energy.
 | 2026-08-14 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.699863281** | Latest locally synced reconciled total; Project B total including the Phase 0 baseline is `1.794296281` node-hours; verify live Perlmutter accounting before submission |
 | 2026-08-15 | 1 | 56994767 | 0.120058594 | 0.120058594 | Fixed-chi 192 step to theta/pi=0.24609375 reached minimum residual `2.254667e-5` at iteration 352 and flattened; all 3600 inner solves converged, but the point was not numerically eligible for continuity testing |
 | 2026-08-15 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.819921875** | Locally synced total through job 56994767; Project B total including the Phase 0 baseline is `1.914354875` node-hours; verify live Perlmutter accounting before submission |
+| 2026-08-18 | 1 | 57192723 | 0.347610677 | 0.347610677 | Fresh chi-512 lineage accepted theta/pi=0 and 0.1; the direct 0.1-to-0.2 update stopped as `diverging_residual`, while all 3550 recorded inner solves converged |
+| 2026-08-18 | **1 reconciled total** | All tracked Phase 1 jobs | — | **1.167532552** | Locally synced total through job 57192723; Project B total including the Phase 0 baseline is `2.261965552` node-hours; verify live Perlmutter accounting before submission |
 
 ## Decision log
 
@@ -508,3 +543,6 @@ mark a converged state rejected solely because another branch has lower energy.
 - 2026-08-14: the next controlled test uses the accepted chi-192 state itself as the strict-lineage parent and changes only theta by 1/256 of pi to 0.24609375. Chi remains 192, the residual and overlap gates are unchanged, inner diagnostics stay enabled, and no rejected optimizer checkpoint participates.
 - 2026-08-15: job 56994767 established that a converged chi-192 parent and a 1/256-pi step still flatten near residual 2.255e-5 at theta/pi=0.24609375. The 34.2% improvement over chi 128 confirms a bond-dimension effect, while converged inner solves and stable sector multiplicities exclude the tested inner-solver and missing-sector explanations.
 - 2026-08-17: the project owner ended further low-chi correctors and authorized a fresh chi-512 YC8-1 primary-forward restart on the exact 0.1-pi grid. Launcher 2.4.0 admits chi through 512 and recognizes only the dedicated fresh campaign metadata for this alternate schedule. The `1e-5` residual, `0.99` overlap, minimal-cell, uniform-gauge, immutable-output, and budget safeguards remain unchanged.
+- 2026-08-18: job 57192723 accepted the fresh chi-512 lineage through theta/pi=0.1. The direct step to 0.2 reached minimum residual `1.013369e-4` and then diverged, despite convergence of every recorded inner solve. The rejected candidate retained high retrospective overlap and unchanged U(1) sector multiplicities, so it is a numerical outer-update failure rather than evidence of a physical endpoint or demonstrated basin change.
+- 2026-08-18: the next controlled job first halves only the failed continuation interval. A SHA-pinned generator accepts exactly the immutable theta/pi=0.1 state from job 57192723, schedules 0.15 followed by 0.2 through 1.0 at chi 512, retains the strict residual and continuity gates, and refuses the rejected direct-0.2 candidate. Its minimum step is 0.05, so later 0.1-pi failures may bisect once but the job cannot silently return to the earlier fine-step campaign.
+- 2026-08-18: launcher 2.5.0 replaces repeated manual chi-512 classification/configuration/reconciliation with immutable `advance` decisions. The first transition schedules 0.15 followed by every remaining nominal target, so success at the bridge continues in the same allocation. Infrastructure recovery, remaining-grid continuation, one midpoint down to 0.05 pi, and capped contracting retries are automated; continuity loss, inner-solver failure, failure at the floor, changed hashes, and unsupported outcomes stop without submission. `advance-submit` remains an explicit operator action and still passes through every live budget guard.

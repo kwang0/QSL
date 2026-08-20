@@ -11,12 +11,13 @@
 
 # Budget-guarded Phase 1 scan launcher for Perlmutter CPU nodes.
 #
-# Do not invoke this file directly with sbatch. Use `plan`, then `submit`; the
-# private `_run` entry point verifies the config hash and the live allocation.
+# Do not invoke this file directly with sbatch. Use `plan`, then `submit`, or
+# the guarded chi-512 `advance`/`advance-submit` state machine; the private
+# `_run` entry point verifies the config hash and the live allocation.
 
 set -euo pipefail
 
-readonly LAUNCHER_VERSION="2.4.0"
+readonly LAUNCHER_VERSION="2.5.0"
 readonly PROJECT_B_HARD_BUDGET_NODE_HOURS=150
 readonly PROJECT_B_AUTOMATIC_SUBMISSION_CAP_NODE_HOURS=140
 readonly PHASE1_BUDGET_NODE_HOURS=20
@@ -564,11 +565,21 @@ resolve_run_dir() {
     cd "$requested" && pwd
   elif [[ -n "$requested" && -d "$run_root/$requested" ]]; then
     cd "$run_root/$requested" && pwd
-  elif [[ -z "$requested" && -f "$run_root/latest_run.txt" ]]; then
-    local latest
-    latest="$(tr -d '\r\n' <"$run_root/latest_run.txt")"
-    [[ -d "$latest" ]] || die "latest run directory no longer exists: $latest"
-    cd "$latest" && pwd
+  elif [[ -z "$requested" && -d "$run_root" ]]; then
+    # A directory sync can overwrite latest_run.txt with a stale pointer. Use
+    # the greatest recorded Slurm job ID instead, without modifying either
+    # the pointer or any immutable run record.
+    local job_file candidate_id latest_id=-1 latest_dir=""
+    while IFS= read -r job_file; do
+      candidate_id="$(awk -F '\t' 'NR == 2 { print $1 }' "$job_file")"
+      [[ "$candidate_id" =~ ^[0-9]+$ ]] || die "invalid job ID in $job_file"
+      if (( candidate_id > latest_id )); then
+        latest_id="$candidate_id"
+        latest_dir="$(dirname "$job_file")"
+      fi
+    done < <(find "$run_root" -mindepth 2 -maxdepth 2 -name job.tsv -type f | sort)
+    [[ -n "$latest_dir" ]] || die "no Phase 1 job records exist under $run_root"
+    cd "$latest_dir" && pwd
   else
     die "cannot resolve Phase 1 run: ${requested:-latest}"
   fi
@@ -720,6 +731,114 @@ status_run() {
     echo "Reconciled charge: $(cat "$run_dir/charged_node_hours.txt") node-hours"
 }
 
+submitted_jobs_for_config_sha() {
+  local config_sha="$1"
+  local matches=""
+  local job_file job_id
+  [[ -d "$run_root" ]] || {
+    printf '\n'
+    return
+  }
+  while IFS= read -r job_file; do
+    job_id="$(awk -F '\t' -v expected="$config_sha" '
+      NR == 1 {
+        for (column_index = 1; column_index <= NF; column_index += 1) {
+          if ($column_index == "config_sha256") config_column = column_index
+        }
+        next
+      }
+      NR == 2 && config_column > 0 && $config_column == expected { print $1 }
+    ' "$job_file")"
+    [[ -n "$job_id" ]] || continue
+    matches="${matches}${matches:+,}${job_id}"
+  done < <(find "$run_root" -mindepth 2 -maxdepth 2 -name job.tsv -type f | sort)
+  printf '%s\n' "$matches"
+}
+
+automatic_advance_run() {
+  local submit_next="$1"
+  local requested="${2:-}"
+  validate_project
+  require_command "$PHASE1_JULIA"
+  require_command sacct
+  local run_dir
+  run_dir="$(resolve_run_dir "$requested")"
+  [[ -f "$run_dir/charged_node_hours.txt" ]] || reconcile_run "$run_dir"
+  [[ -f "$run_dir/sacct.tsv" ]] || die \
+    "automatic advance requires the reconciled accounting export $run_dir/sacct.tsv"
+
+  local automation_script="$project_dir/scripts/prepare_phase1_automatic_advance.jl"
+  [[ -f "$automation_script" ]] || die \
+    "automatic Phase 1 advance script does not exist: $automation_script"
+  local decision_path
+  decision_path="$("$PHASE1_JULIA" --project="$project_dir" --startup-file=no \
+    "$automation_script" "$run_dir")"
+  [[ -f "$decision_path" ]] || die \
+    "automatic Phase 1 advance did not produce a decision artifact: $decision_path"
+
+  local record action transition reason submit_permitted next_config next_config_sha next_fluxes parent_theta
+  record="$("$PHASE1_JULIA" --startup-file=no -e '
+    using TOML
+    decision = TOML.parsefile(ARGS[1])
+    safe(value) = replace(String(value), '\''\t'\'' => '\'' '\'', '\''\n'\'' => '\'' '\'')
+    println(join((
+      safe(get(decision, "action", "")),
+      safe(get(decision, "transition", "")),
+      safe(get(decision, "reason", "")),
+      string(get(decision, "submit_permitted", false)),
+      safe(get(decision, "next_config_path", "")),
+      safe(get(decision, "next_config_sha256", "")),
+      join(get(decision, "next_fluxes_over_pi", Float64[]), ","),
+      string(get(decision, "parent_theta_over_pi", NaN)),
+    ), '\''\t'\''))
+  ' "$decision_path")"
+  IFS=$'\t' read -r action transition reason submit_permitted next_config next_config_sha next_fluxes parent_theta <<<"$record"
+
+  cat <<EOF
+Automatic Phase 1 decision:    $decision_path
+Source run:                    $run_dir
+Action:                        $action
+Transition:                    ${transition:-none}
+Reason:                        $reason
+Accepted parent theta/pi:      $parent_theta
+Next flux schedule:            ${next_fluxes:-none}
+EOF
+
+  case "$action" in
+    complete)
+      echo "The automated chi-512 campaign has reached theta/pi=1.0."
+      return
+      ;;
+    manual_review)
+      echo "No configuration was generated or submitted."
+      return
+      ;;
+    next_config) ;;
+    *) die "unknown automatic Phase 1 action '$action' in $decision_path" ;;
+  esac
+  [[ "$submit_permitted" == "true" ]] || die \
+    "automatic decision generated a config but did not permit submission"
+  [[ -f "$next_config" ]] || die "automatic next configuration is missing: $next_config"
+  [[ "$(sha256_file "$next_config")" == "$next_config_sha" ]] || die \
+    "automatic next configuration changed after decision creation: $next_config"
+
+  print_plan "$next_config"
+  if [[ "$submit_next" == "true" ]]; then
+    local prior_jobs
+    prior_jobs="$(submitted_jobs_for_config_sha "$next_config_sha")"
+    [[ -z "$prior_jobs" ]] || die \
+      "automatic configuration was already submitted as job(s) $prior_jobs; advance from the latest resulting run instead"
+    submit_scan "$next_config"
+  else
+    cat <<EOF
+
+The next transition is fully prepared but has not been submitted. To recheck
+the immutable decision and submit through all live budget guards:
+  bash "$script_path" advance-submit "$(basename "$run_dir")"
+EOF
+  fi
+}
+
 run_worker() {
   [[ "$#" -eq 4 ]] || die "internal _run usage: CONFIG SHA256 RUN_DIR PROJECT_DIR"
   local config_path="$1"
@@ -795,11 +914,18 @@ Usage:
   bash $(basename "$script_path") status [RUN_ID]
   bash $(basename "$script_path") cancel-plateau RUN_ID
   bash $(basename "$script_path") reconcile [RUN_ID]
+  bash $(basename "$script_path") advance [RUN_ID]
+  bash $(basename "$script_path") advance-submit [RUN_ID]
 
 Direct `sbatch $(basename "$script_path") CONFIG.toml` is intentionally unsupported.
 The submit command admits only the sparse, strict-lineage Phase 1 scout contract,
 allows one Phase 1 pilot at a time, and refuses a new job until the prior pilot
 has been reconciled with sacct.
+
+The advance commands are restricted to the guarded YC8-1 chi-512 campaign.
+They reconcile a terminal run, write an immutable decision, and either stop for
+manual review or generate the next strict-lineage configuration. Only the
+explicit advance-submit command may submit that generated configuration.
 EOF
 }
 
@@ -824,6 +950,14 @@ case "$command_name" in
   reconcile)
     [[ "$#" -le 2 ]] || die "reconcile accepts at most one RUN_ID"
     reconcile_run "${2:-}"
+    ;;
+  advance)
+    [[ "$#" -le 2 ]] || die "advance accepts at most one RUN_ID"
+    automatic_advance_run false "${2:-}"
+    ;;
+  advance-submit)
+    [[ "$#" -le 2 ]] || die "advance-submit accepts at most one RUN_ID"
+    automatic_advance_run true "${2:-}"
     ;;
   _run)
     shift

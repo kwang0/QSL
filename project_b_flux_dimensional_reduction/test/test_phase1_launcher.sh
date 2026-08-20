@@ -62,4 +62,37 @@ grep -Fq -- 'physical_endpoint = false' "$cancel_run/termination.toml"
 grep -Fq -- 'last_outer_iteration = 40' "$cancel_run/termination.toml"
 grep -Fq -- 'last_theta_over_pi = 0.25' "$cancel_run/termination.toml"
 
+advance_root="$temporary_root/advance-runs"
+advance_run="$advance_root/manual-run"
+advance_output="$temporary_root/advance.out"
+mkdir -p "$advance_run"
+cp "$config" "$advance_run/config.snapshot.toml"
+printf 'job_id\n789\n' >"$advance_run/job.tsv"
+printf '0.010000000\n' >"$advance_run/charged_node_hours.txt"
+printf '789|pb1-scan|COMPLETED|120|6|8G|\n' >"$advance_run/sacct.tsv"
+cat >"$advance_run/automatic_advance.toml" <<EOF
+action = "manual_review"
+artifact_kind = "project_b_phase1_automatic_advance"
+parent_theta_over_pi = 0.1
+policy_version = "yc8-1-primary-forward-chi512-v1"
+reason = "fixture requires manual review"
+schema_version = 1
+source_job_id = "789"
+source_config_sha256 = "$config_sha"
+source_run_directory = "$advance_run"
+source_scheduler_state = "COMPLETED"
+submit_permitted = false
+transition = "manual_review"
+EOF
+printf '%s\n' "$advance_root/stale-run" >"$advance_root/latest_run.txt"
+
+PATH="$fixture_bin:$PATH" \
+PHASE1_RUN_ROOT="$advance_root" \
+PHASE1_JULIA="$real_julia" \
+  bash "$launcher" advance >"$advance_output"
+
+grep -Fq -- 'Action:                        manual_review' "$advance_output"
+grep -Fq -- 'Reason:                        fixture requires manual review' "$advance_output"
+grep -Fq -- 'No configuration was generated or submitted.' "$advance_output"
+
 printf '%s\n' 'phase1 staged-launcher regression: ok'

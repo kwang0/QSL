@@ -99,55 +99,87 @@ by the overlap gate and is not accepted lineage. Job `56994767` cost
 `0.120058594` node-hours; the locally synced reconciled Phase 1 total through
 that job is `0.819921875` node-hours. Perlmutter remains the live authority.
 
-## Next campaign: fresh chi 512 on a 0.1-pi grid
+## What the fresh chi-512 run established
 
-The project owner has ended the low-chi corrector sequence. The next campaign
-starts independently at `theta/pi=0`, grows the alternating state to chi 512,
-and schedules `0.0, 0.1, ..., 1.0`. It is a new labeled forward lineage,
-`primary_forward_chi512_legacy_0p1`, so it cannot be confused with or silently
-replace the earlier chi-128/192 lineage.
+Reconciled job `57192723` used the dedicated fresh-start configuration with
+SHA-256 `09a1d32e17af6e27c0ee13dad946c3a31cf9477015201f6c118653fb46e34ce0`.
+It completed normally in `14:49:53`, used about `1.90 GiB` MaxRSS in the Julia
+step, and was charged `0.347610677` node-hours.
 
-Only the requested bond dimension and scheduled spacing adopt the legacy
-scale. The modern minimal two-site cell, uniform gauge, `1e-5` residual gate,
-`0.99` parent-overlap gate, inner-solver diagnostics, immutable artifacts, and
-budget checks remain. In particular, this is not the old `1e-4`, 20-iteration
-VUMPS protocol and it does not run transfer spectroscopy during optimization.
+At `theta/pi=0`, growth proceeded through bond dimensions
+`1,2,4,16,64,256,512`. The final chi-512 stage converged after 117 iterations;
+all growth stages together used 306 iterations. The accepted state has
+residual `9.5006856e-6`, energy density `-0.507212542889`, mean entropy
+`2.318198535`, and SHA-256
+`95255fbe3a590505902bd0061d7d9d9f14f8ecd7ca3e4eac1aacfc5c7fe72d0b`.
 
-Each point allows 180 outer iterations. The plateau detector has a 40-iteration
-warmup and 32-iteration patience. `minimum_step_over_pi=0.1`, equal to the
-scheduled interval, so failure is recorded on the requested grid without
-automatically returning to small corrective theta steps. A rejected point
-stops the scan and cannot seed the next point.
+The direct `0 -> 0.1` continuation converged in 19 iterations to residual
+`9.0649938e-6`. It passed the branch gate with overlap per site
+`0.9999173509`; its accepted SHA-256 is
+`f71fc084883ea98535e012801d47c2c0b3c0b5ce58e08c72592e46410a27b7cc`.
 
-## Perlmutter submission
+The direct `0.1 -> 0.2` update did not converge. Its residual decreased from
+`2.616349e-3` to `1.013369e-4` at iteration 14, then increased monotonically
+to `2.011009e-3` at iteration 30. The divergence guard stopped it after eight
+sustained iterations above four times the minimum. All 300 inner solves for
+that point—and all 3550 inner solves in the job—converged. The failure is
+classified `numerical_divergence_not_physical_endpoint`; numerical ineligibility
+correctly prevented an official continuity test.
 
-First synchronize the updated source, configuration, launcher, and
-documentation to Perlmutter. From the Perlmutter project root, run only:
+A retrospective read-only diagnostic on the rejected candidate found overlap
+per site `0.9998896923` with the accepted `0.1` parent. Both cuts retained
+exactly the same U(1) labels and multiplicities, with sector-weight total
+variation `0.003153869` and `0.002422914`. Those sector rows are stored in
+`docs/data/phase1_yc8_1_chi512_0p1_to_0p2_bond_sectors.tsv`. The Schmidt tails
+remain chi-limited, so a larger representation may still matter, but there is
+no abrupt sector or entropy discontinuity at `0.2`. The large scheduled step
+and outer-update dynamics are therefore the leading controlled variable.
+
+The locally synced reconciled Phase 1 total through job `57192723` is
+`1.167532552` node-hours; the Project B total including the Phase 0 baseline is
+`2.261965552` node-hours. Perlmutter remains authoritative immediately before
+another submission.
+
+## Automated next campaign step
+
+Launcher 2.5.0 encodes the repeated recovery decisions in an immutable,
+Perlmutter-side state machine. For job `57192723`, it verifies the reconciled
+allocation, submitted config snapshot, accepted `0.1` hash, rejected `0.2`
+hash, and convergence of every recorded inner solve. It then generates one
+strict-lineage job with schedule `0.15,0.2,0.3,...,1.0` and minimum step `0.05`.
+
+This is more than a two-point bridge. If `0.15` and `0.2` converge, the same
+allocation proceeds immediately. A later failed 0.1-pi interval is bisected
+once by the scan queue, but no step below 0.05-pi is inserted. The rejected
+direct `0.2` state remains diagnostic only and is never a continuation parent.
+
+First synchronize launcher 2.5.0 and the new source/docs to Perlmutter without
+overwriting remote `output/`. Then run:
 
 ```bash
+cd /global/homes/k/kwang98/QSL/project_b_flux_dimensional_reduction
+
 grep '^readonly LAUNCHER_VERSION=' slurm/run_scan_cpu.sh
-# Expected: readonly LAUNCHER_VERSION="2.4.0"
+# Expected: readonly LAUNCHER_VERSION="2.5.0"
 
-config=configs/phase1_yc8_1_forward_chi512_legacy_0p1.toml
-bash slurm/run_scan_cpu.sh plan "$config"
+run_id=20260818T002056Z-yc8-1-primary_forward_chi512_legacy_0p1-512
+bash slurm/run_scan_cpu.sh advance "$run_id"
 ```
 
-The plan must show YC8-1, chi 512, residual tolerance `1e-5`, 180 outer
-iterations, the eleven-point `0.0` through `1.0` schedule, independent product
-state preparation, no optimizer checkpoint, the `0.99` overlap gate, and an
-empty output directory. It should retain two Julia threads, a four-CPU scan
-step, 8 GiB, 24 hours, and a worst-case reservation of `0.562500000`
-node-hours. If those fields match:
+The plan must report transition `refine_interval`, parent `theta/pi=0.1` with
+SHA-256
+`f71fc084883ea98535e012801d47c2c0b3c0b5ce58e08c72592e46410a27b7cc`,
+schedule `0.15,0.2,...,1.0`, chi 512, residual tolerance `1e-5`, overlap gate
+`0.99`, no optimizer checkpoint, and a `0.562500000` node-hour reservation.
+
+To submit that exact immutable decision through the ordinary live scheduler
+and budget checks:
 
 ```bash
-bash slurm/run_scan_cpu.sh submit "$config"
+bash slurm/run_scan_cpu.sh advance-submit "$run_id"
 ```
 
-Do not submit either `hu_yc8_1_forward.toml` or an edited old chi-192 config.
-The dedicated chi-512 file is the only fresh-start configuration for this
-campaign.
-
-## Monitor, reconcile, and inspect
+Monitor normally:
 
 ```bash
 bash slurm/run_scan_cpu.sh status
@@ -157,46 +189,25 @@ job_id=$(awk -F '\t' 'NR == 2 {print $1}' "$run_dir/job.tsv")
 tail -n 80 "$run_dir/logs/scan-$job_id.out"
 ```
 
-The configured plateau detector will stop a genuinely stalled trajectory and
-save the numerical outcome. Do not cancel merely because an early residual is
-above tolerance. Intervene only for nonfinite values, a scheduler/node failure,
-or a clearly catastrophic trajectory. Once Slurm reports a terminal state:
+After that job becomes terminal, the recurring command is simply:
 
 ```bash
-run_id=$(basename "$run_dir")
-bash slurm/run_scan_cpu.sh reconcile "$run_id"
-
-output_dir=output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512
-ls -1 "$output_dir/states"
-if [[ -f "$output_dir/scan_outcome.toml" ]]; then cat "$output_dir/scan_outcome.toml"; fi
+bash slurm/run_scan_cpu.sh advance-submit
 ```
 
-Eleven chi-512 points may not fit in one 24-hour allocation. Accepted points
-are saved immediately and remain valid if Slurm later reports `TIMEOUT` or a
-node failure. Reconcile that job, then use the highest-index accepted state
-from Perlmutter as the SHA-pinned parent for a new output directory. Do not use
-this recovery after a clean numerical or continuity rejection without first
-inspecting `scan_outcome.toml`.
+It reconciles the latest run if needed and automatically continues only for a
+saved accepted parent after timeout/node failure, remaining nominal targets, a
+failed interval wider than 0.05-pi, or a demonstrably contracting corrector
+below the 720-iteration automatic cap. It stops without submission for a
+continuity failure, any inner Krylov failure, a numerical failure at the
+0.05-pi floor, an unsupported scheduler failure, changed/missing evidence, or
+any requested chi/tolerance/solver change. The complete transition table and
+artifact schema are in `docs/PHASE1_AUTOMATION.md`.
 
-```bash
-ls -1 "$output_dir"/states/*_accepted_*.h5
-
-parent_state=/absolute/path/to/the_highest_index_accepted_state.h5
-sha256sum "$parent_state"
-# Copy the printed digest exactly into parent_sha256.
-parent_sha256=PASTE_THE_64_DIGIT_DIGEST
-
-julia --project=. --startup-file=no \
-  scripts/prepare_phase1_chi512_legacy_resume.jl \
-  "$parent_state" "$parent_sha256"
-```
-
-The generator prints a new configuration containing only the remaining 0.1
-grid points. It verifies the state hash, numerical acceptance, chi, branch,
-model, and complete flux-history prefix, and refuses an existing destination.
-Plan and submit the printed configuration through the same guarded launcher.
-After every terminal job, reconcile on Perlmutter and synchronize the run and
-state directories locally before requesting analysis.
+After each terminal run, synchronize its run and output directories locally
+before requesting detailed scientific interpretation. The automation removes
+routine classification and resubmission, not the need to interpret genuinely
+new physics.
 
 ## Stored diagnostics
 
@@ -268,7 +279,7 @@ julia --project=. --startup-file=no \
 
 ## If a live job truly plateaus
 
-Use an explicit run ID. Launcher 2.4.0 preserves the intervention as a
+Use an explicit run ID. Launcher 2.5.0 preserves the intervention as a
 scientific failure artifact before the job is reconciled:
 
 ```bash

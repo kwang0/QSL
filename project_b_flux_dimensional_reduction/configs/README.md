@@ -17,9 +17,10 @@ The supplied files cover the first Project B calculations:
   numerical plateau at theta/pi=0.24609375.
 - `phase1_yc8_1_reverse_chi128.toml`: independently prepared two-flavor reverse basin diagnostic.
 - `phase1_yc8_1_forward_chi512_legacy_0p1.toml`: fresh high-bond-dimension
-  primary-forward restart on the requested `0.0,0.1,...,1.0` grid. It retains
-  the strict `1e-5` residual and `0.99` overlap gates, records Krylov solves,
-  and uses a distinct lineage and output directory.
+  primary-forward restart on the requested `0.0,0.1,...,1.0` grid. Job
+  `57192723` accepted `0.0` and `0.1` before the direct `0.2` update diverged.
+  It retains the strict `1e-5` residual and `0.99` overlap gates, records
+  Krylov solves, and uses a distinct lineage and output directory.
 - `phase1_yc8_0_forward_chi128.toml`: primary four-flavor threaded branch.
 - `phase1_yc8_0_reverse_chi128.toml`: independently prepared four-flavor reverse basin diagnostic.
 - `hu_yc8_1_forward.toml`: the two-flavor Hu geometry, with the expected crossing at `theta/pi=1`.
@@ -49,12 +50,19 @@ digest before optimization.
 
 Fixed-chi job `56994767` did not pass the `1e-5` gate at theta/pi=0.24609375:
 chi 192 reached a minimum residual `2.254667e-5` after the corresponding chi-128
-minimum was `3.424244e-5`. The low-chi corrector sequence is now closed. Submit
-the checked-in fresh chi-512 config above. If an allocation ends because of
-wall time after saving accepted points, use
-`scripts/prepare_phase1_chi512_legacy_resume.jl` with the highest-index accepted
-state and the SHA-256 verified on Perlmutter. The generator validates the exact
-0.1-grid history and writes a distinct continuation config and output directory.
+minimum was `3.424244e-5`. The low-chi corrector sequence is closed. The fresh
+chi-512 job `57192723` then accepted `theta/pi=0.0` and `0.1`, but the direct
+`0.1 -> 0.2` step reached a minimum `1.013369e-4` before stopping as
+`diverging_residual`. Launcher 2.5.0 `advance` converts that immutable outcome
+into an exact-parent adaptive schedule `0.15,0.2,0.3,...,1.0`; later failed
+0.1-pi intervals may insert one midpoint but never go below 0.05-pi.
+`advance-submit` performs reconciliation, state/hash/inner-solve validation,
+planning, and guarded submission in one explicit command. The standalone
+`scripts/prepare_phase1_chi512_bridge_from_0p1.jl` produces the same complete
+remaining schedule as a compatibility fallback. The legacy resume generator
+remains only for manual recovery of older runs; new chi-512 campaign runs
+should use `advance` so scheduler failures and clean numerical outcomes cannot
+be confused.
 
 An optimizer checkpoint is intentionally more restrictive than an ordinary
 restart. It requires strict lineage, exactly one fixed flux, both SHA-256

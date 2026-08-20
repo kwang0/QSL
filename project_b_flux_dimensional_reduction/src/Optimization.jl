@@ -40,6 +40,11 @@ Base.@kwdef mutable struct KrylovInstrumentationContext
     records::Vector{KrylovSolveDiagnostic} = KrylovSolveDiagnostic[]
 end
 
+function all_recorded_krylov_solves_converged(diagnostic::VumpsDiagnostics)
+    isempty(diagnostic.krylov_solves) && return false
+    return all(record -> record.converged_count > 0, diagnostic.krylov_solves)
+end
+
 # ITensorInfiniteMPS does not return the convergence records from its two
 # environment linear solves. The narrowly typed methods below retain the same
 # KrylovKit algorithm, but expose those records while an instrumented VUMPS
