@@ -53,16 +53,17 @@ chi 192 reached a minimum residual `2.254667e-5` after the corresponding chi-128
 minimum was `3.424244e-5`. The low-chi corrector sequence is closed. The fresh
 chi-512 job `57192723` then accepted `theta/pi=0.0` and `0.1`, but the direct
 `0.1 -> 0.2` step reached a minimum `1.013369e-4` before stopping as
-`diverging_residual`. Launcher 2.5.0 `advance` converts that immutable outcome
-into an exact-parent adaptive schedule `0.15,0.2,0.3,...,1.0`; later failed
-0.1-pi intervals may insert one midpoint but never go below 0.05-pi.
-`advance-submit` performs reconciliation, state/hash/inner-solve validation,
-planning, and guarded submission in one explicit command. The standalone
+`diverging_residual`. Job `57245573` then tested the exact-parent `0.15`
+midpoint: its minimum improved to `4.279781e-5` but the sequential update still
+diverged, with all inner solves and retrospective branch diagnostics healthy.
+Launcher 2.6.0 admits one final generated control at the same parent/target with
+`multisite_update_alg="parallel"`; it is not a reusable hand-written config.
+Generate and submit it only through the procedure in
+`docs/PHASE1_FINAL_VUMPS_CONTROL.md`. The standalone
 `scripts/prepare_phase1_chi512_bridge_from_0p1.jl` produces the same complete
 remaining schedule as a compatibility fallback. The legacy resume generator
-remains only for manual recovery of older runs; new chi-512 campaign runs
-should use `advance` so scheduler failures and clean numerical outcomes cannot
-be confused.
+remains only for manual recovery of older runs and must not replace the pinned
+final control.
 
 An optimizer checkpoint is intentionally more restrictive than an ordinary
 restart. It requires strict lineage, exactly one fixed flux, both SHA-256

@@ -13,7 +13,7 @@ the reserve and are not automatically reassigned.
 | Phase | Ceiling | Current status | Exit product |
 |---|---:|---|---|
 | 0 — correctness and resource calibration | 10 node-h | **Complete**; corrected seed, 13-candidate matrix, and chi=512 validation copied locally | Correct minimal-cell timing, peak RSS, and one recommended threading configuration |
-| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; fresh chi-512 forward lineage is accepted through theta/pi=0.1; launcher 2.5.0 can advance the adaptive remaining grid from the reconciled run | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
+| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; chi-512 forward lineage is accepted through theta/pi=0.1; sequential VUMPS failed the halved 0.15 step and one pinned parallel-update control remains before the iDMRG pivot | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
 | 2 — moderate-chi Hu reproduction | 35 node-h | Not started | Converged entropy response and momentum-resolved physical-Sz transfer flow |
 | 3 — critical-point chi ladders | 60 node-h | Not started | Controlled `S = (c/6) log(xi) + a` analysis at selected crossings |
 | 4 — one independent validation | 15 node-h | Not started | One decisive second route, seed, geometry, or width check |
@@ -121,6 +121,17 @@ VUMPS/continuation instability, not a physical endpoint, inner-solver failure,
 or demonstrated basin jump. Job `57192723` ran for `14:49:53`, used about
 `1.90 GiB` MaxRSS in the Julia step, and cost `0.347610677` node-hours.
 
+Reconciled job `57245573` then held the parent and chi fixed while halving the
+target to `theta/pi=0.15`. The residual reached `4.279780651e-5` at iteration
+13, then diverged to `1.027012e-3` at iteration 32; all 320 inner solves
+converged. Retrospective overlap per site was `0.9999724354`, both cuts retained
+identical virtual U(1) sector labels and multiplicities, and the sector-weight
+changes were about `1e-3`. The smaller step improved the minimum by `2.37x`
+relative to the direct `0.2` attempt but still missed the gate by `4.28x`.
+This is stronger evidence for a sequential outer-VUMPS instability, not a
+physical endpoint or demonstrated branch jump. The job cost `0.098899740`
+node-hours.
+
 The implementation now makes branch identity an explicit acceptance condition.
 For every child of an immutable accepted parent, schema-v4-and-newer state
 files store a
@@ -137,18 +148,15 @@ those known smooth steps. This check does not calibrate the score of a genuine
 basin jump, so the first continuity-gated job still requires inspection rather than an
 automatic threshold change.
 
-The project owner has ended further low-chi correctors. Launcher 2.5.0 now
-automates the repeated terminal-job workflow for the dedicated chi-512 branch.
-From reconciled job `57192723`, `advance` verifies the submitted snapshot,
-accepted/rejected hashes, lineage, and every recorded inner solve, then plans
-`0.15,0.2,0.3,...,1.0` from the accepted `0.1` parent. The `0.05` minimum step
-lets later nominal failures bisect once in the same allocation while forbidding
-smaller automatic refinement. `advance-submit` is the only one-command path
-that may reconcile and submit; it retains all ordinary live budget and
-one-pilot guards. Continuity loss, an inner-solver failure, a numerical failure
-at the step floor, changed evidence, or an unsupported outcome stops for manual
-review. Exact commands and the transition table are in
-`docs/PHASE1_AUTOMATION.md` and `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
+The project owner has ended further low-chi correctors and requested one final
+VUMPS control before switching methods. Launcher 2.6.0 admits exactly one
+SHA-pinned parallel multisite-update test at `theta/pi=0.15` from the accepted
+`0.1` parent. Every model, chi, tolerance, inner-solver, and continuity setting
+is unchanged. Best-iterate restoration preserves a useful rejected state if
+the outer trajectory later degrades, but cannot bypass acceptance. A numerical
+failure is an explicit iDMRG pivot; a scheduler/process failure remains
+inconclusive. Exact commands and criteria are in
+`docs/PHASE1_FINAL_VUMPS_CONTROL.md`.
 
 Canonical evidence:
 
@@ -193,15 +201,21 @@ Canonical evidence:
 - guarded chi-512 automatic advance implementation:
   `src/Automation.jl`, `scripts/prepare_phase1_automatic_advance.jl`, and
   launcher `slurm/run_scan_cpu.sh`;
+- completed sequential `theta/pi=0.15` outcome:
+  `output/phase1/yc8_1/chi512_auto_refine_interval_from_p0p10000000_p0p15000000_to_p1p00000000_f71fc084883e/seed_101/chi512/scan_outcome.toml`;
+- final parallel-update control generator:
+  `scripts/prepare_phase1_chi512_parallel_control.jl`;
+- final VUMPS control contract and commands:
+  `docs/PHASE1_FINAL_VUMPS_CONTROL.md`;
 - automatic transition contract and commands:
   `docs/PHASE1_AUTOMATION.md`;
 - diagnostic protocol and interpretation:
   `docs/PHASE1_PLATEAU_DIAGNOSTICS.md`.
 
 Do **not** submit either existing `configs/hu_yc8_*_forward.toml` as a Phase 1
-campaign. Use launcher `advance|advance-submit` for the dedicated chi-512
-lineage, or ordinary `plan|submit` only for a configuration that the automatic
-decision artifact generated:
+campaign. Generate the pinned final control exactly as documented, then use
+ordinary launcher `plan|submit`. Do not hand-edit or generalize its parallel
+solver settings:
 
 - the launcher fixes two Julia threads, a four-CPU scan step, 8 GiB, Shared QOS,
   and a one-pilot-at-a-time submission policy. Shared QOS may expose five task
@@ -504,6 +518,8 @@ mark a converged state rejected solely because another branch has lower energy.
 | 2026-08-15 | **1 reconciled total** | All tracked Phase 1 jobs | — | **0.819921875** | Locally synced total through job 56994767; Project B total including the Phase 0 baseline is `1.914354875` node-hours; verify live Perlmutter accounting before submission |
 | 2026-08-18 | 1 | 57192723 | 0.347610677 | 0.347610677 | Fresh chi-512 lineage accepted theta/pi=0 and 0.1; the direct 0.1-to-0.2 update stopped as `diverging_residual`, while all 3550 recorded inner solves converged |
 | 2026-08-18 | **1 reconciled total** | All tracked Phase 1 jobs | — | **1.167532552** | Locally synced total through job 57192723; Project B total including the Phase 0 baseline is `2.261965552` node-hours; verify live Perlmutter accounting before submission |
+| 2026-08-20 | 1 | 57245573 | 0.098899740 | 0.098899740 | Exact-parent chi-512 midpoint to theta/pi=0.15 reached minimum residual `4.279781e-5` before diverging; all 320 inner solves converged and retrospective branch diagnostics stayed smooth |
+| 2026-08-20 | **1 reconciled total** | All tracked Phase 1 jobs | — | **1.266432292** | Locally synced total through job 57245573; Project B total including the Phase 0 baseline is `2.360865292` node-hours; verify live Perlmutter accounting before submission |
 
 ## Decision log
 
@@ -546,3 +562,5 @@ mark a converged state rejected solely because another branch has lower energy.
 - 2026-08-18: job 57192723 accepted the fresh chi-512 lineage through theta/pi=0.1. The direct step to 0.2 reached minimum residual `1.013369e-4` and then diverged, despite convergence of every recorded inner solve. The rejected candidate retained high retrospective overlap and unchanged U(1) sector multiplicities, so it is a numerical outer-update failure rather than evidence of a physical endpoint or demonstrated basin change.
 - 2026-08-18: the next controlled job first halves only the failed continuation interval. A SHA-pinned generator accepts exactly the immutable theta/pi=0.1 state from job 57192723, schedules 0.15 followed by 0.2 through 1.0 at chi 512, retains the strict residual and continuity gates, and refuses the rejected direct-0.2 candidate. Its minimum step is 0.05, so later 0.1-pi failures may bisect once but the job cannot silently return to the earlier fine-step campaign.
 - 2026-08-18: launcher 2.5.0 replaces repeated manual chi-512 classification/configuration/reconciliation with immutable `advance` decisions. The first transition schedules 0.15 followed by every remaining nominal target, so success at the bridge continues in the same allocation. Infrastructure recovery, remaining-grid continuation, one midpoint down to 0.05 pi, and capped contracting retries are automated; continuity loss, inner-solver failure, failure at the floor, changed hashes, and unsupported outcomes stop without submission. `advance-submit` remains an explicit operator action and still passes through every live budget guard.
+- 2026-08-20: job 57245573 tested the canonical 0.05-pi midpoint from the exact accepted chi-512 theta/pi=0.1 parent. The minimum residual improved by 2.37x relative to the direct 0.2 attempt but remained 4.28x above tolerance and then diverged. Parent overlap, U(1) sector support, entropy/Schmidt changes, and all inner solves remained smooth, isolating the sequential outer update as the remaining VUMPS-specific variable.
+- 2026-08-20: launcher 2.6.0 and schema-v7 implement one final, pinned parallel multisite-update control at theta/pi=0.15. The generator verifies every source hash and inner solve; the launcher forbids this solver setting elsewhere. On failure, the lowest-residual iterate is saved only as a rejected diagnostic while the terminal residual is recorded separately. Numerical failure ends VUMPS and triggers iDMRG planning; infrastructure failure does not.

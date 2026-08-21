@@ -105,6 +105,10 @@ function write_optimizer_diagnostics!(
     file["optimizer/iterations"] = diagnostic.iterations
     file["optimizer/residual"] = diagnostic.residual
     file["optimizer/minimum_residual"] = diagnostic.minimum_residual
+    file["optimizer/terminal_residual"] = diagnostic.terminal_residual
+    file["optimizer/best_iteration"] = diagnostic.best_iteration
+    file["optimizer/returned_iteration"] = diagnostic.returned_iteration
+    file["optimizer/restored_best_on_failure"] = diagnostic.restored_best_on_failure
     file["optimizer/residual_history"] = diagnostic.residual_history
     file["optimizer/energy_left_history"] = diagnostic.energy_left_history
     file["optimizer/energy_right_history"] = diagnostic.energy_right_history
@@ -258,7 +262,7 @@ function write_state_file(
         create_group(file, "optimizer")
         create_group(file, "observables")
         create_group(file, "continuation")
-        file["schema_version"] = 6
+        file["schema_version"] = 7
         file["artifact_kind"] = "project_b_vumps_state"
         file["created_at_utc"] = string(now(UTC))
         file["config_id"] = config_identifier(settings)
@@ -321,6 +325,9 @@ function write_state_file(
         file["optimizer/solver_max_iterations"] = settings.optimizer.solver_max_iterations
         file["optimizer/record_krylov_diagnostics"] =
             settings.optimizer.record_krylov_diagnostics
+        file["optimizer/multisite_update_alg"] = settings.optimizer.multisite_update_alg
+        file["optimizer/restore_best_on_failure_enabled"] =
+            settings.optimizer.restore_best_on_failure
         file["optimizer/plateau_detection"] = settings.optimizer.plateau_detection
         file["optimizer/plateau_warmup_iterations"] =
             settings.optimizer.plateau_warmup_iterations
@@ -424,6 +431,26 @@ function read_state_file(path::AbstractString)
                 Float64(read(file, "optimizer/residual")) : NaN,
             optimizer_minimum_residual=haskey(file, "optimizer/minimum_residual") ?
                 Float64(read(file, "optimizer/minimum_residual")) : NaN,
+            optimizer_terminal_residual=haskey(file, "optimizer/terminal_residual") ?
+                Float64(read(file, "optimizer/terminal_residual")) :
+                (haskey(file, "optimizer/residual") ?
+                 Float64(read(file, "optimizer/residual")) : NaN),
+            optimizer_best_iteration=haskey(file, "optimizer/best_iteration") ?
+                Int(read(file, "optimizer/best_iteration")) : 0,
+            optimizer_returned_iteration=haskey(file, "optimizer/returned_iteration") ?
+                Int(read(file, "optimizer/returned_iteration")) :
+                (haskey(file, "optimizer/iterations") ?
+                 Int(read(file, "optimizer/iterations")) : 0),
+            optimizer_restored_best_on_failure=haskey(
+                file,
+                "optimizer/restored_best_on_failure",
+            ) ? Bool(read(file, "optimizer/restored_best_on_failure")) : false,
+            optimizer_multisite_update_alg=haskey(file, "optimizer/multisite_update_alg") ?
+                String(read(file, "optimizer/multisite_update_alg")) : "sequential",
+            optimizer_restore_best_on_failure_enabled=haskey(
+                file,
+                "optimizer/restore_best_on_failure_enabled",
+            ) ? Bool(read(file, "optimizer/restore_best_on_failure_enabled")) : false,
             optimizer_residual_tolerance=haskey(file, "optimizer/residual_tolerance") ?
                 Float64(read(file, "optimizer/residual_tolerance")) : NaN,
             optimizer_checkpoint_path=haskey(file, "optimizer/restart_checkpoint_path") ?

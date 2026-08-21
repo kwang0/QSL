@@ -140,7 +140,10 @@ The locally synced reconciled Phase 1 total through job `57192723` is
 `2.261965552` node-hours. Perlmutter remains authoritative immediately before
 another submission.
 
-## Automated next campaign step
+## Historical automated bridge step (completed)
+
+This section records how job `57245573` was generated. Do not rerun these
+commands as the current next step; use the final control below.
 
 Launcher 2.5.0 encodes the repeated recovery decisions in an immutable,
 Perlmutter-side state machine. For job `57192723`, it verifies the reconciled
@@ -209,10 +212,63 @@ before requesting detailed scientific interpretation. The automation removes
 routine classification and resubmission, not the need to interpret genuinely
 new physics.
 
+## What the halved chi-512 step established
+
+Reconciled job `57245573` used the exact accepted `theta/pi=0.1` parent and
+tried the automatically inserted `theta/pi=0.15` midpoint at fixed chi 512.
+It completed normally in `4:13:03` and was charged `0.098899740` node-hours.
+The residual reached `4.279780651e-5` at iteration 13, then rebounded to
+`1.027012e-3`; the divergence guard stopped it at iteration 32. All 320 inner
+Krylov solves converged.
+
+The rejected candidate remained extremely close to its accepted parent under
+every branch diagnostic available retrospectively: overlap per site was
+`0.9999724354`, both virtual cuts retained the same U(1) sector labels and
+multiplicities, sector-weight total-variation distances were `0.00127015` and
+`0.00107379`, mean entropy changed by `0.00576134`, and Schmidt total variation
+was `0.00228610`. The energy-density change was about `9.27e-6`. These checks do
+not make the state numerically acceptable, but they rule against a branch jump,
+missing symmetry sector, or inaccurate inner solve as the cause of rejection.
+
+Halving the flux step improved the minimum residual by about `2.37x` relative
+to the direct `theta/pi=0.2` attempt, yet the new minimum still exceeded the
+`1e-5` gate by `4.28x`. The failure therefore isolates an outer sequential
+VUMPS fixed-point instability at this parent and target more strongly than the
+earlier runs. It is still not evidence of a physical flux endpoint.
+
+The locally synced reconciled Phase 1 total through job `57245573` is
+`1.266432292` node-hours; the Project B total including the Phase 0 estimate is
+`2.360865292` node-hours. Perlmutter remains authoritative immediately before
+submission.
+
+## Final VUMPS control
+
+Launcher 2.6.0 admits one SHA-pinned exception: retry exactly
+`theta/pi=0.15` from the accepted `0.1` parent while changing the library's
+multisite update from `sequential` to `parallel`. All physical, representation,
+residual, inner-solver, and continuity settings remain fixed. A rejected run
+restores its lowest-residual iterate before writing the diagnostic state, while
+recording the degraded terminal residual separately; this never bypasses the
+acceptance gates.
+
+The generator verifies the parent, sequential outcome, rejected candidate, and
+all recorded inner solves before creating an isolated one-point configuration.
+The launcher refuses parallel/best-iterate settings for every other Phase 1
+configuration. After the control terminates, `advance` produces no successor:
+it reports successful-control review, a numerical iDMRG pivot, or an
+inconclusive infrastructure ending.
+
+The exact preparation, plan, submission, monitoring, reconciliation, and
+pass/fail rules are in `docs/PHASE1_FINAL_VUMPS_CONTROL.md`. Do not use
+`advance-submit` for this control, and do not treat a timeout or process error
+as a numerical VUMPS failure.
+
 ## Stored diagnostics
 
-Every new schema-v6 state stores the schema-v5 optimizer diagnostics plus:
+Every new schema-v7 state stores the schema-v6 optimizer diagnostics plus:
 
+- the terminal residual, lowest-residual iteration, returned-state iteration,
+  and whether a failed control restored that best iterate;
 - a separate optimizer-restart checkpoint path, basename, SHA-256, prior
   cumulative iteration count, residual, minimum residual, and stop reason; and
 - `continuation/preparation_source=optimizer_checkpoint_resume`, while the
@@ -279,7 +335,7 @@ julia --project=. --startup-file=no \
 
 ## If a live job truly plateaus
 
-Use an explicit run ID. Launcher 2.5.0 preserves the intervention as a
+Use an explicit run ID. Launcher 2.6.0 preserves the intervention as a
 scientific failure artifact before the job is reconciled:
 
 ```bash

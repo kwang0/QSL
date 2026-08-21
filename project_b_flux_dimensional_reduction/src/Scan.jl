@@ -400,7 +400,7 @@ function write_bracketed_scan_outcome(
     left, right = minmax(Float64(last_accepted_theta), Float64(rejected_theta))
     continuity_loss = diagnostic.converged && continuity.checked && !continuity.passed
     data = Dict{String,Any}(
-        "schema_version" => 3,
+        "schema_version" => 4,
         "artifact_kind" => "project_b_flux_scan_outcome",
         "created_at_utc" => string(now(UTC)),
         "status" => continuity_loss ?
@@ -425,6 +425,13 @@ function write_bracketed_scan_outcome(
         "minimum_step_over_pi" => settings.scan.minimum_step_over_pi,
         "residual" => diagnostic.residual,
         "minimum_residual" => diagnostic.minimum_residual,
+        "optimizer_terminal_residual" => diagnostic.terminal_residual,
+        "optimizer_best_iteration" => diagnostic.best_iteration,
+        "optimizer_returned_iteration" => diagnostic.returned_iteration,
+        "optimizer_restored_best_on_failure" => diagnostic.restored_best_on_failure,
+        "optimizer_multisite_update_alg" => settings.optimizer.multisite_update_alg,
+        "optimizer_restore_best_on_failure_enabled" =>
+            settings.optimizer.restore_best_on_failure,
         "residual_tolerance" => settings.optimizer.residual_tol,
         "optimizer_stop_reason" => diagnostic.stop_reason,
         "optimizer_iterations" => diagnostic.iterations,
@@ -483,7 +490,7 @@ function write_fixed_flux_expansion_outcome(
     ispath(temporary_path) && error("stale temporary scan outcome exists: $temporary_path")
     continuity_loss = diagnostic.converged && continuity.checked && !continuity.passed
     data = Dict{String,Any}(
-        "schema_version" => 1,
+        "schema_version" => 2,
         "artifact_kind" => "project_b_fixed_flux_expansion_outcome",
         "created_at_utc" => string(now(UTC)),
         "status" => continuity_loss ?
@@ -508,6 +515,13 @@ function write_fixed_flux_expansion_outcome(
         "result_maxdim" => Int(result_maxdim),
         "residual" => diagnostic.residual,
         "minimum_residual" => diagnostic.minimum_residual,
+        "optimizer_terminal_residual" => diagnostic.terminal_residual,
+        "optimizer_best_iteration" => diagnostic.best_iteration,
+        "optimizer_returned_iteration" => diagnostic.returned_iteration,
+        "optimizer_restored_best_on_failure" => diagnostic.restored_best_on_failure,
+        "optimizer_multisite_update_alg" => settings.optimizer.multisite_update_alg,
+        "optimizer_restore_best_on_failure_enabled" =>
+            settings.optimizer.restore_best_on_failure,
         "residual_tolerance" => settings.optimizer.residual_tol,
         "optimizer_stop_reason" => diagnostic.stop_reason,
         "optimizer_iterations" => diagnostic.iterations,
@@ -575,7 +589,7 @@ function write_fixed_flux_optimizer_resume_outcome(
     ispath(temporary_path) && error("stale temporary scan outcome exists: $temporary_path")
     continuity_loss = diagnostic.converged && continuity.checked && !continuity.passed
     data = Dict{String,Any}(
-        "schema_version" => 1,
+        "schema_version" => 2,
         "artifact_kind" => "project_b_fixed_flux_optimizer_resume_outcome",
         "created_at_utc" => string(now(UTC)),
         "status" => continuity_loss ?
@@ -610,6 +624,13 @@ function write_fixed_flux_optimizer_resume_outcome(
             Float64(checkpoint_minimum_residual),
             diagnostic.minimum_residual,
         ),
+        "optimizer_terminal_residual" => diagnostic.terminal_residual,
+        "optimizer_best_iteration" => diagnostic.best_iteration,
+        "optimizer_returned_iteration" => diagnostic.returned_iteration,
+        "optimizer_restored_best_on_failure" => diagnostic.restored_best_on_failure,
+        "optimizer_multisite_update_alg" => settings.optimizer.multisite_update_alg,
+        "optimizer_restore_best_on_failure_enabled" =>
+            settings.optimizer.restore_best_on_failure,
         "residual_tolerance" => settings.optimizer.residual_tol,
         "optimizer_stop_reason" => diagnostic.stop_reason,
         "optimizer_max_iterations" => settings.optimizer.max_iterations,

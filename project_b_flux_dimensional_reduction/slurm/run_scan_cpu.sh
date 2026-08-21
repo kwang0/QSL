@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-readonly LAUNCHER_VERSION="2.5.0"
+readonly LAUNCHER_VERSION="2.6.0"
 readonly PROJECT_B_HARD_BUDGET_NODE_HOURS=150
 readonly PROJECT_B_AUTOMATIC_SUBMISSION_CAP_NODE_HOURS=140
 readonly PHASE1_BUDGET_NODE_HOURS=20
@@ -218,6 +218,10 @@ config_record() {
     solver_max_iterations = Int(get(optimizer, "solver_max_iterations", 100))
     solver_max_iterations >= 1 || error(
       "Phase 1 solver_max_iterations must be positive")
+    multisite_update_alg = String(get(optimizer, "multisite_update_alg", "sequential"))
+    multisite_update_alg in ("sequential", "parallel") || error(
+      "Phase 1 multisite_update_alg must be sequential or parallel")
+    restore_best_on_failure = Bool(get(optimizer, "restore_best_on_failure", false))
     record_krylov_diagnostics = Bool(get(optimizer, "record_krylov_diagnostics", false))
     plateau_detection = Bool(get(optimizer, "plateau_detection", false))
     plateau_warmup_iterations = Int(get(optimizer, "plateau_warmup_iterations", 30))
@@ -273,6 +277,46 @@ config_record() {
       ordered || isempty(differences) || error("resumed Phase 1 schedule disagrees with its direction")
       crossing = shift == 1 ? 1.0 : 2.0
       all(theta -> 0.0 <= theta <= crossing, fluxes) || error("resumed Phase 1 flux lies outside the scout interval")
+    end
+    if multisite_update_alg != "sequential" || restore_best_on_failure
+      control = get(raw, "control", Dict{String,Any}())
+      approved_parallel_control =
+        multisite_update_alg == "parallel" && restore_best_on_failure &&
+        legacy_chi512_campaign && length(fluxes) == 1 &&
+        isapprox(only(fluxes), 0.15; atol=1e-12, rtol=0) &&
+        initial_state_sha256 ==
+          "f71fc084883ea98535e012801d47c2c0b3c0b5ce58e08c72592e46410a27b7cc" &&
+        String(get(control, "artifact_kind", "")) ==
+          "project_b_chi512_parallel_update_control" &&
+        String(get(control, "decision_on_failure", "")) == "switch_to_idmrg" &&
+        String(get(control, "source_job_id", "")) == "57245573" &&
+        lowercase(String(get(control, "source_config_sha256", ""))) ==
+          "1a272abe6879c69827d1f14547a0b6d4780083945e414ad3f1cb9ee1a050749f" &&
+        lowercase(String(get(control, "source_outcome_sha256", ""))) ==
+          "001eadee6f43e73fa9228c4221c8ac81edc821db58a391625037806b16e0b2cf" &&
+        lowercase(String(get(control, "sequential_candidate_sha256", ""))) ==
+          "b5ef48caaf7a10eb00e4fd003e8fd1b5a57add77a8111b270a358a7c8f049953"
+      approved_parallel_control || error(
+        "Phase 1 permits parallel best-iterate restoration only for the pinned final chi-512 control")
+      for (path_key, expected_sha256) in (
+        ("source_config_path",
+         "1a272abe6879c69827d1f14547a0b6d4780083945e414ad3f1cb9ee1a050749f"),
+        ("source_outcome_path",
+         "001eadee6f43e73fa9228c4221c8ac81edc821db58a391625037806b16e0b2cf"),
+        ("sequential_candidate_path",
+         "b5ef48caaf7a10eb00e4fd003e8fd1b5a57add77a8111b270a358a7c8f049953"),
+      )
+        recorded_value = String(get(control, path_key, ""))
+        isempty(recorded_value) && error("final chi-512 control is missing $path_key")
+        recorded_path = isabspath(recorded_value) ? normpath(recorded_value) :
+          normpath(joinpath(dirname(path), recorded_value))
+        isfile(recorded_path) || error("final chi-512 control artifact does not exist: $recorded_path")
+        actual_sha256 = open(recorded_path, "r") do io
+          bytes2hex(sha256(io))
+        end
+        actual_sha256 == expected_sha256 || error(
+          "final chi-512 control artifact SHA-256 mismatch for $recorded_path")
+      end
     end
     checkpoint_value = String(get(scan, "optimizer_checkpoint_file", ""))
     optimizer_checkpoint = isempty(checkpoint_value) ? "" :
@@ -334,7 +378,8 @@ config_record() {
       solver_krylov_dimension,
       solver_max_iterations, record_krylov_diagnostics, plateau_detection,
       plateau_warmup_iterations, plateau_patience,
-      plateau_min_relative_improvement, path), "\t"))
+      plateau_min_relative_improvement, multisite_update_alg,
+      restore_best_on_failure, path), "\t"))
   ' "$config_path"
 }
 
@@ -399,9 +444,9 @@ print_plan() {
   validate_project
   require_command "$PHASE1_JULIA"
   local config_path="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-  local record geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement ignored
+  local record geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement multisite_update_alg restore_best_on_failure ignored
   record="$(config_record "$config_path")"
-  IFS=$'\t' read -r geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement ignored <<<"$record"
+  IFS=$'\t' read -r geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement multisite_update_alg restore_best_on_failure ignored <<<"$record"
   local forecast reconciled unreconciled project_active phase1_active active_ids
   local maximum_effective_cpus existing_state_count
   forecast="$(reservation_node_hours "$PHASE1_SLURM_CPUS" "$PHASE1_MEMORY" "$PHASE1_TIME")"
@@ -425,6 +470,7 @@ Branch / preparation:           $branch / $preparation
 Direction / seed:               $direction / $seed_pattern:$random_seed
 Chi / residual tolerance:       $chi / $tolerance
 Outer iteration cap:            $max_iterations
+Multisite update / rollback:    $multisite_update_alg / restore-best=$restore_best_on_failure
 Inner Krylov setting:           dimension $solver_krylov, max restarts $solver_max_iterations, record=$record_krylov
 Plateau detector:               $plateau_detection (warmup $plateau_warmup, window $plateau_patience, minimum improvement $plateau_improvement)
 Parent-overlap continuity gate: $require_overlap (minimum/site $minimum_overlap, eigensolve tol $overlap_tolerance, Krylov $overlap_krylov)
@@ -465,9 +511,9 @@ submit_scan() {
   require_command squeue
   require_command scontrol
   local config_path="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-  local record geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement ignored
+  local record geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement multisite_update_alg restore_best_on_failure ignored
   record="$(config_record "$config_path")"
-  IFS=$'\t' read -r geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement ignored <<<"$record"
+  IFS=$'\t' read -r geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement multisite_update_alg restore_best_on_failure ignored <<<"$record"
 
   local existing_state=""
   if [[ -d "$output/states" ]]; then
@@ -526,6 +572,8 @@ submit_scan() {
     printf 'CONFIG_SHA256=%q\n' "$config_sha"
     printf 'INITIAL_STATE_SHA256=%q\n' "$initial_sha"
     printf 'OPTIMIZER_CHECKPOINT_SHA256=%q\n' "$optimizer_checkpoint_sha"
+    printf 'MULTISITE_UPDATE_ALG=%q\n' "$multisite_update_alg"
+    printf 'RESTORE_BEST_ON_FAILURE=%q\n' "$restore_best_on_failure"
   } >"$run_dir/run.env"
   export PHASE1_JULIA PHASE1_GNU_TIME PHASE1_ACCOUNT PHASE1_QOS
   local raw job_id
@@ -536,13 +584,14 @@ submit_scan() {
     --output="$run_dir/logs/scan-%j.out" --export=ALL \
     "$script_path" _run "$config_path" "$config_sha" "$run_dir" "$project_dir")"
   job_id="${raw%%;*}"
-  printf 'job_id\tphase\tgeometry\tmps_period\ttwist_gauge\tbranch\tpreparation\tdirection\tseed_pattern\trandom_seed\tchi\tfluxes_over_pi\tslurm_cpus\tmemory\ttime_limit\tforecast_node_hours\tconfig_path\tconfig_sha256\trequire_parent_overlap\tminimum_parent_overlap_per_site\tparent_overlap_tolerance\tparent_overlap_krylov_dimension\tinitial_state_sha256\toptimizer_checkpoint_path\toptimizer_checkpoint_sha256\n' >"$run_dir/job.tsv"
-  printf '%s\t1\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+  printf 'job_id\tphase\tgeometry\tmps_period\ttwist_gauge\tbranch\tpreparation\tdirection\tseed_pattern\trandom_seed\tchi\tfluxes_over_pi\tslurm_cpus\tmemory\ttime_limit\tforecast_node_hours\tconfig_path\tconfig_sha256\trequire_parent_overlap\tminimum_parent_overlap_per_site\tparent_overlap_tolerance\tparent_overlap_krylov_dimension\tinitial_state_sha256\toptimizer_checkpoint_path\toptimizer_checkpoint_sha256\tmultisite_update_alg\trestore_best_on_failure\n' >"$run_dir/job.tsv"
+  printf '%s\t1\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$job_id" "$geometry" "$period" "$gauge" "$branch" "$preparation" "$direction" \
     "$seed_pattern" "$random_seed" "$chi" "$fluxes" "$PHASE1_SLURM_CPUS" \
     "$PHASE1_MEMORY" "$PHASE1_TIME" "$forecast" "$config_path" "$config_sha" \
     "$require_overlap" "$minimum_overlap" "$overlap_tolerance" "$overlap_krylov" \
     "$initial_sha" "$optimizer_checkpoint" "$optimizer_checkpoint_sha" \
+    "$multisite_update_alg" "$restore_best_on_failure" \
     >>"$run_dir/job.tsv"
   printf '%s\n' "$run_dir" >"$run_root/latest_run.txt"
 

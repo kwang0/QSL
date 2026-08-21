@@ -94,9 +94,11 @@ See [`docs/PHASE1_PLATEAU_DIAGNOSTICS.md`](docs/PHASE1_PLATEAU_DIAGNOSTICS.md)
 for the fresh chi-512, 0.1-pi primary-forward campaign, exact Perlmutter
 submission and wall-time recovery steps, inner-Krylov diagnostics, and U(1)
 sector comparisons.
-See [`docs/PHASE1_AUTOMATION.md`](docs/PHASE1_AUTOMATION.md) for launcher 2.5.0
+See [`docs/PHASE1_AUTOMATION.md`](docs/PHASE1_AUTOMATION.md) for launcher 2.6.0
 `advance` and `advance-submit`, the encoded recovery state machine, and every
 condition that deliberately stops for manual review.
+The current one-point solver control and its exact Perlmutter commands are in
+[`docs/PHASE1_FINAL_VUMPS_CONTROL.md`](docs/PHASE1_FINAL_VUMPS_CONTROL.md).
 
 Direct `sbatch` use is intentionally unsupported. The submit path fixes the
 calibrated compute setting at two Julia threads, a four-CPU scan step, and 8 GiB;
@@ -136,14 +138,18 @@ passed parent overlap per site at `0.99991735`. The direct `0.1 -> 0.2` step
 then reached residual `1.0134e-4` before diverging to `2.0110e-3`. All 3550
 recorded inner solves converged, and a retrospective read-only overlap remained
 `0.99988969`, so this is a step-size/outer-update diagnostic rather than a
-physical endpoint or established basin jump. Generate the next exact-parent
-chi-512 recovery through launcher `advance`: it inserts `0.15`, retains
-`0.2,0.3,...,1.0`, and allows one 0.05-pi midpoint on each later nominal
-interval. It rechecks state hashes and all recorded inner solves and never uses
-the rejected `0.2` state as a parent. After a terminal chi-512 campaign job,
-`advance-submit` reconciles, classifies, plans, and submits only an encoded safe
-transition; continuity loss, inner-solver failure, or failure at the step floor
-stops without submission.
+physical endpoint or established basin jump. Launcher `advance` generated the
+exact-parent midpoint without ever using the rejected `0.2` state as a parent.
+The automatic policy stopped after that midpoint failed at its configured
+0.05-pi floor.
+
+Reconciled job `57245573` then tried the exact-parent midpoint at
+`theta/pi=0.15`. Its minimum residual improved to `4.2798e-5`, but the
+trajectory diverged after iteration 13 despite convergence of all 320 inner
+solves and smooth retrospective branch diagnostics. Launcher 2.6.0 now admits
+one final SHA-pinned one-point test that changes only the VUMPS multisite update
+to `parallel`. If it fails numerically, the documented next method is iDMRG;
+an allocation or process failure remains inconclusive.
 
 The launcher passes the submission-side absolute project directory into the
 private worker entry point. This is required because Slurm executes a staged
@@ -181,7 +187,7 @@ bash test/test_phase1_launcher.sh
 
 The normal suite tests minimal/supercell geometry, uniform twist charges,
 configuration, momentum formulas, identical-state mixed-transfer fidelity,
-central-charge analysis, diagnostics, and a schema-v6 infinite-MPS HDF5 round
+central-charge analysis, diagnostics, and a schema-v7 infinite-MPS HDF5 round
 trip. The opt-in test also performs one VUMPS iteration and neutral plus
 physical-`S^z=1` transfer eigensolves. The shell regression runs a staged copy
 of the Phase 1 launcher and verifies that it still invokes the original Julia

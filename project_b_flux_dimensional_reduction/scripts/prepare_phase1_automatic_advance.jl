@@ -18,6 +18,13 @@ const EXPECTED_PREPARATION = "independent_theta0_alternating_chi512"
 const EXPECTED_MAXDIM = 512
 const BASE_MAX_ITERATIONS = 180
 const DECISION_FILENAME = "automatic_advance.toml"
+const FINAL_CONTROL_SOURCE_JOB_ID = "57245573"
+const FINAL_CONTROL_SOURCE_CONFIG_SHA256 =
+    "1a272abe6879c69827d1f14547a0b6d4780083945e414ad3f1cb9ee1a050749f"
+const FINAL_CONTROL_SOURCE_OUTCOME_SHA256 =
+    "001eadee6f43e73fa9228c4221c8ac81edc821db58a391625037806b16e0b2cf"
+const FINAL_CONTROL_SEQUENTIAL_CANDIDATE_SHA256 =
+    "b5ef48caaf7a10eb00e4fd003e8fd1b5a57add77a8111b270a358a7c8f049953"
 
 function read_tsv_record(path::AbstractString)
     lines = readlines(path)
@@ -73,6 +80,26 @@ function require_approx(actual, expected, label::AbstractString)
         error("$label=$actual, expected $expected")
 end
 
+function is_final_parallel_control(raw)
+    optimizer = get(raw, "optimizer", Dict{String,Any}())
+    scan = get(raw, "scan", Dict{String,Any}())
+    control = get(raw, "control", Dict{String,Any}())
+    fluxes = Float64.(get(scan, "fluxes_over_pi", Float64[]))
+    return String(get(optimizer, "multisite_update_alg", "sequential")) == "parallel" &&
+        Bool(get(optimizer, "restore_best_on_failure", false)) &&
+        length(fluxes) == 1 && isapprox(only(fluxes), 0.15; atol=1e-12, rtol=0) &&
+        String(get(control, "artifact_kind", "")) ==
+            "project_b_chi512_parallel_update_control" &&
+        String(get(control, "decision_on_failure", "")) == "switch_to_idmrg" &&
+        String(get(control, "source_job_id", "")) == FINAL_CONTROL_SOURCE_JOB_ID &&
+        lowercase(String(get(control, "source_config_sha256", ""))) ==
+            FINAL_CONTROL_SOURCE_CONFIG_SHA256 &&
+        lowercase(String(get(control, "source_outcome_sha256", ""))) ==
+            FINAL_CONTROL_SOURCE_OUTCOME_SHA256 &&
+        lowercase(String(get(control, "sequential_candidate_sha256", ""))) ==
+            FINAL_CONTROL_SEQUENTIAL_CANDIDATE_SHA256
+end
+
 function validate_source_configuration(raw)
     model = required_table(raw, "model")
     optimizer = required_table(raw, "optimizer")
@@ -110,10 +137,17 @@ function validate_source_configuration(raw)
         error("optimizer.require_converged must remain true")
     Bool(get(optimizer, "record_krylov_diagnostics", false)) ||
         error("automatic advance requires recorded Krylov diagnostics")
+    final_parallel_control = is_final_parallel_control(raw)
+    expected_algorithm = final_parallel_control ? "parallel" : "sequential"
     require_equal(
-        String(get(optimizer, "multisite_update_alg", "")),
-        "sequential",
+        String(get(optimizer, "multisite_update_alg", "sequential")),
+        expected_algorithm,
         "optimizer.multisite_update_alg",
+    )
+    require_equal(
+        Bool(get(optimizer, "restore_best_on_failure", false)),
+        final_parallel_control,
+        "optimizer.restore_best_on_failure",
     )
     require_equal(Int(get(optimizer, "divergence_patience", 0)), 8, "optimizer.divergence_patience")
     require_approx(get(optimizer, "divergence_factor", NaN), 4.0, "optimizer.divergence_factor")
@@ -172,7 +206,7 @@ function validate_source_configuration(raw)
     Bool(get(runtime, "threaded_blocksparse", false)) ||
         error("runtime.threaded_blocksparse must remain true")
     require_equal(Int(get(runtime, "output_level", -1)), 1, "runtime.output_level")
-    return nothing
+    return final_parallel_control
 end
 
 function recorded_inner_solves_converged(path::AbstractString)
@@ -351,7 +385,7 @@ occursin(r"^[0-9a-f]{64}$", source_config_sha256) ||
 PB.file_sha256(snapshot_path) == source_config_sha256 ||
     error("submitted configuration snapshot does not match the recorded SHA-256")
 raw = TOML.parsefile(snapshot_path)
-validate_source_configuration(raw)
+final_parallel_control = validate_source_configuration(raw)
 runtime = required_table(raw, "runtime")
 scan = required_table(raw, "scan")
 optimizer = required_table(raw, "optimizer")
@@ -447,6 +481,41 @@ if candidate !== nothing
     )) || error("rejected candidate flux history does not extend the accepted parent")
 end
 
+if final_parallel_control && candidate !== nothing
+    candidate.state.optimizer_multisite_update_alg == "parallel" || error(
+        "final-control candidate was not produced by parallel VUMPS",
+    )
+    candidate.state.optimizer_restore_best_on_failure_enabled || error(
+        "final-control candidate did not enable best-iterate preservation",
+    )
+    isapprox(
+        candidate.state.optimizer_residual,
+        candidate.state.optimizer_minimum_residual;
+        atol=0,
+        rtol=1e-12,
+    ) || error("final-control rejected state is not its lowest-residual iterate")
+    candidate.state.optimizer_returned_iteration ==
+        candidate.state.optimizer_best_iteration || error(
+            "final-control rejected state does not record the best iteration as returned",
+        )
+    if candidate.state.optimizer_terminal_residual >
+            candidate.state.optimizer_minimum_residual * (1 + 1e-12)
+        candidate.state.optimizer_restored_best_on_failure || error(
+            "degraded final-control trajectory did not restore its best iterate",
+        )
+    end
+end
+
+if final_parallel_control && parent !== nothing &&
+        isapprox(parent.state.theta_over_pi, 0.15; atol=1e-12, rtol=0)
+    parent.state.optimizer_multisite_update_alg == "parallel" || error(
+        "accepted final-control state was not produced by parallel VUMPS",
+    )
+    parent.state.optimizer_restore_best_on_failure_enabled || error(
+        "accepted final-control state lacks the requested control metadata",
+    )
+end
+
 parent_inner_converged = parent === nothing ? false :
     recorded_inner_solves_converged(parent.path)
 policy = PB.phase1_advance_policy(
@@ -464,6 +533,17 @@ policy = PB.phase1_advance_policy(
     projected_total_iterations=projected_iterations,
     candidate_inner_solves_converged=candidate_inner_converged,
 )
+
+if final_parallel_control
+    reached_control_target = parent !== nothing &&
+        isapprox(parent.state.theta_over_pi, 0.15; atol=1e-12, rtol=0)
+    policy = PB.phase1_final_vumps_control_policy(
+        scheduler_state=state,
+        job_exit_code=exit_code,
+        reached_target=reached_control_target,
+        outcome_kind,
+    )
+end
 
 next_schedule = Float64[]
 next_max_iterations = BASE_MAX_ITERATIONS
@@ -502,6 +582,8 @@ decision = Dict{String,Any}(
     "source_outcome_status" => outcome_status,
     "source_classification" => classification,
     "source_optimizer_stop_reason" => stop_reason,
+    "source_is_final_parallel_control" => final_parallel_control,
+    "next_solver_on_numerical_failure" => final_parallel_control ? "idmrg" : "",
     "action" => policy.action in (:continue_schedule, :refine_interval, :retry_contracting) ?
         "next_config" : String(policy.action),
     "transition" => String(policy.action),

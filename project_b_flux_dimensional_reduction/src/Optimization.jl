@@ -29,6 +29,10 @@ Base.@kwdef struct VumpsDiagnostics
     log_residual_slope::Float64 = NaN
     log_residual_r_squared::Float64 = NaN
     projected_total_iterations::Float64 = NaN
+    terminal_residual::Float64 = residual
+    best_iteration::Int = 0
+    returned_iteration::Int = iterations
+    restored_best_on_failure::Bool = false
     krylov_solves::Vector{KrylovSolveDiagnostic} = KrylovSolveDiagnostic[]
 end
 
@@ -301,6 +305,29 @@ function residual_trend(
     )
 end
 
+function best_residual_iteration(residual_history::AbstractVector{<:Real})
+    best_iteration = 0
+    best_residual = Inf
+    for (iteration, raw_residual) in pairs(residual_history)
+        residual = Float64(raw_residual)
+        if isfinite(residual) && residual < best_residual
+            best_iteration = Int(iteration)
+            best_residual = residual
+        end
+    end
+    return best_iteration
+end
+
+function should_restore_best_on_failure(
+    enabled::Bool,
+    stop_reason::AbstractString,
+    best_iteration::Integer,
+    iterations::Integer,
+)
+    return enabled && stop_reason != "converged" &&
+        0 < best_iteration < iterations
+end
+
 function residual_plateau_detected(
     residual_history::AbstractVector{<:Real},
     optimizer::OptimizerSettings,
@@ -340,6 +367,9 @@ function run_vumps_iterations(
         maximum_iterations=optimizer.solver_max_iterations,
         record_diagnostics=optimizer.record_krylov_diagnostics,
     )
+    best_psi = nothing
+    best_iteration = 0
+    best_residual = Inf
 
     for iteration in 1:optimizer.max_iterations
         context.outer_iteration = iteration
@@ -366,6 +396,14 @@ function run_vumps_iterations(
         end
         residual = max(maximum(epsilon_left), maximum(epsilon_right))
         push!(residual_history, residual)
+        if isfinite(residual) && residual < best_residual
+            best_iteration = iteration
+            best_residual = residual
+            # The pinned ITensorInfiniteMPS iteration copies its input tensor
+            # vectors before replacing entries, so this snapshot is independent
+            # of later outer iterations without duplicating immutable tensor data.
+            optimizer.restore_best_on_failure && (best_psi = copy(psi))
+        end
         output_level > 0 && @printf(
             "VUMPS iteration %d: chi=%d residual=%.6e target=%.3e time=%.2fs\n",
             iteration,
@@ -420,8 +458,28 @@ function run_vumps_iterations(
         end
     end
 
-    residual = isempty(residual_history) ? Inf : last(residual_history)
+    terminal_residual = isempty(residual_history) ? Inf : last(residual_history)
     iterations = length(residual_history)
+    restored_best_on_failure = should_restore_best_on_failure(
+        optimizer.restore_best_on_failure,
+        stop_reason,
+        best_iteration,
+        iterations,
+    )
+    if restored_best_on_failure
+        best_psi === nothing && error("missing saved best iterate")
+        psi = best_psi
+        output_level > 0 && @printf(
+            "Restored lowest-residual iterate %d (residual=%.6e) after %s at iteration %d (terminal residual=%.6e).\n",
+            best_iteration,
+            best_residual,
+            stop_reason,
+            iterations,
+            terminal_residual,
+        )
+    end
+    returned_iteration = restored_best_on_failure ? best_iteration : iterations
+    residual = restored_best_on_failure ? best_residual : terminal_residual
     diagnostics = VumpsDiagnostics(
         converged=residual <= optimizer.residual_tol,
         stop_reason=stop_reason,
@@ -439,6 +497,10 @@ function run_vumps_iterations(
         log_residual_slope=trend.log_slope,
         log_residual_r_squared=trend.r_squared,
         projected_total_iterations=trend.projected_total_iterations,
+        terminal_residual=terminal_residual,
+        best_iteration=best_iteration,
+        returned_iteration=returned_iteration,
+        restored_best_on_failure=restored_best_on_failure,
         krylov_solves=context.records,
     )
     return psi, diagnostics
@@ -481,7 +543,7 @@ function merge_diagnostics(stages::AbstractVector{VumpsDiagnostics}, growth_dime
         converged=final.converged,
         stop_reason=final.stop_reason,
         iterations=length(residuals),
-        residual=last(residuals),
+        residual=final.residual,
         minimum_residual=minimum(residuals),
         residual_history=residuals,
         energy_left_history=left,
@@ -494,6 +556,11 @@ function merge_diagnostics(stages::AbstractVector{VumpsDiagnostics}, growth_dime
         log_residual_slope=final.log_residual_slope,
         log_residual_r_squared=final.log_residual_r_squared,
         projected_total_iterations=projected_total_iterations,
+        terminal_residual=final.terminal_residual,
+        best_iteration=final.best_iteration == 0 ? 0 :
+            prior_iterations + final.best_iteration,
+        returned_iteration=prior_iterations + final.returned_iteration,
+        restored_best_on_failure=final.restored_best_on_failure,
         krylov_solves=krylov_solves,
     )
 end
@@ -545,6 +612,7 @@ function optimizer_with_maxdim(optimizer::OptimizerSettings, maxdim::Integer)
         solver_max_iterations=optimizer.solver_max_iterations,
         record_krylov_diagnostics=optimizer.record_krylov_diagnostics,
         multisite_update_alg=optimizer.multisite_update_alg,
+        restore_best_on_failure=optimizer.restore_best_on_failure,
         require_converged=optimizer.require_converged,
         divergence_patience=optimizer.divergence_patience,
         divergence_factor=optimizer.divergence_factor,

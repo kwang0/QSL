@@ -27,6 +27,7 @@ Base.@kwdef struct OptimizerSettings
     solver_max_iterations::Int = 100
     record_krylov_diagnostics::Bool = false
     multisite_update_alg::String = "sequential"
+    restore_best_on_failure::Bool = false
     require_converged::Bool = true
     divergence_patience::Int = 8
     divergence_factor::Float64 = 4.0
@@ -183,6 +184,11 @@ function load_settings(config_path::AbstractString)
             false,
         )),
         multisite_update_alg=String(table_value(optimizer_table, "multisite_update_alg", "sequential")),
+        restore_best_on_failure=Bool(table_value(
+            optimizer_table,
+            "restore_best_on_failure",
+            false,
+        )),
         require_converged=Bool(table_value(optimizer_table, "require_converged", true)),
         divergence_patience=Int(table_value(optimizer_table, "divergence_patience", 8)),
         divergence_factor=Float64(table_value(optimizer_table, "divergence_factor", 4.0)),
@@ -298,6 +304,9 @@ function load_settings(config_path::AbstractString)
     ))
     optimizer.solver_max_iterations >= 1 || throw(ArgumentError(
         "optimizer.solver_max_iterations must be positive",
+    ))
+    optimizer.multisite_update_alg in ("sequential", "parallel") || throw(ArgumentError(
+        "optimizer.multisite_update_alg must be 'sequential' or 'parallel'",
     ))
     optimizer.divergence_patience >= 1 || throw(ArgumentError("divergence_patience must be positive"))
     optimizer.divergence_factor > 1 || throw(ArgumentError("divergence_factor must exceed one"))

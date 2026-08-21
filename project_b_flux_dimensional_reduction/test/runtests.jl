@@ -86,6 +86,8 @@ end
     @test settings.model.geometry.circumference == 6
     @test settings.model.geometry.shift == 1
     @test settings.optimizer.require_converged
+    @test settings.optimizer.multisite_update_alg == "sequential"
+    @test !settings.optimizer.restore_best_on_failure
     @test settings.spectrum.physical_sz_sectors == [0.0, 1.0]
     @test settings.scan.direction === :forward
     @test settings.scan.preparation == "default"
@@ -142,6 +144,8 @@ end
     @test chi512.optimizer.max_iterations == 180
     @test chi512.optimizer.max_growth_steps == 20
     @test chi512.optimizer.record_krylov_diagnostics
+    @test chi512.optimizer.multisite_update_alg == "sequential"
+    @test !chi512.optimizer.restore_best_on_failure
     @test chi512.optimizer.plateau_detection
     @test chi512.optimizer.plateau_warmup_iterations == 40
     @test chi512.optimizer.plateau_patience == 32
@@ -242,6 +246,18 @@ end
             TOML.print(io, raw; sorted=true)
         end
         @test_throws ArgumentError load_settings(invalid_path)
+
+        raw = TOML.parsefile(joinpath(
+            PROJECT_ROOT,
+            "configs",
+            "phase1_yc8_1_forward_chi128.toml",
+        ))
+        raw["optimizer"]["multisite_update_alg"] = "unsupported"
+        invalid_algorithm_path = joinpath(directory, "invalid-algorithm.toml")
+        open(invalid_algorithm_path, "w") do io
+            TOML.print(io, raw; sorted=true)
+        end
+        @test_throws ArgumentError load_settings(invalid_algorithm_path)
     end
 end
 
@@ -417,6 +433,29 @@ end
         parent_theta_over_pi=0.4,
     )
     @test failed.action === :manual_review
+
+    final_success = PB.phase1_final_vumps_control_policy(
+        scheduler_state="COMPLETED",
+        job_exit_code=0,
+        reached_target=true,
+    )
+    @test final_success.action === :manual_review
+    @test occursin("converged", final_success.reason)
+    final_numerical_failure = PB.phase1_final_vumps_control_policy(
+        scheduler_state="COMPLETED",
+        job_exit_code=0,
+        reached_target=false,
+        outcome_kind="flux_scan",
+    )
+    @test final_numerical_failure.action === :manual_review
+    @test occursin("iDMRG", final_numerical_failure.reason)
+    final_infrastructure_failure = PB.phase1_final_vumps_control_policy(
+        scheduler_state="TIMEOUT",
+        job_exit_code=nothing,
+        reached_target=false,
+    )
+    @test final_infrastructure_failure.action === :manual_review
+    @test occursin("scheduler", final_infrastructure_failure.reason)
 end
 
 @testset "Fixed-flux expansion classification" begin
@@ -488,6 +527,7 @@ end
             repeat("b", 64),
         )
         outcome = TOML.parsefile(path)
+        @test outcome["schema_version"] == 2
         @test outcome["artifact_kind"] == "project_b_fixed_flux_expansion_outcome"
         @test outcome["status"] == "fixed_flux_expansion_numerical_failure"
         @test outcome["classification"] ==
@@ -497,6 +537,10 @@ end
         @test outcome["requested_maxdim"] == 192
         @test outcome["result_maxdim"] == 192
         @test outcome["optimizer_max_iterations"] == 360
+        @test outcome["optimizer_terminal_residual"] == 3e-5
+        @test outcome["optimizer_returned_iteration"] == 360
+        @test outcome["optimizer_multisite_update_alg"] == "sequential"
+        @test !outcome["optimizer_restore_best_on_failure_enabled"]
         @test !outcome["optimizer_plateau_detection"]
         @test !outcome["physical_endpoint"]
         @test !outcome["continuation_accepted"]
@@ -560,6 +604,24 @@ end
 end
 
 @testset "Residual trend and plateau classification" begin
+    @test PB.best_residual_iteration([3.0, 1.0, 2.0]) == 2
+    @test PB.best_residual_iteration([NaN, Inf, 2.0]) == 3
+    @test PB.best_residual_iteration(Float64[]) == 0
+    @test PB.should_restore_best_on_failure(true, "diverging_residual", 13, 32)
+    @test !PB.should_restore_best_on_failure(false, "diverging_residual", 13, 32)
+    @test !PB.should_restore_best_on_failure(true, "converged", 13, 32)
+    @test !PB.should_restore_best_on_failure(true, "diverging_residual", 32, 32)
+    resized_optimizer = PB.optimizer_with_maxdim(
+        OptimizerSettings(
+            maxdim=512,
+            multisite_update_alg="parallel",
+            restore_best_on_failure=true,
+        ),
+        256,
+    )
+    @test resized_optimizer.maxdim == 256
+    @test resized_optimizer.multisite_update_alg == "parallel"
+    @test resized_optimizer.restore_best_on_failure
     contracting = 3.4e-5 .* 0.996 .^ (0:199)
     trend = PB.residual_trend(contracting, 1e-5; improvement_window=24)
     @test trend.relative_improvement > 0.05
@@ -609,6 +671,10 @@ end
     merged = PB.merge_diagnostics([staged, staged], [2, 2])
     @test merged.iterations == 4
     @test merged.projected_total_iterations == 6.0
+    @test merged.terminal_residual == 0.5
+    @test merged.best_iteration == 0
+    @test merged.returned_iteration == 4
+    @test !merged.restored_best_on_failure
 end
 
 @testset "Parent-overlap acceptance rule" begin
@@ -729,6 +795,12 @@ end
         @test state.random_seed == 1
         @test state.seed_pattern == "alternating"
         @test state.flux_history_over_pi == [0.0]
+        @test state.optimizer_terminal_residual == 0.0
+        @test state.optimizer_best_iteration == 0
+        @test state.optimizer_returned_iteration == 1
+        @test !state.optimizer_restored_best_on_failure
+        @test state.optimizer_multisite_update_alg == "sequential"
+        @test !state.optimizer_restore_best_on_failure_enabled
         @test isempty(state.parent_state_path)
         @test isempty(state.parent_state_sha256)
         parent_sha256 = PB.file_sha256(path)
@@ -934,7 +1006,7 @@ end
         )
         @test_throws ErrorException PB.load_or_build_initial_state(missing_hash_settings)
         h5open(path, "r") do file
-            @test read(file, "schema_version") == 6
+            @test read(file, "schema_version") == 7
             @test haskey(file, "geometry/bonds")
             @test read(file, "geometry/mps_period") == 2
             @test read(file, "geometry/minimal_mps_period") == 2
@@ -942,6 +1014,12 @@ end
             @test read(file, "model/twist_gauge") == "uniform"
             @test haskey(file, "observables/schmidt_probabilities")
             @test haskey(file, "optimizer/residual_history")
+            @test read(file, "optimizer/terminal_residual") == 0.0
+            @test read(file, "optimizer/best_iteration") == 0
+            @test read(file, "optimizer/returned_iteration") == 1
+            @test !read(file, "optimizer/restored_best_on_failure")
+            @test read(file, "optimizer/multisite_update_alg") == "sequential"
+            @test !read(file, "optimizer/restore_best_on_failure_enabled")
             @test read(file, "optimizer/krylov_solves/count") == 1
             @test read(file, "optimizer/krylov_solves/solve_kind") == ["center_C"]
             @test read(file, "optimizer/krylov_solves/krylov_dimension") == [30]
@@ -1101,6 +1179,29 @@ if get(ENV, "PROJECT_B_RUN_VUMPS_SMOKE", "0") == "1"
             "center_C",
             "center_AC",
         ])
+        parallel_optimizer = OptimizerSettings(
+            maxdim=2,
+            cutoff=1e-8,
+            residual_tol=1e-2,
+            max_iterations=1,
+            max_growth_steps=1,
+            record_krylov_diagnostics=true,
+            multisite_update_alg="parallel",
+            restore_best_on_failure=true,
+        )
+        _, parallel_diagnostic = PB.run_vumps_iterations(
+            hamiltonian,
+            expanded,
+            parallel_optimizer;
+            output_level=0,
+        )
+        @test parallel_diagnostic.iterations == 1
+        @test isfinite(parallel_diagnostic.residual)
+        @test parallel_diagnostic.terminal_residual == parallel_diagnostic.residual
+        @test parallel_diagnostic.best_iteration == 1
+        @test parallel_diagnostic.returned_iteration == 1
+        @test !parallel_diagnostic.restored_best_on_failure
+        @test !isempty(parallel_diagnostic.krylov_solves)
         neutral = compute_transfer_spectrum(
             optimized;
             physical_sz=0.0,

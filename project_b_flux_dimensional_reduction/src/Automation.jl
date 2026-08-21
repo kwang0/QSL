@@ -46,6 +46,35 @@ function phase1_contracting_retry_cap(
     return min(limit, max(doubled, projected))
 end
 
+function phase1_final_vumps_control_policy(;
+    scheduler_state::AbstractString,
+    job_exit_code::Union{Nothing,Integer},
+    reached_target::Bool,
+    outcome_kind::AbstractString="none",
+)
+    state = uppercase(String(scheduler_state))
+    if startswith(state, "COMPLETED") && job_exit_code == 0 &&
+            reached_target && outcome_kind == "none"
+        return (
+            action=:manual_review,
+            reason="the final chi-512 parallel VUMPS control converged at theta/pi=0.15; " *
+                "review it before promoting a solver change",
+        )
+    end
+    if outcome_kind in ("flux_scan", "operator_termination")
+        return (
+            action=:manual_review,
+            reason="the final chi-512 parallel VUMPS control failed numerically at " *
+                "theta/pi=0.15; end the VUMPS campaign and begin the documented iDMRG pivot",
+        )
+    end
+    return (
+        action=:manual_review,
+        reason="the final chi-512 parallel VUMPS control ended without a conclusive " *
+            "numerical result; diagnose the scheduler or implementation before an iDMRG pivot",
+    )
+end
+
 function phase1_advance_policy(;
     scheduler_state::AbstractString,
     job_exit_code::Union{Nothing,Integer},
