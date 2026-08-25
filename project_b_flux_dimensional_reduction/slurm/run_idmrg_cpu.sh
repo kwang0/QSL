@@ -6,6 +6,7 @@ set -euo pipefail
 
 readonly DEFAULT_ACCOUNT="m4863"
 readonly ACTIVE_CONTROL_REF="configs/phase1_idmrg_active_control.ref"
+readonly WORKING_CONVERGENCE_POLICY="configs/phase1_idmrg_working_convergence.toml"
 readonly ACCEPTED_PARENT_RELATIVE="output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -25,6 +26,7 @@ usage:
   bash slurm/run_idmrg_cpu.sh status [CONTROL.toml] [JOB_ID]
   bash slurm/run_idmrg_cpu.sh reconcile [CONTROL.toml] [JOB_ID]
   bash slurm/run_idmrg_cpu.sh analyze [CONTROL.toml]
+  bash slurm/run_idmrg_cpu.sh analyze-working [CONTROL.toml]
 
 With no CONTROL argument, the launcher uses the hash-pinned control named by
 configs/phase1_idmrg_active_control.ref. `submit` is the complete, explicit
@@ -32,7 +34,9 @@ authorization for one guarded Slurm submission; no acknowledgement variable
 is required. The default NERSC account is m4863 and PHASE1_ACCOUNT may override
 it. A successful submit records the job ID, so status and reconcile need no
 JOB_ID. Analyze runs locally after the package has been copied back by Globus.
-There is no automatic submission or automatic advance.
+Analyze-working applies the separately pinned owner-selected working policy
+without rewriting the source control or its original analysis. There is no
+automatic submission or automatic advance.
 EOF
   exit 2
 }
@@ -80,7 +84,7 @@ parse_control_and_job_arguments() {
   control_argument=""
   job_id_argument=""
   case "$command_name" in
-    plan|submit|analyze)
+    plan|submit|analyze|analyze-working)
       [[ $# -le 1 ]] || usage
       control_argument="${1:-}"
       ;;
@@ -114,21 +118,22 @@ case "$command_name" in
   submit|status|reconcile)
     require_perlmutter "$command_name"
     ;;
-  analyze)
+  analyze|analyze-working)
     [[ "$is_perlmutter" != true ]] ||
       die "analyze is a local post-sync command; do not run it on a Perlmutter login node"
     ;;
 esac
 
 validator_arguments=("$control_path")
-if [[ "$command_name" == analyze ]]; then
+if [[ "$command_name" == analyze || "$command_name" == analyze-working ]]; then
   validator_arguments+=(--postprocess)
 fi
 validation="$($julia_bin --startup-file=no --project="$project_root/idmrg" \
   "$project_root/idmrg/scripts/validate_control.jl" "${validator_arguments[@]}")"
 IFS=$'\t' read -r control_sha bridge_sha parent_path parent_sha seed_path seed_sha \
   result_path lightweight_path storage_backend scratch_subdirectory checkpoint_leaf \
-  nodes cpus time_limit qos maximum_new_node_hours maximum_jobs \
+  parent_theta target_theta nodes cpus julia_threads memory time_limit qos \
+  maximum_new_node_hours maximum_jobs \
   prior_phase1_node_hours phase1_ceiling_node_hours prior_project_node_hours \
   project_ceiling_node_hours previous_sacct_path previous_sacct_sha previous_job_id \
   <<<"$validation"
@@ -204,10 +209,11 @@ Project B Phase 1 one-point iDMRG plan
   immutable accepted parent SHA-256: $parent_sha
   numerical seed SHA-256: $seed_sha
   numerical seed status: $([[ "$seed_sha" == "$parent_sha" ]] && printf 'accepted lineage parent' || printf 'rejected/nonconverged; not the lineage parent')
-  target: theta/pi=0.2, YC8-1, period 2, U(1), uniform gauge, chi 512
+  step: theta/pi=$parent_theta -> $target_theta
+  target: YC8-1, period 2, U(1), uniform gauge, chi 512
   solver: MPSKit 0.13.13 one-site IDMRG
   account: $phase1_account
-  resources: nodes=$nodes cpus-per-task=$cpus qos=$qos time=$time_limit
+  resources: nodes=$nodes cpus-per-task=$cpus julia-threads=$julia_threads memory=$memory qos=$qos time=$time_limit
   maximum forecast charge: $maximum_new_node_hours node-hours; maximum new jobs: $maximum_jobs
   Phase 1 budget: prior=$prior_phase1_node_hours ceiling=$phase1_ceiling_node_hours node-hours
   project budget: prior=$prior_project_node_hours ceiling=$project_ceiling_node_hours node-hours
@@ -262,7 +268,7 @@ case "$command_name" in
       --nodes="$nodes"
       --ntasks=1
       --cpus-per-task="$cpus"
-      --mem=0
+      --mem="$memory"
       --time="$time_limit"
       --output="$package_directory/logs/idmrg-%j.out"
       --export="ALL,PROJECT_B_IDMRG_CHECKPOINT_DIRECTORY=$checkpoint_directory"
@@ -271,7 +277,7 @@ case "$command_name" in
       sbatch_args+=(--licenses=scratch)
     fi
     raw_job_id="$(sbatch "${sbatch_args[@]}" \
-      --wrap="srun env JULIA_NUM_THREADS=$cpus OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 $julia_bin --startup-file=no --project=$project_root/idmrg $project_root/idmrg/scripts/run_idmrg.jl $control_path $result_path")"
+      --wrap="srun --cpu-bind=cores env JULIA_NUM_THREADS=$julia_threads OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 $julia_bin --startup-file=no --project=$project_root/idmrg $project_root/idmrg/scripts/run_idmrg.jl $control_path $result_path")"
     job_id="${raw_job_id%%;*}"
     [[ "$job_id" =~ ^[0-9]+$ ]] || die "Slurm returned an invalid job ID: $raw_job_id"
     printf 'Slurm accepted job %s.\n' "$job_id"
@@ -320,5 +326,17 @@ case "$command_name" in
     "$julia_bin" --startup-file=no --project="$project_root" \
       "$project_root/scripts/analyze_phase1_idmrg_result.jl" \
       "$result_path" "$local_parent" "$analysis_directory"
+    ;;
+  analyze-working)
+    [[ -f "$result_path" ]] ||
+      die "missing synced result: $result_path; copy the run package back with Globus first"
+    local_parent="$project_root/$ACCEPTED_PARENT_RELATIVE"
+    working_policy="$project_root/$WORKING_CONVERGENCE_POLICY"
+    [[ -f "$working_policy" ]] ||
+      die "missing working convergence policy: $working_policy"
+    analysis_directory="$package_directory/analysis"
+    "$julia_bin" --startup-file=no --project="$project_root" \
+      "$project_root/scripts/analyze_phase1_idmrg_result.jl" \
+      "$result_path" "$local_parent" "$analysis_directory" "$working_policy"
     ;;
 esac

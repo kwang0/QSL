@@ -39,13 +39,6 @@ ceiling is not automatically reassigned.
 
 ## Current handoff snapshot
 
-The current cross-device operational entry point is
-`docs/PHASE1_CROSS_DEVICE_HANDOFF.md`; its copyable Codex bootstrap is
-`docs/PHASE1_CROSS_DEVICE_NEW_CHAT_PROMPT.md`. The last confirmed benchmark
-event in that snapshot is a successful live Perlmutter schema-4 `plan`.
-Whether a later `submit` occurred is unknown and must be resolved on
-Perlmutter.
-
 ### Data-authority rule
 
 Perlmutter is authoritative for current job state, logs, artifacts, state
@@ -691,4 +684,3 @@ mark a converged state rejected solely because another branch has lower energy.
 - 2026-08-24: benchmark job 57548405 failed `1:0` after 11 seconds because the batch worker derived the repository root from `BASH_SOURCE` after Slurm copied it below `/var/spool/slurmd`. It ran zero scientific iterations and produced no timing artifact. The corrected worker takes an explicit project root, `plan` invokes it in preflight mode, the job sets `--chdir`, and a regression test executes a copied worker from a spool-like temporary directory. A separate retry package preserves all failed-attempt hashes and carries forward its approximately `0.000381944` node-hour charge.
 - 2026-08-24: retry benchmark job 57550459 reached the correct source tree but failed `1:0` after 202 seconds at the first 2-thread step because the benchmark called `Base.cputime()`, which is absent from Julia 1.12. It completed zero iDMRG updates, wrote no timing result, and cost approximately `0.007013889` derived Shared-QOS node-hours. Its schema-3 retry replaced that unsupported call with libuv `uv_getrusage`, executed the timing helper during `plan`, propagated the exact validated Julia binary, tested the real MPSKit iterator locally, and made failed `reconcile`/`analyze` commands print recognized causes. Neither failed job is scientific nonconvergence or valid resource data.
 - 2026-08-24: retry benchmark job 57574096 proved that the corrected Perlmutter path, Julia 1.12 timing helper, U(1) seed conversion, state construction, and five 2-thread iDMRG updates execute successfully. It then failed `1:0` after 889 seconds because HDF5 0.17.3 cannot serialize a packed `BitVector` measured-mask. The partial file contains no timing histories, so the attempt is not benchmark data and says nothing about scientific convergence. Its derived Shared-QOS charge is `0.030868056` node-hours. Schema 4 uses a dense `UInt8` mask, cleans writer-owned temporary files on exceptions, rejects stale temporaries before submission, makes both login- and compute-node preflights execute the exact production writer/readback, and tests the analyzer against real writer output.
-- 2026-08-25: a self-contained cross-device handoff and new-chat bootstrap were added for GitHub continuation. Git transports the complete code/documentation subtree but not ignored `output/` or HDF5 evidence; after pulling the exact transfer commit, the other device must Globus-copy authoritative Perlmutter `output/` only. The last reported remote event was a successful schema-4 benchmark `plan`; no later submission result is assumed.

@@ -82,6 +82,8 @@ end
                 path=bridge_path,
                 parent_path="accepted.h5",
                 parent_sha256=repeat("c", 64),
+                root_sha256=repeat("c", 64),
+                root_theta=0.15,
                 numerical_seed_kind="rejected_nonconverged_idmrg_result",
                 numerical_seed_path="seed.h5",
                 numerical_seed_sha256=repeat("d", 64),

@@ -2,24 +2,6 @@
 
 These instructions apply to every task under this directory.
 
-## Current cross-device entry point
-
-- For a new checkout or Codex chat, read
-  `docs/PHASE1_CROSS_DEVICE_HANDOFF.md` completely after this file, then follow
-  its ordered reading list. The copyable bootstrap message is
-  `docs/PHASE1_CROSS_DEVICE_NEW_CHAT_PROMPT.md`. Do not ask the project owner to
-  reconstruct the prior conversation.
-- GitHub carries code, manifests, configuration, tests, and documentation, but
-  the ignored `output/` tree and all HDF5 run evidence require a separate
-  transfer. On a cross-device GitHub handoff, pull the code commit first and
-  then Globus-copy only authoritative Perlmutter `output/` into the matching
-  checkout with mirroring/deletion disabled. Do not overwrite the newer GitHub
-  source tree with an older full-tree Perlmutter snapshot.
-- The last state recorded in the cross-device handoff is a successful live
-  Perlmutter plan for the schema-4 iDMRG benchmark. A later submission is not
-  evidenced in that snapshot. Resolve current status on Perlmutter before any
-  mutating action.
-
 ## Perlmutter is the run-data authority
 
 - Treat the local checkout as a possibly stale or partial mirror of Perlmutter.

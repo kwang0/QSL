@@ -5,6 +5,10 @@
             "lineage" => Dict(
                 "branch" => "primary_forward_chi512_legacy_0p1",
                 "direction" => "forward",
+                "parent_state_sha256" =>
+                    "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803",
+                "parent_theta_over_pi" => 0.15,
+                "target_theta_over_pi" => 0.2,
             ),
             "model" => Dict(
                 "circumference" => 8,

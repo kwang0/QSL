@@ -9,7 +9,7 @@ using Serialization
 using TOML
 using TensorKit
 
-const BRIDGE_SCHEMA_VERSIONS = (1, 2)
+const BRIDGE_SCHEMA_VERSIONS = (1, 2, 3)
 const REQUIRED_MPSKIT_VERSION = v"0.13.13"
 const REQUIRED_HDF5_VERSION = v"0.17.3"
 const REQUIRED_TENSORKIT_VERSION = v"0.17.1"
@@ -96,7 +96,7 @@ function load_control(path::AbstractString)
     raw = TOML.parsefile(absolute)
     get(raw, "artifact_kind", "") == "project_b_phase1_idmrg_control" ||
         error("not a Project B iDMRG control file: $absolute")
-    get(raw, "schema_version", 0) in (1, 2) || error("unsupported control schema")
+    get(raw, "schema_version", 0) in (1, 2, 3) || error("unsupported control schema")
     bridge = raw["bridge"]
     bridge_path = isabspath(bridge["path"]) ? bridge["path"] :
         normpath(joinpath(dirname(absolute), bridge["path"]))
@@ -144,30 +144,34 @@ function load_bridge(path::AbstractString)
                 twist_charge=twist_charges[i],
             )
         end
-        energy_reference_path = schema_version == 1 ?
-            "validation/parent_energy_density_at_target" :
-            "validation/seed_energy_density_at_target"
+        energy_reference_path = schema_version == 2 ?
+            "validation/seed_energy_density_at_target" :
+            "validation/parent_energy_density_at_target"
         parent_sha256 = read_string(file, "lineage/parent_state_sha256")
-        numerical_seed_path = schema_version == 1 ?
-            read_string(file, "lineage/parent_state_path") :
-            read_string(file, "lineage/numerical_seed_path")
-        numerical_seed_sha256 = schema_version == 1 ? parent_sha256 :
-            read_string(file, "lineage/numerical_seed_sha256")
+        parent_path = read_string(file, "lineage/parent_state_path")
+        numerical_seed_path = schema_version == 2 ?
+            read_string(file, "lineage/numerical_seed_path") : parent_path
+        numerical_seed_sha256 = schema_version == 2 ?
+            read_string(file, "lineage/numerical_seed_sha256") : parent_sha256
+        parent_theta = Float64(read(file, "lineage/parent_theta_over_pi"))
         return (;
             schema_version,
             path=abspath(path),
-            parent_path=read_string(file, "lineage/parent_state_path"),
+            parent_path,
             parent_sha256,
-            parent_theta=Float64(read(file, "lineage/parent_theta_over_pi")),
+            parent_theta,
+            root_sha256=haskey(file, "lineage/root_state_sha256") ?
+                read_string(file, "lineage/root_state_sha256") : parent_sha256,
+            root_theta=haskey(file, "lineage/root_theta_over_pi") ?
+                Float64(read(file, "lineage/root_theta_over_pi")) : parent_theta,
             target_theta=Float64(read(file, "model/target_theta_over_pi")),
             parent_energy=Float64(read(file, energy_reference_path)),
-            numerical_seed_kind=schema_version == 1 ? "accepted_parent" :
-                read_string(file, "lineage/numerical_seed_kind"),
+            numerical_seed_kind=schema_version == 2 ?
+                read_string(file, "lineage/numerical_seed_kind") : "accepted_parent",
             numerical_seed_path,
             numerical_seed_sha256,
-            numerical_seed_theta=schema_version == 1 ?
-                Float64(read(file, "lineage/parent_theta_over_pi")) :
-                Float64(read(file, "lineage/numerical_seed_theta_over_pi")),
+            numerical_seed_theta=schema_version == 2 ?
+                Float64(read(file, "lineage/numerical_seed_theta_over_pi")) : parent_theta,
             model_energy_tolerance=Float64(read(
                 file,
                 "validation/model_energy_density_tolerance",
@@ -417,16 +421,28 @@ function run_control(
     require_exact_environment()
     control_record = load_control(control_path)
     control = control_record.raw
+    lineage = control["lineage"]
     bridge = load_bridge(control_record.bridge_path)
-    bridge.parent_sha256 == control["lineage"]["parent_state_sha256"] ||
+    bridge.parent_sha256 == lineage["parent_state_sha256"] ||
         error("control/bridge parent hash mismatch")
     if Int(control["schema_version"]) == 2
-        bridge.numerical_seed_sha256 == control["lineage"]["numerical_seed_sha256"] ||
+        bridge.numerical_seed_sha256 == lineage["numerical_seed_sha256"] ||
             error("control/bridge numerical-seed hash mismatch")
-        bridge.numerical_seed_kind == control["lineage"]["numerical_seed_kind"] ||
+        bridge.numerical_seed_kind == lineage["numerical_seed_kind"] ||
             error("control/bridge numerical-seed classification mismatch")
     end
-    bridge.target_theta == 0.2 || error("first control must remain at theta/pi=0.2")
+    if haskey(lineage, "root_state_sha256")
+        bridge.root_sha256 == lineage["root_state_sha256"] ||
+            error("control/bridge lineage-root hash mismatch")
+    end
+    control_parent_theta = Float64(lineage["parent_theta_over_pi"])
+    control_target_theta = Float64(lineage["target_theta_over_pi"])
+    isapprox(bridge.parent_theta, control_parent_theta; atol=1e-12, rtol=0) ||
+        error("control/bridge parent theta mismatch")
+    isapprox(bridge.target_theta, control_target_theta; atol=1e-12, rtol=0) ||
+        error("control/bridge target theta mismatch")
+    0.0 <= control_parent_theta < control_target_theta <= 1.0 ||
+        error("control does not describe a forward theta step")
     control_sha = file_sha256(control_record.path)
     bridge_sha = file_sha256(bridge.path)
     algorithm = IDMRG(
@@ -511,6 +527,8 @@ function write_result(path::AbstractString, run)
         file["lineage/parent_state_path"] = run.bridge.parent_path
         file["lineage/parent_state_sha256"] = run.bridge.parent_sha256
         file["lineage/parent_theta_over_pi"] = run.bridge.parent_theta
+        file["lineage/root_state_sha256"] = run.bridge.root_sha256
+        file["lineage/root_theta_over_pi"] = run.bridge.root_theta
         file["lineage/target_theta_over_pi"] = run.bridge.target_theta
         file["lineage/numerical_seed_kind"] = run.bridge.numerical_seed_kind
         file["lineage/numerical_seed_path"] = run.bridge.numerical_seed_path
@@ -558,6 +576,8 @@ function write_lightweight_archive(path::AbstractString, run, result)
         file["source_bridge/sha256"] = file_sha256(run.bridge.path)
         file["lineage/accepted_parent_path"] = run.bridge.parent_path
         file["lineage/accepted_parent_sha256"] = run.bridge.parent_sha256
+        file["lineage/root_state_sha256"] = run.bridge.root_sha256
+        file["lineage/root_theta_over_pi"] = run.bridge.root_theta
         file["lineage/numerical_seed_kind"] = run.bridge.numerical_seed_kind
         file["lineage/numerical_seed_path"] = run.bridge.numerical_seed_path
         file["lineage/numerical_seed_sha256"] = run.bridge.numerical_seed_sha256

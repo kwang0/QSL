@@ -7,6 +7,12 @@ the project owner use bare `plan`, `submit`, `status`, `reconcile`, and
 Update it only after a new iDMRG control has been generated and locally
 validated; never choose an active package by modification time.
 
+The current pointer selects the guarded `theta/pi=0.15 -> 0.175` recovery step
+described in `docs/PHASE1_IDMRG_SWEEP_RECOVERY.md`. It starts from the accepted
+lineage parent itself, uses the predeclared working convergence profile and the
+benchmarked 2-thread/4-CPU Shared allocation, and has no automatic submission
+or advance.
+
 `phase1_idmrg_benchmark_active_control.ref` is the separate two-line pointer
 for the low-cost iDMRG resource benchmark. It supports the same bare
 `plan`, `submit`, `status`, `reconcile`, and local `analyze` actions through
@@ -21,6 +27,11 @@ pointer now names a distinct schema-4 package that hash-pins all three failures.
 Its `plan` action executes the real worker preflight with an explicit project
 root, corrected process CPU timing, exact package-version checks, and the actual
 HDF5 result writer/readback before `submit` is available.
+
+Benchmark job `57576411` subsequently completed all 2/4/8/16-thread steps with
+exit `0:0`. Independent analysis selected two Julia threads and four Slurm
+logical CPUs by projected Shared-QOS node-hours per 100 updates. The benchmark
+pointer is retained as immutable evidence; it is not a scientific parent.
 
 `phase1_idmrg_working_convergence.toml` records the project owner's exploratory
 iDMRG thresholds for controls prepared after job `57500598`: bond-matrix update

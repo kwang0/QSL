@@ -5,11 +5,6 @@
 > on the primary branch but failed native convergence. The guarded
 > scratch-backed successor and current operator commands are in
 > `docs/PHASE1_IDMRG_CONTROL.md` and `docs/PHASE1_IDMRG_STORAGE.md`.
->
-> Cross-device update, 2026-08-25: the current operational handoff is
-> `docs/PHASE1_CROSS_DEVICE_HANDOFF.md`, with a copyable new-chat bootstrap in
-> `docs/PHASE1_CROSS_DEVICE_NEW_CHAT_PROMPT.md`. Read those files rather than
-> treating this historical pre-run snapshot as current status.
 
 ## Purpose
 
