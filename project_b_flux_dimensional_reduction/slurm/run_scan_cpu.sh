@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-readonly LAUNCHER_VERSION="2.6.0"
+readonly LAUNCHER_VERSION="2.7.0"
 readonly PROJECT_B_HARD_BUDGET_NODE_HOURS=150
 readonly PROJECT_B_AUTOMATIC_SUBMISSION_CAP_NODE_HOURS=140
 readonly PHASE1_BUDGET_NODE_HOURS=20
@@ -280,6 +280,7 @@ config_record() {
     end
     if multisite_update_alg != "sequential" || restore_best_on_failure
       control = get(raw, "control", Dict{String,Any}())
+      promotion = get(raw, "promotion", Dict{String,Any}())
       approved_parallel_control =
         multisite_update_alg == "parallel" && restore_best_on_failure &&
         legacy_chi512_campaign && length(fluxes) == 1 &&
@@ -296,26 +297,105 @@ config_record() {
           "001eadee6f43e73fa9228c4221c8ac81edc821db58a391625037806b16e0b2cf" &&
         lowercase(String(get(control, "sequential_candidate_sha256", ""))) ==
           "b5ef48caaf7a10eb00e4fd003e8fd1b5a57add77a8111b270a358a7c8f049953"
-      approved_parallel_control || error(
-        "Phase 1 permits parallel best-iterate restoration only for the pinned final chi-512 control")
-      for (path_key, expected_sha256) in (
-        ("source_config_path",
-         "1a272abe6879c69827d1f14547a0b6d4780083945e414ad3f1cb9ee1a050749f"),
-        ("source_outcome_path",
-         "001eadee6f43e73fa9228c4221c8ac81edc821db58a391625037806b16e0b2cf"),
-        ("sequential_candidate_path",
-         "b5ef48caaf7a10eb00e4fd003e8fd1b5a57add77a8111b270a358a7c8f049953"),
-      )
-        recorded_value = String(get(control, path_key, ""))
-        isempty(recorded_value) && error("final chi-512 control is missing $path_key")
+      approved_parallel_promotion =
+        multisite_update_alg == "parallel" && restore_best_on_failure &&
+        legacy_chi512_campaign &&
+        String(get(promotion, "artifact_kind", "")) ==
+          "project_b_chi512_parallel_update_promotion" &&
+        String(get(promotion, "decision_on_numerical_failure", "")) ==
+          "automatic_recovery_then_idmrg_review" &&
+        String(get(promotion, "source_control_job_id", "")) == "57337312" &&
+        lowercase(String(get(promotion, "source_control_config_sha256", ""))) ==
+          "78a2a320b8fe641947336989188cd5c3e33b2607b1c29037ff88c3d664c43b93" &&
+        lowercase(String(get(promotion, "source_control_decision_sha256", ""))) ==
+          "19e2e1e6f58752d6540672c311d23767aed7a45270b3528be476567da77ff778" &&
+        lowercase(String(get(promotion, "accepted_control_state_sha256", ""))) ==
+          "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+      approved_parallel_control || approved_parallel_promotion || error(
+        "Phase 1 permits parallel best-iterate restoration only for the pinned final control or its approved continuation")
+      if approved_parallel_control
+        evidence = (
+          ("source_config_path",
+           "1a272abe6879c69827d1f14547a0b6d4780083945e414ad3f1cb9ee1a050749f"),
+          ("source_outcome_path",
+           "001eadee6f43e73fa9228c4221c8ac81edc821db58a391625037806b16e0b2cf"),
+          ("sequential_candidate_path",
+           "b5ef48caaf7a10eb00e4fd003e8fd1b5a57add77a8111b270a358a7c8f049953"),
+        )
+        evidence_label = "final chi-512 control"
+      else
+        evidence = (
+          ("source_control_config_path",
+           "78a2a320b8fe641947336989188cd5c3e33b2607b1c29037ff88c3d664c43b93"),
+          ("source_control_decision_path",
+           "19e2e1e6f58752d6540672c311d23767aed7a45270b3528be476567da77ff778"),
+          ("accepted_control_state_path",
+           "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"),
+        )
+        evidence_label = "promoted parallel chi-512 campaign"
+      end
+      evidence_table = approved_parallel_control ? control : promotion
+      for (path_key, expected_sha256) in evidence
+        recorded_value = String(get(evidence_table, path_key, ""))
+        isempty(recorded_value) && error("$evidence_label is missing $path_key")
         recorded_path = isabspath(recorded_value) ? normpath(recorded_value) :
           normpath(joinpath(dirname(path), recorded_value))
-        isfile(recorded_path) || error("final chi-512 control artifact does not exist: $recorded_path")
+        isfile(recorded_path) || error("$evidence_label artifact does not exist: $recorded_path")
         actual_sha256 = open(recorded_path, "r") do io
           bytes2hex(sha256(io))
         end
         actual_sha256 == expected_sha256 || error(
-          "final chi-512 control artifact SHA-256 mismatch for $recorded_path")
+          "$evidence_label artifact SHA-256 mismatch for $recorded_path")
+      end
+      if approved_parallel_promotion
+        accepted_control_sha256 =
+          "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+        if !haskey(raw, "automation")
+          initial_state_sha256 == accepted_control_sha256 || error(
+            "the initial promoted parallel campaign must use the accepted control state")
+          expected_promoted_fluxes = Float64.(2:10) ./ 10
+          length(fluxes) == length(expected_promoted_fluxes) &&
+            all(isapprox.(fluxes, expected_promoted_fluxes; atol=1e-12, rtol=0)) ||
+            error("the initial promoted parallel campaign must schedule theta/pi=0.2:0.1:1.0")
+        else
+          automation = get(raw, "automation", Dict{String,Any}())
+          String(get(automation, "policy_version", "")) ==
+            "yc8-1-primary-forward-chi512-v1" || error(
+              "a promoted parallel descendant requires the pinned automation policy")
+          source_run_value = String(get(automation, "source_run_directory", ""))
+          isempty(source_run_value) && error(
+            "a promoted parallel descendant is missing its source run")
+          source_run = isabspath(source_run_value) ? normpath(source_run_value) :
+            normpath(joinpath(dirname(path), source_run_value))
+          decision_path = joinpath(source_run, "automatic_advance.toml")
+          isfile(decision_path) || error(
+            "promoted parallel source decision does not exist: $decision_path")
+          source_decision = TOML.parsefile(decision_path)
+          String(get(source_decision, "artifact_kind", "")) ==
+            "project_b_phase1_automatic_advance" || error(
+              "promoted parallel source decision has the wrong artifact kind")
+          String(get(source_decision, "policy_version", "")) ==
+            "yc8-1-primary-forward-chi512-v1" || error(
+              "promoted parallel source decision has the wrong policy version")
+          String(get(source_decision, "source_job_id", "")) ==
+            String(get(automation, "source_job_id", "")) || error(
+              "promoted parallel automation names a different source job")
+          String(get(source_decision, "action", "")) == "next_config" || error(
+            "promoted parallel source decision did not generate a successor")
+          Bool(get(source_decision, "submit_permitted", false)) || error(
+            "promoted parallel source decision did not permit submission")
+          normpath(String(get(source_decision, "next_config_path", ""))) == path || error(
+            "promoted parallel source decision names a different next configuration")
+          current_config_sha256 = open(path, "r") do io
+            bytes2hex(sha256(io))
+          end
+          lowercase(String(get(source_decision, "next_config_sha256", ""))) ==
+            current_config_sha256 || error(
+              "promoted parallel source decision has a different next-config SHA-256")
+          lowercase(String(get(source_decision, "parent_state_sha256", ""))) ==
+            initial_state_sha256 || error(
+              "promoted parallel source decision names a different restart parent")
+        end
       end
     end
     checkpoint_value = String(get(scan, "optimizer_checkpoint_file", ""))
@@ -829,7 +909,9 @@ automatic_advance_run() {
   record="$("$PHASE1_JULIA" --startup-file=no -e '
     using TOML
     decision = TOML.parsefile(ARGS[1])
-    safe(value) = replace(String(value), '\''\t'\'' => '\'' '\'', '\''\n'\'' => '\'' '\'')
+    separator = Char(0x1f)
+    safe(value) = replace(
+      String(value), '\''\t'\'' => '\'' '\'', '\''\n'\'' => '\'' '\'', separator => '\'' '\'')
     println(join((
       safe(get(decision, "action", "")),
       safe(get(decision, "transition", "")),
@@ -839,9 +921,9 @@ automatic_advance_run() {
       safe(get(decision, "next_config_sha256", "")),
       join(get(decision, "next_fluxes_over_pi", Float64[]), ","),
       string(get(decision, "parent_theta_over_pi", NaN)),
-    ), '\''\t'\''))
+    ), separator))
   ' "$decision_path")"
-  IFS=$'\t' read -r action transition reason submit_permitted next_config next_config_sha next_fluxes parent_theta <<<"$record"
+  IFS=$'\x1f' read -r action transition reason submit_permitted next_config next_config_sha next_fluxes parent_theta <<<"$record"
 
   cat <<EOF
 Automatic Phase 1 decision:    $decision_path

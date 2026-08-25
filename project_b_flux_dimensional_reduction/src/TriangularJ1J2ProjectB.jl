@@ -26,6 +26,7 @@ include("Scan.jl")
 include("Automation.jl")
 include("Scaling.jl")
 include("Diagnostics.jl")
+include("IDMRGBridge.jl")
 
 export YCGeometry,
     CylinderBond,
@@ -77,6 +78,7 @@ export YCGeometry,
     fit_central_charge,
     diagnose_series,
     parse_vumps_log,
-    diagnose_legacy_file
+    diagnose_legacy_file,
+    canonicalize_idmrg_tensors
 
 end

@@ -1,5 +1,38 @@
 # Configuration guide
 
+`phase1_idmrg_active_control.ref` is the two-line operational pointer for the
+current iDMRG package: relative control path followed by exact SHA-256. It lets
+the project owner use bare `plan`, `submit`, `status`, `reconcile`, and
+`analyze` launcher commands without weakening immutable-control validation.
+Update it only after a new iDMRG control has been generated and locally
+validated; never choose an active package by modification time.
+
+`phase1_idmrg_benchmark_active_control.ref` is the separate two-line pointer
+for the low-cost iDMRG resource benchmark. It supports the same bare
+`plan`, `submit`, `status`, `reconcile`, and local `analyze` actions through
+`slurm/run_idmrg_benchmark_cpu.sh`. The benchmark pointer never replaces the
+scientific control pointer and cannot authorize a continuation or state
+promotion. Jobs `57548405` and `57550459` both failed before a scientific
+update—the first from Slurm-spool project-root resolution and the second from
+an unsupported Julia 1.12 CPU-timing call. Job `57574096` completed five
+2-thread updates but then failed because HDF5 0.17.3 cannot serialize a packed
+`BitVector`; its partial temporary file contains no timing histories. The
+pointer now names a distinct schema-4 package that hash-pins all three failures.
+Its `plan` action executes the real worker preflight with an explicit project
+root, corrected process CPU timing, exact package-version checks, and the actual
+HDF5 result writer/readback before `submit` is available.
+
+`phase1_idmrg_working_convergence.toml` records the project owner's exploratory
+iDMRG thresholds for controls prepared after job `57500598`: bond-matrix update
+norm at most `1e-5` and final-four intensive-energy span at most `1e-8`. The
+policy does not rewrite the immutable criteria or rejection recorded by that
+completed job. A future control using the working pair must carry the exact
+`phase1_exploratory_working_20260824` profile label, and native passage still
+does not replace the overlap, observable, U(1), and branch-continuity gates.
+The iDMRG control preparers load the thresholds and policy SHA-256 from this
+file, and the validator rejects a future working-profile control if either
+value or the policy digest differs.
+
 The supplied files cover the first Project B calculations:
 
 - `pilot_yc6_1.toml`: a low-cost regression geometry matching the legacy scan.

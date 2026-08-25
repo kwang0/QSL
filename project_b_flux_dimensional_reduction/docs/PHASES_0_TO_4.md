@@ -13,7 +13,7 @@ the reserve and are not automatically reassigned.
 | Phase | Ceiling | Current status | Exit product |
 |---|---:|---|---|
 | 0 — correctness and resource calibration | 10 node-h | **Complete**; corrected seed, 13-candidate matrix, and chi=512 validation copied locally | Correct minimal-cell timing, peak RSS, and one recommended threading configuration |
-| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; chi-512 forward lineage is accepted through theta/pi=0.1; sequential VUMPS failed the halved 0.15 step and one pinned parallel-update control remains before the iDMRG pivot | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
+| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; chi-512 forward lineage is accepted through theta/pi=0.15; MPSKit iDMRG job 57500598 passes the owner-selected working native gate but is not promoted, and a locally validated Shared-QOS threading benchmark is prepared after three invalid benchmark attempts | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
 | 2 — moderate-chi Hu reproduction | 35 node-h | Not started | Converged entropy response and momentum-resolved physical-Sz transfer flow |
 | 3 — critical-point chi ladders | 60 node-h | Not started | Controlled `S = (c/6) log(xi) + a` analysis at selected crossings |
 | 4 — one independent validation | 15 node-h | Not started | One decisive second route, seed, geometry, or width check |
@@ -38,6 +38,13 @@ These are the Phase 0 script's Shared-QOS estimates. Reconcile them with
 ceiling is not automatically reassigned.
 
 ## Current handoff snapshot
+
+The current cross-device operational entry point is
+`docs/PHASE1_CROSS_DEVICE_HANDOFF.md`; its copyable Codex bootstrap is
+`docs/PHASE1_CROSS_DEVICE_NEW_CHAT_PROMPT.md`. The last confirmed benchmark
+event in that snapshot is a successful live Perlmutter schema-4 `plan`.
+Whether a later `submit` occurred is unknown and must be resolved on
+Perlmutter.
 
 ### Data-authority rule
 
@@ -148,15 +155,104 @@ those known smooth steps. This check does not calibrate the score of a genuine
 basin jump, so the first continuity-gated job still requires inspection rather than an
 automatic threshold change.
 
-The project owner has ended further low-chi correctors and requested one final
-VUMPS control before switching methods. Launcher 2.6.0 admits exactly one
-SHA-pinned parallel multisite-update test at `theta/pi=0.15` from the accepted
-`0.1` parent. Every model, chi, tolerance, inner-solver, and continuity setting
-is unchanged. Best-iterate restoration preserves a useful rejected state if
-the outer trajectory later degrades, but cannot bypass acceptance. A numerical
-failure is an explicit iDMRG pivot; a scheduler/process failure remains
-inconclusive. Exact commands and criteria are in
-`docs/PHASE1_FINAL_VUMPS_CONTROL.md`.
+Final-control job `57337312` changed only the multisite update schedule from
+sequential to parallel and converged monotonically at `theta/pi=0.15` in 10
+outer iterations, residual `9.183773e-6`. All 60 inner solves converged and
+parent overlap per site was `0.9999782682`. Launcher 2.7.0 therefore admits a
+SHA-pinned parallel continuation from accepted state
+`38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803`
+through `0.2,0.3,...,1.0`. Best-iterate restoration, the `1e-5` residual gate,
+the `0.99` continuity floor, automatic midpoint recovery down to `0.05*pi`,
+and the explicit submission gate remain unchanged. Exhausted numerical
+recovery triggers iDMRG review; scheduler/process failure remains
+inconclusive. Exact commands are in
+`docs/PHASE1_PARALLEL_VUMPS_PROMOTION.md`.
+
+Promoted parallel-VUMPS job `57392725` then exhausted that policy at the first
+remaining point, `theta/pi=0.2`. Its best residual was
+`1.192367929e-5` at iteration 15, narrowly above the unchanged `1e-5` gate;
+the terminal residual diverged to `1.030614057e-3` at iteration 46. All 276
+inner solves converged. The restored best tensor is immutable but rejected,
+with SHA-256
+`f59dd18f29004d259a3d94e7bedadd99a7fcb88b1ba960fb7e357dd8e645e7c0`.
+The accepted `theta/pi=0.15` state remains the parent. This exhausts the
+approved VUMPS recovery rather than establishing a physical endpoint.
+
+Perlmutter job `57452187` then ran the single fixed-chi-512, period-2, U(1)
+MPSKit 0.13.13 one-site iDMRG control at `theta/pi=0.2`. It completed at the
+scheduler/process level after 6,567 seconds, but its 80-iteration result failed
+the predeclared native criteria: final MPSKit bond-matrix update norm
+`3.781953625e-5` versus `1e-8`, and corrected final-four intensive-energy span
+`6.930349628e-9` versus `1e-9`. The original stored cumulative superblock
+energy was not a valid stationarity history; the corrected period-normalized
+MPSKit energy increment is now the schema-2 native quantity. The tolerances
+were not changed.
+
+The ITensor-side analysis of result SHA-256
+`527afdf421e3411fb91f622ae0a5f8764d453f892c7752b2294913813749c8de`
+found parent overlap per site `0.9999707484`, unchanged U(1) sector
+multiplicities, and small entropy/magnetization/local-energy changes. It is a
+scientifically justified continuation seed but remains explicitly rejected and
+cannot replace accepted theta/pi=0.15 parent SHA-256
+`38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803`.
+
+The next controlled continuation used the same rejected tensors, with every
+native and branch gate unchanged. Its streamlined active-control SHA-256 was
+`67e258ee244ddaf397d9f493a09c1a30d4a0b1e0f4a3a001e954db8f287a89d0`
+and bridge SHA-256 is
+`f0612ee36814a7830253d3bc0f80ebeee1031ff104f4075cb519e02ec7f4ef95`.
+Heavy checkpoints go to `$PSCRATCH` every 20 iterations, while the home package
+automatically receives a compact manifest/history HDF5.
+
+That control ran as Perlmutter job `57500598`. It completed with exit `0:0`
+after `08:48:35` and 400 iDMRG updates. Result SHA-256
+`c7ef67c0e22b32d581fec9ed3d4f86b14182db15a1f80688c88fc311eb326116`
+maintained chi 512 and zero one-site discarded weight. Its final-four
+period-normalized energy span is `1.222133506e-12`, passing the `1e-9` gate,
+but its MPSKit stopping value is `2.311348784e-6`, still 231 times above the
+fixed `1e-8` gate. Pinned MPSKit source defines this value as
+`norm(C_new - C_old)` after a complete sweep; the legacy field name
+`environment_error` is not an environment residual. It decreased monotonically
+over the final 100 iterations and reached its run minimum at iteration 400, so
+the state is slowly contracting rather than plateaued.
+
+Native convergence already rejects this state, so the corrected analyzer did
+not perform the ITensor conversion, parent-overlap, observables, sector
+comparison, or common VUMPS probe. Those remain promotion gates for a future
+native-converged candidate. The native-only analysis SHA-256 is
+`eb7d1fa5b655f212ce30d88963d16900d0c9e2070f03014b7c1b32db05ba66c1`.
+
+After reviewing this evidence, the project owner selected a post-hoc working
+exploratory gate of bond-matrix update norm at most `1e-5` and final-four
+energy span at most `1e-8`. Job `57500598` passes that working native gate.
+Its immutable source control and original rejection remain unchanged, and the
+working passage is not a promotion: overlap, common observables, U(1) sectors,
+and primary-forward continuity remain unevaluated. The exact policy and source
+hashes are recorded in `configs/phase1_idmrg_working_convergence.toml`.
+
+Detailed job-57500598 accounting shows 128 logical CPUs in the solver step but
+only `150866` TotalCPU seconds over `31707` wall seconds, or 4.7586 CPUs on
+average and 3.72% scheduler CPU efficiency; MaxRSS was 9.63 GiB. The exclusive
+regular-QOS allocation therefore cost approximately `8.809722222` node-hours.
+Before any further scientific continuation, one guarded Shared-QOS job will
+benchmark independent 2/4/8/16-thread restarts from the same rejected tensor.
+It writes no checkpoints or full states and is capped at `0.1875` node-hours.
+Exact commands and the full-tree Globus sync cycle are in
+`docs/PHASE1_IDMRG_BENCHMARK.md`; storage details remain in
+`docs/PHASE1_IDMRG_STORAGE.md`.
+
+Benchmark jobs `57548405` and `57550459` both failed before the first iDMRG
+update and provide no timing evidence. The first worker resolved the repository
+below Slurm's spool directory. The second reached the correct package but called
+the nonexistent Julia 1.12 API `Base.cputime()` before state initialization.
+Job `57574096` completed five 2-thread solver updates but then failed while HDF5
+serialized a packed `BitVector`; its partial file contains no timing histories.
+The final schema-4 retry uses libuv process CPU accounting, dense `UInt8` mask
+serialization, atomic temporary cleanup, and exact timing plus HDF5 writer
+preflights on both login and compute nodes. It propagates the validated Julia
+binary into the worker and hash-pins all three failed attempts. Its
+active-control SHA-256 is
+`8fb5a1c0b99e5fa3c955f9e0e914913735e08fe64e90681a648d9ca339a05110`.
 
 Canonical evidence:
 
@@ -205,8 +301,12 @@ Canonical evidence:
   `output/phase1/yc8_1/chi512_auto_refine_interval_from_p0p10000000_p0p15000000_to_p1p00000000_f71fc084883e/seed_101/chi512/scan_outcome.toml`;
 - final parallel-update control generator:
   `scripts/prepare_phase1_chi512_parallel_control.jl`;
+- promoted parallel-continuation generator:
+  `scripts/prepare_phase1_chi512_parallel_continuation.jl`;
 - final VUMPS control contract and commands:
   `docs/PHASE1_FINAL_VUMPS_CONTROL.md`;
+- successful-control promotion contract and commands:
+  `docs/PHASE1_PARALLEL_VUMPS_PROMOTION.md`;
 - automatic transition contract and commands:
   `docs/PHASE1_AUTOMATION.md`;
 - diagnostic protocol and interpretation:
@@ -520,6 +620,20 @@ mark a converged state rejected solely because another branch has lower energy.
 | 2026-08-18 | **1 reconciled total** | All tracked Phase 1 jobs | — | **1.167532552** | Locally synced total through job 57192723; Project B total including the Phase 0 baseline is `2.261965552` node-hours; verify live Perlmutter accounting before submission |
 | 2026-08-20 | 1 | 57245573 | 0.098899740 | 0.098899740 | Exact-parent chi-512 midpoint to theta/pi=0.15 reached minimum residual `4.279781e-5` before diverging; all 320 inner solves converged and retrospective branch diagnostics stayed smooth |
 | 2026-08-20 | **1 reconciled total** | All tracked Phase 1 jobs | — | **1.266432292** | Locally synced total through job 57245573; Project B total including the Phase 0 baseline is `2.360865292` node-hours; verify live Perlmutter accounting before submission |
+| 2026-08-21 | 1 | 57337312 | 0.038216146 | 0.038216146 | Exact-parent parallel-VUMPS control accepted theta/pi=0.15 in 10 monotone iterations; residual `9.183773e-6`, overlap/site `0.9999782682`, and all 60 inner solves converged |
+| 2026-08-21 | **1 reconciled total** | All tracked Phase 1 jobs | — | **1.304648438** | Locally synced total through job 57337312; Project B total including the Phase 0 baseline is `2.399081438` node-hours; verify live Perlmutter accounting before submission |
+| 2026-08-22 | 1 | 57392725 | 0.562500000 | 0.166842448 | Promoted parallel VUMPS exhausted the 0.05-pi recovery floor at theta/pi=0.2; best restored residual `1.192368e-5`, terminal residual `1.030614e-3`, and all 276 inner solves converged; tensor remains rejected |
+| 2026-08-22 | **1 reconciled total** | All tracked Phase 1 jobs | — | **1.471490886** | Locally synced total through job 57392725; Project B total including the Phase 0 baseline is `2.565923886` node-hours; verify live Perlmutter accounting before submission |
+| 2026-08-23 | 1 | 57452187 | 6.000000000 | 1.824166667 | First MPSKit one-site iDMRG job completed scheduler/process successfully; 80-iteration result stayed on the primary branch but failed unchanged native environment and intensive-energy-span gates, so it remains a rejected numerical seed |
+| 2026-08-23 | **1 reconciled total** | All tracked Phase 1 jobs | — | **3.295657553** | Synced total through job 57452187; Project B total including the Phase 0 baseline is `4.390090553` node-hours; successor forecast is at most 10 node-hours and still requires live Perlmutter plan plus explicit submission authorization |
+| 2026-08-24 | 1 | 57500598 | 10.000000000 | 8.809722222 | Scratch-backed MPSKit continuation completed 400 updates; intensive energy passed, but the final bond-matrix update norm `2.311349e-6` failed the unchanged `1e-8` native gate; result remains rejected |
+| 2026-08-24 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.105379775** | Total through job 57500598; Project B total including Phase 0 is `13.199812775` node-hours; next action is a Shared-QOS benchmark capped at `0.1875` node-hours, not another full-node continuation |
+| 2026-08-24 | 1 | 57548405 | 0.187500000 | 0.000381944 derived | First Shared-QOS benchmark attempt failed after 11 seconds before any scientific iteration because its Slurm-spooled batch script resolved the project root as `/var/spool/slurmd`; no timing result exists |
+| 2026-08-24 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.105761719** | Total including failed benchmark attempt 57548405; Project B total including Phase 0 is `13.200194719` node-hours; an immutable corrected retry is capped at an additional `0.1875` node-hours |
+| 2026-08-24 | 1 | 57550459 | 0.187500000 | 0.007013889 derived | Second Shared-QOS benchmark attempt failed after 202 seconds before state initialization or any scientific update because `Base.cputime()` is unavailable in Julia 1.12; no timing result exists |
+| 2026-08-24 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.112775608** | Total including both zero-update benchmark failures; Project B total including Phase 0 is `13.207208608` node-hours; schema-3 retry control `1cbfc097ccd1...` is capped at an additional `0.1875` node-hours |
+| 2026-08-24 | 1 | 57574096 | 0.187500000 | 0.030868056 derived | Third Shared-QOS benchmark attempt completed five 2-thread iDMRG updates, then failed while HDF5 serialized a packed `BitVector`; the partial file has no timing histories, so no benchmark timing result is valid |
+| 2026-08-24 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.143643664** | Total including all three invalid benchmark attempts; Project B total including Phase 0 is `13.238076664` node-hours; schema-4 retry control `8fb5a1c0b99e...` is capped at an additional `0.1875` node-hours |
 
 ## Decision log
 
@@ -564,3 +678,17 @@ mark a converged state rejected solely because another branch has lower energy.
 - 2026-08-18: launcher 2.5.0 replaces repeated manual chi-512 classification/configuration/reconciliation with immutable `advance` decisions. The first transition schedules 0.15 followed by every remaining nominal target, so success at the bridge continues in the same allocation. Infrastructure recovery, remaining-grid continuation, one midpoint down to 0.05 pi, and capped contracting retries are automated; continuity loss, inner-solver failure, failure at the floor, changed hashes, and unsupported outcomes stop without submission. `advance-submit` remains an explicit operator action and still passes through every live budget guard.
 - 2026-08-20: job 57245573 tested the canonical 0.05-pi midpoint from the exact accepted chi-512 theta/pi=0.1 parent. The minimum residual improved by 2.37x relative to the direct 0.2 attempt but remained 4.28x above tolerance and then diverged. Parent overlap, U(1) sector support, entropy/Schmidt changes, and all inner solves remained smooth, isolating the sequential outer update as the remaining VUMPS-specific variable.
 - 2026-08-20: launcher 2.6.0 and schema-v7 implement one final, pinned parallel multisite-update control at theta/pi=0.15. The generator verifies every source hash and inner solve; the launcher forbids this solver setting elsewhere. On failure, the lowest-residual iterate is saved only as a rejected diagnostic while the terminal residual is recorded separately. Numerical failure ends VUMPS and triggers iDMRG planning; infrastructure failure does not.
+- 2026-08-21: final-control job 57337312 converged at theta/pi=0.15 with parallel VUMPS after 10 monotone outer iterations, residual `9.183773e-6`, 60/60 converged inner solves, and parent overlap per site `0.9999782682`. The sequential and parallel candidates have direct overlap per site `0.9999953317` and identical virtual U(1) sector support, so the control identifies instability of the sequential outer update rather than a branch change. Launcher 2.7.0 promotes only accepted state SHA-256 `38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803` and requires pinned control evidence plus immutable automatic-decision provenance for every descendant.
+- 2026-08-22: promoted job 57392725 completed successfully at the scheduler/process level but failed the parallel-VUMPS residual gate at theta/pi=0.2. The restored best residual was `1.192367929e-5`, terminal residual was `1.030614057e-3`, and all 276 inner solves converged. This is the approved VUMPS recovery floor, so the rejected tensor cannot seed the primary lineage automatically and the solver transition proceeds to manual iDMRG control.
+- 2026-08-22: MPSKit 0.13.13 one-site iDMRG was selected over TeNPy and the current ITensor Julia ecosystem. MPSKit supplies genuine IDMRG while permitting an exact, round-trip-checked U(1) bridge inside Julia; TeNPy is mature but adds avoidable cross-language state and model conversion risk, and the current ITensor stack does not implement true iDMRG. The first package is one point at theta/pi=0.2, fixed chi 512, with immutable per-iteration checkpoints, a pre-solver Hamiltonian-equivalence gate, independent native convergence criteria, parent overlap against the accepted 0.15 state, and no automatic submission or advance. No Perlmutter job was submitted during implementation.
+- 2026-08-23: job 57452187 completed with exit `0:0` and charged `1.824166667` node-hours, but its 80-iteration iDMRG result failed the unchanged native convergence gates. Reconciliation exposed that schema-1 `energy_density` stored cumulative growing-superblock energy; the valid intensive MPSKit history is the period-normalized iterator increment previously stored as `energy_density_delta`. Schema 2 makes that quantity canonical and retains cumulative energy only as a diagnostic. The corrected span still fails, so this semantics fix does not retroactively accept the state.
+- 2026-08-23: the rejected first iDMRG result passes the `0.99` overlap gate at `0.9999707484`, preserves all recorded U(1) sector multiplicities, and has smooth common observables. One continuation from its tensors is scientifically approved as a numerical retry, while the accepted theta/pi=0.15 state remains the immutable lineage parent and overlap reference. The new control permits at most 400 additional iterations and 10 node-hours without changing chi, solver, model, symmetry, gauge, period, or any tolerance; it has no automatic advance and is not submitted.
+- 2026-08-23: all new heavy iDMRG checkpoints are routed to Perlmutter `$PSCRATCH` with the Slurm scratch license. Home retains controls, logs, accounting, the restartable final bridge, analyses, and an automatic lightweight checkpoint manifest/history. The project owner deleted the job-57452187 checkpoints after canceling a Globus transfer made the copies untrustworthy. The prepared successor does not depend on them: it starts fresh from the hash-pinned final-result tensor bridge and uses a distinct empty scratch directory.
+- 2026-08-23: the iDMRG operator interface now mirrors the concise VUMPS workflow. A hash-pinned active-control reference permits bare `plan`, `submit`, `status`, `reconcile`, and local `analyze` commands; `submit` itself is the explicit authorization, account `m4863` is the overridable default, and the submitted job ID is recorded automatically. Immutable-input, branch, one-job, no-overwrite, scratch, and budget guards remain enforced.
+- 2026-08-24: job 57500598 completed 400 additional one-site iDMRG updates. Its energy-density span passed, but MPSKit's `norm(C_new-C_old)` stopping value remained `2.311349e-6` and was still contracting at the cap. The quantity had been mislabeled as an environment error in Project B artifacts; the legacy path remains readable, while new analysis names its actual bond-matrix-update semantics. Native failure now short-circuits ITensor promotion conversion and records a native-only rejected artifact.
+- 2026-08-24: detailed `sacct` evidence showed only 4.7586 average CPUs and 9.63 GiB MaxRSS in an exclusive full-node allocation that cost about 8.81 node-hours. Further regular-QOS iDMRG is blocked pending one 2/4/8/16-thread Shared-QOS benchmark with correct core binding, independent restarts, no checkpoints or full states, a 0.1875-node-hour ceiling, and no automatic scientific submission.
+- 2026-08-24: the project owner selected post-hoc working exploratory iDMRG thresholds of `1e-5` for the bond-matrix update norm and `1e-8` for the final-four intensive-energy span. Job 57500598 passes this working native gate, while its original predeclared-control rejection remains immutable and all branch-promotion gates remain outstanding.
+- 2026-08-24: benchmark job 57548405 failed `1:0` after 11 seconds because the batch worker derived the repository root from `BASH_SOURCE` after Slurm copied it below `/var/spool/slurmd`. It ran zero scientific iterations and produced no timing artifact. The corrected worker takes an explicit project root, `plan` invokes it in preflight mode, the job sets `--chdir`, and a regression test executes a copied worker from a spool-like temporary directory. A separate retry package preserves all failed-attempt hashes and carries forward its approximately `0.000381944` node-hour charge.
+- 2026-08-24: retry benchmark job 57550459 reached the correct source tree but failed `1:0` after 202 seconds at the first 2-thread step because the benchmark called `Base.cputime()`, which is absent from Julia 1.12. It completed zero iDMRG updates, wrote no timing result, and cost approximately `0.007013889` derived Shared-QOS node-hours. Its schema-3 retry replaced that unsupported call with libuv `uv_getrusage`, executed the timing helper during `plan`, propagated the exact validated Julia binary, tested the real MPSKit iterator locally, and made failed `reconcile`/`analyze` commands print recognized causes. Neither failed job is scientific nonconvergence or valid resource data.
+- 2026-08-24: retry benchmark job 57574096 proved that the corrected Perlmutter path, Julia 1.12 timing helper, U(1) seed conversion, state construction, and five 2-thread iDMRG updates execute successfully. It then failed `1:0` after 889 seconds because HDF5 0.17.3 cannot serialize a packed `BitVector` measured-mask. The partial file contains no timing histories, so the attempt is not benchmark data and says nothing about scientific convergence. Its derived Shared-QOS charge is `0.030868056` node-hours. Schema 4 uses a dense `UInt8` mask, cleans writer-owned temporary files on exceptions, rejects stale temporaries before submission, makes both login- and compute-node preflights execute the exact production writer/readback, and tests the analyzer against real writer output.
+- 2026-08-25: a self-contained cross-device handoff and new-chat bootstrap were added for GitHub continuation. Git transports the complete code/documentation subtree but not ignored `output/` or HDF5 evidence; after pulling the exact transfer commit, the other device must Globus-copy authoritative Perlmutter `output/` only. The last reported remote event was a successful schema-4 benchmark `plan`; no later submission result is assumed.

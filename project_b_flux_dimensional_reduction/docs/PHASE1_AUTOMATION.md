@@ -2,7 +2,7 @@
 
 ## Scope
 
-Launcher 2.6.0 automates the repeated terminal-job workflow for the dedicated
+Launcher 2.7.0 automates the repeated terminal-job workflow for the dedicated
 YC8-1 primary-forward chi-512 campaign. It does not generalize the chi-512
 exception to other branches, geometries, or phases, and it does not run an
 unattended process on a Perlmutter login node.
@@ -45,6 +45,9 @@ refuses to submit the same generated configuration hash twice.
 | Pinned final parallel-update control reaches `theta/pi=0.15` | Stop for successful-control review | No longer schedule is generated until the solver change is interpreted |
 | Pinned final parallel-update control writes a numerical outcome | Stop and report the iDMRG pivot | No further VUMPS configuration or submission is generated |
 | Pinned final control has only a scheduler or process failure | Stop as inconclusive | Infrastructure failure is not mislabeled as a VUMPS failure |
+| SHA-pinned successful control is explicitly promoted | Schedule `0.2,0.3,...,1.0` with parallel VUMPS | Launcher verifies control job `57337312`, its config and decision, accepted state SHA-256, all inner solves, and the continuity gate |
+| Promoted parallel descendant needs recovery | Apply the same continuation, midpoint, and contracting-retry policy | Every generated descendant retains the promotion record and must be named by an immutable automatic decision before submission |
+| Promoted parallel recovery is exhausted | Stop for manual iDMRG review | Automation never changes solver, chi, tolerance, or branch on its own |
 
 ## In-job behavior
 
@@ -76,38 +79,40 @@ Repeating `advance` revalidates and reuses that decision instead of creating a
 different recommendation. Repeating `advance-submit` after submission is
 refused by config hash and directs the operator to the latest resulting run.
 
-## Current final-control command
+## Current promoted parallel campaign
 
-Job `57245573` already exercised the automatic `0.05*pi` refinement and failed
-numerically at `theta/pi=0.15`. The ordinary automatic policy correctly stopped
-at the configured floor. The owner-approved final VUMPS test is now the pinned
-parallel-update control in `docs/PHASE1_FINAL_VUMPS_CONTROL.md`.
+Final-control job `57337312` accepted `theta/pi=0.15` with parallel VUMPS,
+residual `9.183773e-6`, 60/60 converged inner solves, and overlap per site
+`0.9999782682`. Its manual-review decision remains immutable. The explicit
+promotion generator uses accepted state SHA-256
+`38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803`
+as the next parent and schedules `0.2,0.3,...,1.0`.
 
-After synchronizing launcher 2.6.0 and the new source files to Perlmutter
+After synchronizing launcher 2.7.0 and the new source files to Perlmutter
 without overwriting remote `output/`, verify:
 
 ```bash
 cd /global/homes/k/kwang98/QSL/project_b_flux_dimensional_reduction
 
 grep '^readonly LAUNCHER_VERSION=' slurm/run_scan_cpu.sh
-# Expected: readonly LAUNCHER_VERSION="2.6.0"
+# Expected: readonly LAUNCHER_VERSION="2.7.0"
 ```
 
-Generate, plan, and submit the exact control using the commands in that final
-control document. After it becomes terminal:
+Generate, plan, and submit the promoted continuation using the exact commands
+in `docs/PHASE1_PARALLEL_VUMPS_PROMOTION.md`. After it becomes terminal:
 
 ```bash
 bash slurm/run_scan_cpu.sh reconcile
 bash slurm/run_scan_cpu.sh advance
 ```
 
-When no run ID is supplied, launcher 2.6.0 selects the run containing the
+When no run ID is supplied, launcher 2.7.0 selects the run containing the
 greatest recorded Slurm job ID. It does not trust `latest_run.txt`, because a
 local-to-Perlmutter directory sync can overwrite that pointer with stale data.
 
-For the final control, `advance` always prints `manual_review` and leaves the
-scheduler unchanged. Its reason distinguishes a successful parallel VUMPS
-control, a numerical failure that triggers the documented iDMRG pivot, and an
-inconclusive infrastructure ending. Sync the resulting run/output directories
-locally before asking for detailed scientific interpretation; Perlmutter
-remains authoritative.
+For the promoted campaign, `advance` may prepare a remaining-grid continuation,
+one canonical midpoint, or a contracting retry. It never submits unless the
+operator explicitly invokes `advance-submit`. It stops for continuity loss,
+inner-solver failure, a numerical failure at the `0.05*pi` floor, or unsupported
+infrastructure state. Sync the resulting run/output directories locally before
+detailed scientific interpretation; Perlmutter remains authoritative.

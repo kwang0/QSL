@@ -65,10 +65,26 @@ The outcomes are:
   nonzero scan-process exit, or absent scientific outcome is inconclusive.
   Diagnose or rerun the same control; do not count it as evidence for iDMRG.
 
-## Perlmutter preparation and submission
+## Outcome: control passed
 
-Synchronize launcher 2.6.0 and the source/docs to Perlmutter without replacing
-remote `output/`. Perlmutter remains authoritative. Then run:
+Perlmutter job `57337312` completed on 2026-08-21 and accepted the pinned
+`theta/pi=0.15` point. The residual contracted monotonically from
+`4.224217e-4` to `9.183773e-6` in 10 parallel outer iterations. All 60 recorded
+inner Krylov solves converged, parent overlap per site was `0.9999782682`, and
+no virtual U(1) sector appeared or disappeared. The accepted immutable state
+has SHA-256
+`38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803`.
+
+This resolves the controlled question in favor of the parallel update. Do not
+rerun this one-point test and do not pivot to iDMRG solely because sequential
+VUMPS failed. The approved continuation and current commands are in
+`docs/PHASE1_PARALLEL_VUMPS_PROMOTION.md`.
+
+## Historical Perlmutter preparation and submission
+
+These commands document the completed launcher-2.6.0 control submission. They
+must not be rerun; current work uses launcher 2.7.0 and the promotion document.
+Perlmutter remains authoritative.
 
 The generator performs only SHA-256 and scalar HDF5-metadata validation on the
 login node; it does not deserialize either chi-512 MPS or run optimization.
@@ -77,7 +93,7 @@ login node; it does not deserialize either chi-512 MPS or run optimization.
 cd /global/homes/k/kwang98/QSL/project_b_flux_dimensional_reduction
 
 grep '^readonly LAUNCHER_VERSION=' slurm/run_scan_cpu.sh
-# Expected: readonly LAUNCHER_VERSION="2.6.0"
+# Current promotion workflow: readonly LAUNCHER_VERSION="2.7.0"
 
 parent_state=output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512/states/state_0002_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p10000000_accepted_12126bd1b66b.h5
 parent_sha256=f71fc084883ea98535e012801d47c2c0b3c0b5ce58e08c72592e46410a27b7cc

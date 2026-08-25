@@ -236,14 +236,14 @@ to the direct `theta/pi=0.2` attempt, yet the new minimum still exceeded the
 VUMPS fixed-point instability at this parent and target more strongly than the
 earlier runs. It is still not evidence of a physical flux endpoint.
 
-The locally synced reconciled Phase 1 total through job `57245573` is
-`1.266432292` node-hours; the Project B total including the Phase 0 estimate is
-`2.360865292` node-hours. Perlmutter remains authoritative immediately before
-submission.
+The locally synced reconciled Phase 1 total through successful control job
+`57337312` is `1.304648438` node-hours; the Project B total including the Phase
+0 estimate is `2.399081438` node-hours. Perlmutter remains authoritative
+immediately before submission.
 
-## Final VUMPS control
+## Final VUMPS control and promotion
 
-Launcher 2.6.0 admits one SHA-pinned exception: retry exactly
+Launcher 2.6.0 admitted one SHA-pinned exception: retry exactly
 `theta/pi=0.15` from the accepted `0.1` parent while changing the library's
 multisite update from `sequential` to `parallel`. All physical, representation,
 residual, inner-solver, and continuity settings remain fixed. A rejected run
@@ -251,17 +251,16 @@ restores its lowest-residual iterate before writing the diagnostic state, while
 recording the degraded terminal residual separately; this never bypasses the
 acceptance gates.
 
-The generator verifies the parent, sequential outcome, rejected candidate, and
-all recorded inner solves before creating an isolated one-point configuration.
-The launcher refuses parallel/best-iterate settings for every other Phase 1
-configuration. After the control terminates, `advance` produces no successor:
-it reports successful-control review, a numerical iDMRG pivot, or an
-inconclusive infrastructure ending.
+Job `57337312` passed that control in 10 monotone iterations at residual
+`9.183773e-6`; all 60 inner solves converged and overlap per site was
+`0.9999782682`. Launcher 2.7.0 now permits only the SHA-pinned promoted
+parallel continuation and descendants named by immutable automatic decisions.
+Every other Phase 1 parallel/best-iterate configuration remains forbidden.
 
-The exact preparation, plan, submission, monitoring, reconciliation, and
-pass/fail rules are in `docs/PHASE1_FINAL_VUMPS_CONTROL.md`. Do not use
-`advance-submit` for this control, and do not treat a timeout or process error
-as a numerical VUMPS failure.
+The completed comparison is in `docs/PHASE1_FINAL_VUMPS_CONTROL.md`; current
+generation, submission, and recovery commands are in
+`docs/PHASE1_PARALLEL_VUMPS_PROMOTION.md`. Do not treat a timeout or process
+error as a numerical VUMPS failure.
 
 ## Stored diagnostics
 
@@ -335,13 +334,11 @@ julia --project=. --startup-file=no \
 
 ## If a live job truly plateaus
 
-Use an explicit run ID. Launcher 2.6.0 preserves the intervention as a
+Use an explicit run ID. Launcher 2.7.0 preserves the intervention as a
 scientific failure artifact before the job is reconciled:
 
 ```bash
-run_dir=$(tr -d '\r\n' < output/phase1_jobs/latest_run.txt)
-run_id=$(basename "$run_dir")
-bash slurm/run_scan_cpu.sh cancel-plateau "$run_id"
+bash slurm/run_scan_cpu.sh cancel-plateau EXPLICIT_RUN_ID
 ```
 
 The command accepts only a `RUNNING` or `SUSPENDED` job, or an already-terminal

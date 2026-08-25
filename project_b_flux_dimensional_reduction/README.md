@@ -70,6 +70,9 @@ Read [`docs/REPRODUCTION_PROTOCOL.md`](docs/REPRODUCTION_PROTOCOL.md) before a
 large run; it defines the convergence gates and paper-to-artifact mapping.
 The allocation-bounded, cross-chat plan is maintained in
 [`docs/PHASES_0_TO_4.md`](docs/PHASES_0_TO_4.md).
+For continuation on another device, begin with the current
+[`Phase 1 cross-device handoff`](docs/PHASE1_CROSS_DEVICE_HANDOFF.md) and its
+[`new-chat bootstrap prompt`](docs/PHASE1_CROSS_DEVICE_NEW_CHAT_PROMPT.md).
 
 For the sparse Phase 1 scout, use one of the four
 `configs/phase1_yc8_*_chi128.toml` files. On Perlmutter, inspect and submit one

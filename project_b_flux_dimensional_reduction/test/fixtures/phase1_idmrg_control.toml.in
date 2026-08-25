@@ -1,0 +1,90 @@
+artifact_kind = "project_b_phase1_idmrg_control"
+schema_version = 1
+
+[bridge]
+path = "bridge.h5"
+sha256 = "BRIDGE_SHA"
+
+[lineage]
+branch = "primary_forward_chi512_legacy_0p1"
+direction = "forward"
+parent_state_path = "PARENT_PATH"
+parent_state_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+parent_theta_over_pi = 0.15
+target_theta_over_pi = 0.2
+overlap_reference_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+rejected_vumps_diagnostic_path = "rejected.h5"
+rejected_vumps_diagnostic_sha256 = "f59dd18f29004d259a3d94e7bedadd99a7fcb88b1ba960fb7e357dd8e645e7c0"
+use_rejected_vumps_diagnostic_as_seed = false
+
+[model]
+circumference = 8
+shift = 1
+mps_period = 2
+J1 = 1.0
+J2 = 0.12
+Delta1 = 1.0
+Delta2 = 1.0
+Bz = 0.0
+twist_gauge = "uniform"
+u1_conserved = true
+
+[solver]
+library = "MPSKit"
+library_version = "0.13.13"
+algorithm = "one_site_idmrg"
+nominal_chi = 512
+maximum_iterations = 80
+verbosity = 2
+
+[native_convergence]
+defined_before_run = true
+minimum_iterations = 4
+environment_tolerance = 1.0e-8
+energy_window = 4
+energy_density_span_tolerance = 1.0e-9
+discarded_weight_semantics = "zero"
+require_achieved_bond_dimension = 512
+
+[acceptance]
+minimum_parent_overlap_per_site = 0.99
+overlap_tolerance = 1.0e-8
+overlap_krylov_dimension = 16
+require_common_observables = true
+require_sector_resolved_virtual_diagnostics = true
+accept_lower_energy_without_branch_gates = false
+
+[validation]
+tensor_roundtrip_relative_tolerance = 5.0e-13
+model_energy_density_tolerance = 1.0e-6
+
+[storage]
+checkpoint_every_iterations = 5
+checkpoint_directory = "checkpoints"
+result_path = "result.h5"
+final_state_directory = "states"
+
+[resources]
+system = "perlmutter"
+constraint = "cpu"
+qos = "regular"
+nodes = 1
+tasks = 1
+cpus_per_task = 128
+memory = "0"
+time_limit = "06:00:00"
+maximum_new_node_hours = 6.0
+maximum_jobs = 1
+
+[authorization]
+submission_authorized = false
+requires_explicit_submit_command = true
+automatic_advance_allowed = false
+
+[provenance]
+idmrg_manifest_sha256 = "IDMRG_MANIFEST_SHA"
+solver_module_sha256 = "SOLVER_MODULE_SHA"
+root_manifest_sha256 = "ROOT_MANIFEST_SHA"
+analyzer_sha256 = "ANALYZER_SHA"
+launcher_sha256 = "LAUNCHER_SHA"
+decision_document_sha256 = "DECISION_SHA"

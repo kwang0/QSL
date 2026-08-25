@@ -25,6 +25,13 @@ const FINAL_CONTROL_SOURCE_OUTCOME_SHA256 =
     "001eadee6f43e73fa9228c4221c8ac81edc821db58a391625037806b16e0b2cf"
 const FINAL_CONTROL_SEQUENTIAL_CANDIDATE_SHA256 =
     "b5ef48caaf7a10eb00e4fd003e8fd1b5a57add77a8111b270a358a7c8f049953"
+const PARALLEL_PROMOTION_SOURCE_JOB_ID = "57337312"
+const PARALLEL_PROMOTION_SOURCE_CONFIG_SHA256 =
+    "78a2a320b8fe641947336989188cd5c3e33b2607b1c29037ff88c3d664c43b93"
+const PARALLEL_PROMOTION_SOURCE_DECISION_SHA256 =
+    "19e2e1e6f58752d6540672c311d23767aed7a45270b3528be476567da77ff778"
+const PARALLEL_PROMOTION_ACCEPTED_STATE_SHA256 =
+    "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
 
 function read_tsv_record(path::AbstractString)
     lines = readlines(path)
@@ -100,7 +107,41 @@ function is_final_parallel_control(raw)
             FINAL_CONTROL_SEQUENTIAL_CANDIDATE_SHA256
 end
 
-function validate_source_configuration(raw)
+function is_promoted_parallel_campaign(raw)
+    optimizer = get(raw, "optimizer", Dict{String,Any}())
+    promotion = get(raw, "promotion", Dict{String,Any}())
+    return String(get(optimizer, "multisite_update_alg", "sequential")) == "parallel" &&
+        Bool(get(optimizer, "restore_best_on_failure", false)) &&
+        String(get(promotion, "artifact_kind", "")) ==
+            "project_b_chi512_parallel_update_promotion" &&
+        String(get(promotion, "decision_on_numerical_failure", "")) ==
+            "automatic_recovery_then_idmrg_review" &&
+        String(get(promotion, "source_control_job_id", "")) ==
+            PARALLEL_PROMOTION_SOURCE_JOB_ID &&
+        lowercase(String(get(promotion, "source_control_config_sha256", ""))) ==
+            PARALLEL_PROMOTION_SOURCE_CONFIG_SHA256 &&
+        lowercase(String(get(promotion, "source_control_decision_sha256", ""))) ==
+            PARALLEL_PROMOTION_SOURCE_DECISION_SHA256 &&
+        lowercase(String(get(promotion, "accepted_control_state_sha256", ""))) ==
+            PARALLEL_PROMOTION_ACCEPTED_STATE_SHA256
+end
+
+function validate_promotion_evidence(raw, source_path::AbstractString)
+    promotion = required_table(raw, "promotion")
+    for (path_key, expected_sha256) in (
+        ("source_control_config_path", PARALLEL_PROMOTION_SOURCE_CONFIG_SHA256),
+        ("source_control_decision_path", PARALLEL_PROMOTION_SOURCE_DECISION_SHA256),
+        ("accepted_control_state_path", PARALLEL_PROMOTION_ACCEPTED_STATE_SHA256),
+    )
+        path = resolve_recorded_path(promotion[path_key], source_path)
+        isfile(path) || error("parallel-promotion evidence does not exist: $path")
+        PB.file_sha256(path) == expected_sha256 || error(
+            "parallel-promotion evidence SHA-256 mismatch for $path",
+        )
+    end
+end
+
+function validate_source_configuration(raw, source_path::AbstractString)
     model = required_table(raw, "model")
     optimizer = required_table(raw, "optimizer")
     scan = required_table(raw, "scan")
@@ -138,7 +179,12 @@ function validate_source_configuration(raw)
     Bool(get(optimizer, "record_krylov_diagnostics", false)) ||
         error("automatic advance requires recorded Krylov diagnostics")
     final_parallel_control = is_final_parallel_control(raw)
-    expected_algorithm = final_parallel_control ? "parallel" : "sequential"
+    promoted_parallel_campaign = is_promoted_parallel_campaign(raw)
+    final_parallel_control && promoted_parallel_campaign && error(
+        "a source configuration cannot be both the final control and its promotion",
+    )
+    expected_algorithm = final_parallel_control || promoted_parallel_campaign ?
+        "parallel" : "sequential"
     require_equal(
         String(get(optimizer, "multisite_update_alg", "sequential")),
         expected_algorithm,
@@ -146,9 +192,10 @@ function validate_source_configuration(raw)
     )
     require_equal(
         Bool(get(optimizer, "restore_best_on_failure", false)),
-        final_parallel_control,
+        final_parallel_control || promoted_parallel_campaign,
         "optimizer.restore_best_on_failure",
     )
+    promoted_parallel_campaign && validate_promotion_evidence(raw, source_path)
     require_equal(Int(get(optimizer, "divergence_patience", 0)), 8, "optimizer.divergence_patience")
     require_approx(get(optimizer, "divergence_factor", NaN), 4.0, "optimizer.divergence_factor")
     Bool(get(optimizer, "plateau_detection", false)) ||
@@ -182,6 +229,26 @@ function validate_source_configuration(raw)
     fluxes = Float64.(scan["fluxes_over_pi"])
     all(theta -> 0.0 <= theta <= 1.0, fluxes) ||
         error("automatic source flux lies outside [0, 1]")
+    if promoted_parallel_campaign
+        if haskey(raw, "automation")
+            automation = required_table(raw, "automation")
+            require_equal(
+                String(get(automation, "policy_version", "")),
+                POLICY_VERSION,
+                "automation.policy_version",
+            )
+        else
+            require_equal(
+                lowercase(String(get(scan, "initial_state_sha256", ""))),
+                PARALLEL_PROMOTION_ACCEPTED_STATE_SHA256,
+                "scan.initial_state_sha256",
+            )
+            expected_fluxes = Float64.(2:10) ./ 10
+            length(fluxes) == length(expected_fluxes) &&
+                all(isapprox.(fluxes, expected_fluxes; atol=1e-12, rtol=0)) ||
+                error("initial promoted campaign must schedule theta/pi=0.2:0.1:1.0")
+        end
+    end
     Bool(get(scan, "save_rejected", false)) || error("scan.save_rejected must remain true")
     Bool(get(scan, "require_parent_overlap", false)) ||
         error("scan.require_parent_overlap must remain true")
@@ -206,7 +273,10 @@ function validate_source_configuration(raw)
     Bool(get(runtime, "threaded_blocksparse", false)) ||
         error("runtime.threaded_blocksparse must remain true")
     require_equal(Int(get(runtime, "output_level", -1)), 1, "runtime.output_level")
-    return final_parallel_control
+    return (;
+        final_parallel_control,
+        promoted_parallel_campaign,
+    )
 end
 
 function recorded_inner_solves_converged(path::AbstractString)
@@ -235,7 +305,11 @@ function accepted_state_paths(output_directory::AbstractString)
     return last.(candidates)
 end
 
-function validate_parent(path::AbstractString, expected_sha256::Union{Nothing,AbstractString}=nothing)
+function validate_parent(
+    path::AbstractString,
+    expected_sha256::Union{Nothing,AbstractString}=nothing;
+    require_parallel::Bool=false,
+)
     isfile(path) || error("accepted parent does not exist: $path")
     actual_sha256 = PB.file_sha256(path)
     expected_sha256 === nothing || actual_sha256 == lowercase(String(expected_sha256)) ||
@@ -263,6 +337,14 @@ function validate_parent(path::AbstractString, expected_sha256::Union{Nothing,Ab
         error("automatic parent did not use residual tolerance 1e-5")
     parent.optimizer_residual <= parent.optimizer_residual_tolerance ||
         error("automatic parent residual exceeds its recorded tolerance")
+    if require_parallel
+        parent.optimizer_multisite_update_alg == "parallel" || error(
+            "promoted-campaign parent was not produced by parallel VUMPS",
+        )
+        parent.optimizer_restore_best_on_failure_enabled || error(
+            "promoted-campaign parent lacks best-iterate preservation metadata",
+        )
+    end
     for (field, expected) in (
         (:J1, 1.0),
         (:J2, 0.12),
@@ -283,7 +365,11 @@ function validate_parent(path::AbstractString, expected_sha256::Union{Nothing,Ab
     return (; path=abspath(path), sha256=actual_sha256, state=parent)
 end
 
-function validate_candidate(path::AbstractString, expected_sha256::AbstractString)
+function validate_candidate(
+    path::AbstractString,
+    expected_sha256::AbstractString;
+    require_parallel::Bool=false,
+)
     isfile(path) || error("rejected candidate does not exist: $path")
     actual_sha256 = PB.file_sha256(path)
     actual_sha256 == lowercase(String(expected_sha256)) ||
@@ -303,6 +389,14 @@ function validate_candidate(path::AbstractString, expected_sha256::AbstractStrin
         error("outcome candidate did not request chi 512")
     isapprox(candidate.optimizer_residual_tolerance, 1e-5; atol=0, rtol=1e-12) ||
         error("outcome candidate did not use residual tolerance 1e-5")
+    if require_parallel
+        candidate.optimizer_multisite_update_alg == "parallel" || error(
+            "promoted-campaign candidate was not produced by parallel VUMPS",
+        )
+        candidate.optimizer_restore_best_on_failure_enabled || error(
+            "promoted-campaign candidate lacks best-iterate preservation metadata",
+        )
+    end
     return (; path=abspath(path), sha256=actual_sha256, state=candidate)
 end
 
@@ -385,7 +479,9 @@ occursin(r"^[0-9a-f]{64}$", source_config_sha256) ||
 PB.file_sha256(snapshot_path) == source_config_sha256 ||
     error("submitted configuration snapshot does not match the recorded SHA-256")
 raw = TOML.parsefile(snapshot_path)
-final_parallel_control = validate_source_configuration(raw)
+campaign_kind = validate_source_configuration(raw, snapshot_path)
+final_parallel_control = campaign_kind.final_parallel_control
+promoted_parallel_campaign = campaign_kind.promoted_parallel_campaign
 runtime = required_table(raw, "runtime")
 scan = required_table(raw, "scan")
 optimizer = required_table(raw, "optimizer")
@@ -413,7 +509,11 @@ else
             String(scan["initial_state_sha256"]) : nothing
     end
 end
-parent = parent_path === nothing ? nothing : validate_parent(parent_path, parent_expected_sha256)
+parent = parent_path === nothing ? nothing : validate_parent(
+    parent_path,
+    parent_expected_sha256;
+    require_parallel=promoted_parallel_campaign,
+)
 
 outcome_kind = "none"
 outcome_status = ""
@@ -444,13 +544,15 @@ elseif !isempty(outcome)
     if haskey(outcome, "rejected_state_path")
         candidate = validate_candidate(
             String(outcome["rejected_state_path"]),
-            String(outcome["rejected_state_sha256"]),
+            String(outcome["rejected_state_sha256"]);
+            require_parallel=final_parallel_control || promoted_parallel_campaign,
         )
         candidate_inner_converged = recorded_inner_solves_converged(candidate.path)
     elseif haskey(outcome, "candidate_state_path")
         candidate = validate_candidate(
             String(outcome["candidate_state_path"]),
-            String(outcome["candidate_state_sha256"]),
+            String(outcome["candidate_state_sha256"]);
+            require_parallel=final_parallel_control || promoted_parallel_campaign,
         )
         candidate_inner_converged = recorded_inner_solves_converged(candidate.path)
     end
@@ -481,27 +583,27 @@ if candidate !== nothing
     )) || error("rejected candidate flux history does not extend the accepted parent")
 end
 
-if final_parallel_control && candidate !== nothing
+if (final_parallel_control || promoted_parallel_campaign) && candidate !== nothing
     candidate.state.optimizer_multisite_update_alg == "parallel" || error(
-        "final-control candidate was not produced by parallel VUMPS",
+        "parallel-campaign candidate was not produced by parallel VUMPS",
     )
     candidate.state.optimizer_restore_best_on_failure_enabled || error(
-        "final-control candidate did not enable best-iterate preservation",
+        "parallel-campaign candidate did not enable best-iterate preservation",
     )
     isapprox(
         candidate.state.optimizer_residual,
         candidate.state.optimizer_minimum_residual;
         atol=0,
         rtol=1e-12,
-    ) || error("final-control rejected state is not its lowest-residual iterate")
+    ) || error("parallel-campaign rejected state is not its lowest-residual iterate")
     candidate.state.optimizer_returned_iteration ==
         candidate.state.optimizer_best_iteration || error(
-            "final-control rejected state does not record the best iteration as returned",
+            "parallel-campaign rejected state does not record the best iteration as returned",
         )
     if candidate.state.optimizer_terminal_residual >
             candidate.state.optimizer_minimum_residual * (1 + 1e-12)
         candidate.state.optimizer_restored_best_on_failure || error(
-            "degraded final-control trajectory did not restore its best iterate",
+            "degraded parallel-campaign trajectory did not restore its best iterate",
         )
     end
 end
@@ -541,7 +643,7 @@ if final_parallel_control
         scheduler_state=state,
         job_exit_code=exit_code,
         reached_target=reached_control_target,
-        outcome_kind,
+        outcome_kind=outcome_kind,
     )
 end
 
@@ -583,7 +685,14 @@ decision = Dict{String,Any}(
     "source_classification" => classification,
     "source_optimizer_stop_reason" => stop_reason,
     "source_is_final_parallel_control" => final_parallel_control,
-    "next_solver_on_numerical_failure" => final_parallel_control ? "idmrg" : "",
+    "source_is_promoted_parallel_campaign" => promoted_parallel_campaign,
+    "next_solver_on_numerical_failure" => if final_parallel_control
+        "idmrg"
+    elseif promoted_parallel_campaign
+        "idmrg_after_automatic_recovery"
+    else
+        ""
+    end,
     "action" => policy.action in (:continue_schedule, :refine_interval, :retry_contracting) ?
         "next_config" : String(policy.action),
     "transition" => String(policy.action),

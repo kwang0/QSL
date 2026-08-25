@@ -7,6 +7,50 @@ using TriangularJ1J2ProjectB
 const PB = TriangularJ1J2ProjectB
 const PROJECT_ROOT = normpath(joinpath(@__DIR__, ".."))
 
+@testset "Phase 1 orchestration scripts parse" begin
+    for relative_path in (
+        joinpath("scripts", "prepare_phase1_automatic_advance.jl"),
+        joinpath("scripts", "prepare_phase1_chi512_parallel_continuation.jl"),
+        joinpath("scripts", "prepare_phase1_idmrg_control.jl"),
+        joinpath("scripts", "prepare_phase1_idmrg_resume.jl"),
+        joinpath("scripts", "analyze_phase1_idmrg_result.jl"),
+        joinpath("scripts", "make_phase1_idmrg_lightweight.jl"),
+        joinpath("scripts", "archive_phase1_idmrg_checkpoints.jl"),
+        joinpath("scripts", "prepare_phase1_idmrg_benchmark.jl"),
+        joinpath("scripts", "analyze_phase1_idmrg_benchmark.jl"),
+        joinpath("idmrg", "scripts", "run_idmrg.jl"),
+        joinpath("idmrg", "scripts", "validate_control.jl"),
+        joinpath("idmrg", "scripts", "run_benchmark.jl"),
+        joinpath("idmrg", "scripts", "validate_benchmark_control.jl"),
+    )
+        code = read(joinpath(PROJECT_ROOT, relative_path), String)
+        position = 1
+        parsed = true
+        while true
+            expression, position = Meta.parse(code, position; greedy=true, raise=false)
+            expression === nothing && break
+            if expression isa Expr && expression.head === :error
+                parsed = false
+                break
+            end
+        end
+        @test parsed
+    end
+end
+
+include("test_idmrg_native_analysis.jl")
+
+@testset "Phase 1 iDMRG target bond table" begin
+    geometry = YCGeometry(8, 1)
+    bonds = unit_cell_bonds(geometry; period=2)
+    @test length(bonds) == 12
+    @test [bond.source_site for bond in bonds] == [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2]
+    @test [bond.target_site for bond in bonds] == [2, 9, 8, 10, 7, 16, 3, 10, 9, 11, 8, 17]
+    @test [bond_twist_charge(bond, geometry, :uniform) for bond in bonds] ==
+        [1 / 8, 0, -1 / 8, 1 / 8, -1 / 4, -1 / 8,
+         1 / 8, 0, -1 / 8, 1 / 8, -1 / 4, -1 / 8]
+end
+
 @testset "YC geometry and twist seam" begin
     g = YCGeometry(6, 1)
     @test string(g) == "YC6-1"

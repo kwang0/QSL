@@ -5,9 +5,16 @@ set -euo pipefail
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fixture_bin="$project_dir/test/fixtures/phase1_launcher"
 launcher="$project_dir/slurm/run_scan_cpu.sh"
+automatic_advance="$project_dir/scripts/prepare_phase1_automatic_advance.jl"
 config="$project_dir/configs/phase1_yc8_1_forward_chi128.toml"
 temporary_root="$(mktemp -d)"
 trap 'rm -rf "$temporary_root"' EXIT
+
+# Guard the keyword-only policy invocation used after the final VUMPS control.
+# A bare `outcome_kind,` is valid Julia syntax but becomes a positional argument.
+grep -Fq -- 'outcome_kind=outcome_kind,' "$automatic_advance"
+grep -Fq -- 'readonly LAUNCHER_VERSION="2.7.0"' "$launcher"
+grep -Fq -- 'project_b_chi512_parallel_update_promotion' "$launcher"
 
 staged_launcher="$temporary_root/run_scan_cpu.sh"
 run_dir="$temporary_root/run"
@@ -93,6 +100,7 @@ PHASE1_JULIA="$real_julia" \
 
 grep -Fq -- 'Action:                        manual_review' "$advance_output"
 grep -Fq -- 'Reason:                        fixture requires manual review' "$advance_output"
+grep -Fq -- 'Accepted parent theta/pi:      0.1' "$advance_output"
 grep -Fq -- 'No configuration was generated or submitted.' "$advance_output"
 
 printf '%s\n' 'phase1 staged-launcher regression: ok'
