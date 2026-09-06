@@ -42,7 +42,16 @@ function state_file_path(
         status,
         config_identifier(settings),
     )
-    return joinpath(settings.runtime.output_directory, "states", filename)
+    requested_directory = strip(get(ENV, "PROJECT_B_STATE_OUTPUT_DIRECTORY", ""))
+    state_directory = if isempty(requested_directory)
+        joinpath(settings.runtime.output_directory, "states")
+    else
+        isabspath(requested_directory) || error(
+            "PROJECT_B_STATE_OUTPUT_DIRECTORY must be an absolute path",
+        )
+        normpath(requested_directory)
+    end
+    return joinpath(state_directory, filename)
 end
 
 function atomic_h5write(writer::Function, path::AbstractString)
@@ -143,6 +152,8 @@ function write_continuity_diagnostics!(file, diagnostic::BranchContinuityDiagnos
     file["continuation/continuity_checked"] = diagnostic.checked
     file["continuation/continuity_passed"] = diagnostic.passed
     file["continuation/continuity_reason"] = diagnostic.reason
+    file["continuation/continuity_policy"] = diagnostic.policy
+    file["continuation/fixed_flux_bond_growth"] = diagnostic.fixed_flux_bond_growth
     file["continuation/parent_theta_over_pi"] = diagnostic.parent_theta_over_pi
     file["continuation/candidate_theta_over_pi"] = diagnostic.candidate_theta_over_pi
     file["continuation/mixed_transfer_eigenvalue"] = diagnostic.mixed_transfer_eigenvalue
@@ -150,6 +161,7 @@ function write_continuity_diagnostics!(file, diagnostic::BranchContinuityDiagnos
     file["continuation/overlap_per_unit_cell"] = diagnostic.overlap_per_unit_cell
     file["continuation/overlap_per_site"] = diagnostic.overlap_per_site
     file["continuation/minimum_overlap_per_site"] = diagnostic.minimum_overlap_per_site
+    file["continuation/overlap_alarm_triggered"] = diagnostic.overlap_alarm_triggered
     file["continuation/overlap_krylov_converged"] = diagnostic.krylov_converged
     file["continuation/overlap_krylov_residual_norms"] = diagnostic.krylov_residual_norms
     file["continuation/overlap_krylov_iterations"] = diagnostic.krylov_iterations
@@ -157,10 +169,51 @@ function write_continuity_diagnostics!(file, diagnostic::BranchContinuityDiagnos
     file["continuation/energy_density_delta"] = diagnostic.energy_density_delta
     file["continuation/mean_entropy_delta"] = diagnostic.mean_entropy_delta
     file["continuation/maximum_cut_entropy_jump"] = diagnostic.maximum_cut_entropy_jump
+    file["continuation/maximum_cut_entropy_jump_threshold"] =
+        diagnostic.maximum_cut_entropy_jump_threshold
+    file["continuation/entropy_gate_passed"] = diagnostic.entropy_gate_passed
     file["continuation/energy_term_rms_jump"] = diagnostic.energy_term_rms_jump
+    file["continuation/maximum_energy_term_rms_jump"] =
+        diagnostic.maximum_energy_term_rms_jump
+    file["continuation/energy_term_gate_passed"] = diagnostic.energy_term_gate_passed
     file["continuation/magnetization_rms_jump"] = diagnostic.magnetization_rms_jump
+    file["continuation/maximum_magnetization_rms_jump"] =
+        diagnostic.maximum_magnetization_rms_jump
+    file["continuation/magnetization_gate_passed"] =
+        diagnostic.magnetization_gate_passed
     file["continuation/mean_schmidt_total_variation"] =
         diagnostic.mean_schmidt_total_variation
+    file["continuation/maximum_mean_schmidt_total_variation"] =
+        diagnostic.maximum_mean_schmidt_total_variation
+    file["continuation/schmidt_gate_passed"] = diagnostic.schmidt_gate_passed
+    file["continuation/correlation_length_diagnostics_required"] =
+        diagnostic.correlation_length_diagnostics_required
+    file["continuation/correlation_length_diagnostics_passed"] =
+        diagnostic.correlation_length_diagnostics_passed
+    file["continuation/correlation_length_reason"] = diagnostic.correlation_length_reason
+    file["continuation/correlation_length_physical_sz_sectors"] =
+        diagnostic.correlation_length_physical_sz_sectors
+    file["continuation/parent_correlation_lengths"] = diagnostic.parent_correlation_lengths
+    file["continuation/candidate_correlation_lengths"] =
+        diagnostic.candidate_correlation_lengths
+    file["continuation/maximum_log_correlation_length_jump"] =
+        diagnostic.maximum_log_correlation_length_jump
+    file["continuation/maximum_log_correlation_length_jump_threshold"] =
+        diagnostic.maximum_log_correlation_length_jump_threshold
+    file["continuation/correlation_length_gate_passed"] =
+        diagnostic.correlation_length_gate_passed
+    file["continuation/correlation_length_krylov_converged"] =
+        diagnostic.correlation_length_krylov_converged
+    file["continuation/correlation_length_krylov_residual_norms"] =
+        diagnostic.correlation_length_krylov_residual_norms
+    file["continuation/u1_sector_diagnostics_required"] =
+        diagnostic.u1_sector_diagnostics_required
+    file["continuation/u1_sector_diagnostics_passed"] =
+        diagnostic.u1_sector_diagnostics_passed
+    file["continuation/u1_sector_labels_preserved"] =
+        diagnostic.u1_sector_labels_preserved
+    file["continuation/u1_sector_multiplicities_preserved"] =
+        diagnostic.u1_sector_multiplicities_preserved
     return nothing
 end
 
@@ -411,6 +464,11 @@ function read_state_file(path::AbstractString)
                 String(read(file, "continuation/parent_state_path")) : "",
             parent_state_sha256=haskey(file, "continuation/parent_state_sha256") ?
                 String(read(file, "continuation/parent_state_sha256")) : "",
+            parent_flux_history_over_pi=haskey(
+                file,
+                "continuation/parent_flux_history_over_pi",
+            ) ? Float64.(read(file, "continuation/parent_flux_history_over_pi")) :
+                Float64[],
             flux_history_over_pi=flux_history,
             observables,
             circumference,

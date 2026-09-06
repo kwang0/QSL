@@ -345,12 +345,88 @@ function residual_plateau_detected(
     return relative_improvement < optimizer.plateau_min_relative_improvement
 end
 
+function in_progress_diagnostic(
+    psi,
+    optimizer::OptimizerSettings,
+    residual_history::AbstractVector{<:Real},
+    energy_left_buffer::AbstractMatrix{<:Real},
+    energy_right_buffer::AbstractMatrix{<:Real},
+    krylov_solves::AbstractVector{KrylovSolveDiagnostic},
+    stop_reason::AbstractString,
+)
+    iterations = length(residual_history)
+    iterations >= 1 || error("cannot checkpoint before a completed VUMPS iteration")
+    trend = residual_trend(
+        residual_history,
+        optimizer.residual_tol;
+        improvement_window=optimizer.plateau_patience,
+    )
+    residuals = Float64.(residual_history)
+    terminal_residual = last(residuals)
+    return VumpsDiagnostics(
+        converged=false,
+        stop_reason=String(stop_reason),
+        iterations=iterations,
+        residual=terminal_residual,
+        minimum_residual=minimum(residuals),
+        residual_history=residuals,
+        energy_left_history=Float64.(energy_left_buffer[:, 1:iterations]),
+        energy_right_history=Float64.(energy_right_buffer[:, 1:iterations]),
+        growth_dimensions=[maxlinkdim(psi)],
+        growth_stage_ends=[iterations],
+        residual_tolerance=optimizer.residual_tol,
+        trend_window=trend.window,
+        recent_relative_improvement=trend.relative_improvement,
+        log_residual_slope=trend.log_slope,
+        log_residual_r_squared=trend.r_squared,
+        projected_total_iterations=trend.projected_total_iterations,
+        terminal_residual=terminal_residual,
+        best_iteration=best_residual_iteration(residuals),
+        returned_iteration=iterations,
+        restored_best_on_failure=false,
+        krylov_solves=collect(krylov_solves),
+    )
+end
+
+function checkpoint_diagnostic(
+    diagnostic::VumpsDiagnostics,
+    stop_reason::AbstractString,
+)
+    return VumpsDiagnostics(
+        converged=false,
+        stop_reason=String(stop_reason),
+        iterations=diagnostic.iterations,
+        residual=diagnostic.residual,
+        minimum_residual=diagnostic.minimum_residual,
+        residual_history=copy(diagnostic.residual_history),
+        energy_left_history=copy(diagnostic.energy_left_history),
+        energy_right_history=copy(diagnostic.energy_right_history),
+        growth_dimensions=copy(diagnostic.growth_dimensions),
+        growth_stage_ends=copy(diagnostic.growth_stage_ends),
+        residual_tolerance=diagnostic.residual_tolerance,
+        trend_window=diagnostic.trend_window,
+        recent_relative_improvement=diagnostic.recent_relative_improvement,
+        log_residual_slope=diagnostic.log_residual_slope,
+        log_residual_r_squared=diagnostic.log_residual_r_squared,
+        projected_total_iterations=diagnostic.projected_total_iterations,
+        terminal_residual=diagnostic.terminal_residual,
+        best_iteration=diagnostic.best_iteration,
+        returned_iteration=diagnostic.returned_iteration,
+        restored_best_on_failure=diagnostic.restored_best_on_failure,
+        krylov_solves=copy(diagnostic.krylov_solves),
+    )
+end
+
 function run_vumps_iterations(
     hamiltonian,
     psi,
     optimizer::OptimizerSettings;
     output_level::Integer=1,
+    checkpoint_every_iterations::Integer=0,
+    checkpoint_callback::Union{Nothing,Function}=nothing,
+    stop_requested::Function=() -> false,
 )
+    checkpoint_every_iterations >= 0 || error("checkpoint cadence cannot be negative")
     n = nsites(psi)
     epsilon_left = fill(optimizer.residual_tol, n)
     epsilon_right = fill(optimizer.residual_tol, n)
@@ -412,29 +488,62 @@ function run_vumps_iterations(
             optimizer.residual_tol,
             elapsed,
         )
-        if !isfinite(residual)
-            stop_reason = "nonfinite_residual"
-            break
+        iteration_stop_reason = if !isfinite(residual)
+            "nonfinite_residual"
         elseif residual <= optimizer.residual_tol
-            stop_reason = "converged"
-            break
+            "converged"
         elseif residual_plateau_detected(residual_history, optimizer)
-            stop_reason = "residual_plateau"
             output_level > 0 && @printf(
                 "VUMPS plateau detector stopped at iteration %d after less than %.3g relative improvement over %d iterations.\n",
                 iteration,
                 optimizer.plateau_min_relative_improvement,
                 optimizer.plateau_patience,
             )
-            break
+            "residual_plateau"
         elseif length(residual_history) >= optimizer.divergence_patience
             window = @view residual_history[(end - optimizer.divergence_patience + 1):end]
             historical_minimum = minimum(@view residual_history[1:(end - optimizer.divergence_patience + 1)])
             if minimum(window) > optimizer.divergence_factor * historical_minimum &&
                last(window) > 100 * optimizer.residual_tol
-                stop_reason = "diverging_residual"
-                break
+                "diverging_residual"
+            else
+                nothing
             end
+        else
+            nothing
+        end
+        if iteration_stop_reason !== nothing
+            stop_reason = iteration_stop_reason
+            break
+        end
+
+        pretimeout_requested = stop_requested()
+        periodic_checkpoint = checkpoint_every_iterations > 0 &&
+            iteration % checkpoint_every_iterations == 0
+        if pretimeout_requested || periodic_checkpoint
+            checkpoint_callback === nothing && error(
+                "a VUMPS checkpoint was requested without a checkpoint callback",
+            )
+            checkpoint_reason = pretimeout_requested ?
+                "pretimeout_checkpoint" : "periodic_checkpoint"
+            partial = in_progress_diagnostic(
+                psi,
+                optimizer,
+                residual_history,
+                energy_left_buffer,
+                energy_right_buffer,
+                context.records,
+                checkpoint_reason,
+            )
+            checkpoint_callback(psi, partial)
+        end
+        if pretimeout_requested
+            stop_reason = "pretimeout_checkpoint"
+            output_level > 0 && println(
+                "Pre-timeout request observed after iteration $iteration; " *
+                "the completed iterate was checkpointed and optimization will stop cleanly.",
+            )
+            break
         end
     end
 
@@ -565,7 +674,15 @@ function merge_diagnostics(stages::AbstractVector{VumpsDiagnostics}, growth_dime
     )
 end
 
-function grow_and_optimize(hamiltonian, psi, optimizer::OptimizerSettings; output_level::Integer=1)
+function grow_and_optimize(
+    hamiltonian,
+    psi,
+    optimizer::OptimizerSettings;
+    output_level::Integer=1,
+    checkpoint_every_iterations::Integer=0,
+    checkpoint_callback::Union{Nothing,Function}=nothing,
+    stop_requested::Function=() -> false,
+)
     stages = VumpsDiagnostics[]
     dimensions = Int[maxlinkdim(psi)]
     for growth_step in 1:optimizer.max_growth_steps
@@ -583,14 +700,35 @@ function grow_and_optimize(hamiltonian, psi, optimizer::OptimizerSettings; outpu
         output_level > 0 && println(
             "Growth stage $growth_step: chi $old_dimension -> $new_dimension (target $(optimizer.maxdim))",
         )
+        stage_callback = checkpoint_callback === nothing ? nothing : function (
+            checkpoint_psi,
+            stage_diagnostic,
+        )
+            merged = isempty(stages) ? stage_diagnostic :
+                merge_diagnostics(vcat(stages, [stage_diagnostic]), dimensions)
+            checkpoint_callback(checkpoint_psi, merged)
+        end
+        stage_checkpoint_cadence = new_dimension >= optimizer.maxdim ?
+            checkpoint_every_iterations : 0
         psi, diagnostic = run_vumps_iterations(
             hamiltonian,
             psi,
             optimizer;
             output_level,
+            checkpoint_every_iterations=stage_checkpoint_cadence,
+            checkpoint_callback=stage_callback,
+            stop_requested,
         )
         push!(stages, diagnostic)
+        diagnostic.stop_reason == "pretimeout_checkpoint" && break
         new_dimension >= optimizer.maxdim && break
+        if checkpoint_callback !== nothing
+            merged = merge_diagnostics(stages, dimensions)
+            checkpoint_callback(
+                psi,
+                checkpoint_diagnostic(merged, "growth_stage_checkpoint"),
+            )
+        end
         if new_dimension == old_dimension
             @warn "Subspace expansion did not increase the bond dimension" old_dimension optimizer.maxdim
             break

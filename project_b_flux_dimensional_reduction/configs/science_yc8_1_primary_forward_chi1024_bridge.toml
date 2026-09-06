@@ -1,0 +1,112 @@
+# YC8-1 primary-forward science bridge. The first queued point is the accepted
+# theta/pi=0.15 anchor itself, so VUMPS grows chi=512 -> 1024 at fixed theta
+# before any flux advance. Full state and optimizer-checkpoint payloads are
+# routed to Perlmutter scratch by the guarded launcher; compact manifests stay
+# under output/ for routine synchronization.
+
+[campaign]
+artifact_kind = "project_b_yc8_1_chi1024_bridge_control"
+profile = "yc8_1_primary_forward_chi1024_multimetric_20260831"
+execution_profile = "parallel_vumps_julia4_step8_blocksparse_20260831"
+mode = "forward_bridge"
+immutable_lineage_root_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+fixed_theta_growth_before_flux = true
+nominal_step_over_pi = 0.025
+bridge_end_theta_over_pi = 0.45
+reverse_validation_required_before_full_sweep_promotion = true
+overlap_is_alarm_not_single_acceptance_gate = true
+continuity_policy_path = "configs/phase1_yc8_1_multimetric_continuity.toml"
+continuity_policy_sha256 = "51164d89ff6ca9ed4cc6cca839eec1f46a98cce2c99a68035c74b6665f97b7a3"
+
+[model]
+circumference = 8
+shift = 1
+mps_period = 2
+twist_gauge = "uniform"
+J1 = 1.0
+J2 = 0.12
+Delta1 = 1.0
+Delta2 = 1.0
+Bz = 0.0
+
+[optimizer]
+maxdim = 1024
+cutoff = 1.0e-10
+# Exploratory VUMPS outer-residual profile requested on 2026-08-31. This is
+# not an iDMRG bond-matrix update norm and is not a discarded weight.
+residual_tol = 1.0e-4
+max_iterations = 60
+max_growth_steps = 20
+solver_tol_scale = 100.0
+solver_tol_floor = 1.0e-10
+solver_krylov_dimension = 40
+solver_max_iterations = 120
+record_krylov_diagnostics = true
+multisite_update_alg = "parallel"
+restore_best_on_failure = true
+require_converged = true
+divergence_patience = 8
+divergence_factor = 4.0
+plateau_detection = true
+plateau_warmup_iterations = 40
+plateau_patience = 24
+plateau_min_relative_improvement = 0.005
+
+[scan]
+branch = "primary_forward_chi512_legacy_0p1"
+preparation = "independent_theta0_alternating_chi512"
+direction = "forward"
+lineage_policy = "strict"
+fluxes_over_pi = [0.15, 0.175, 0.20, 0.225, 0.25, 0.275, 0.30, 0.325, 0.35, 0.375, 0.40, 0.425, 0.45]
+seed_pattern = "alternating"
+random_seed = 101
+adaptive_bisection = true
+minimum_step_over_pi = 0.00625
+save_rejected = true
+require_parent_overlap = true
+continuity_policy = "multimetric_trust_region"
+# Alarm only under the multimetric policy; it is not a stand-alone physical
+# acceptance cutoff.
+minimum_parent_overlap_per_site = 0.90
+parent_overlap_tolerance = 1.0e-8
+parent_overlap_krylov_dimension = 32
+# Empirical trust-region bounds calibrated against the smooth accepted
+# 0.10 -> 0.15 transition and the discontinuous rejected 0.15 -> 0.175
+# candidate. They are numerical branch diagnostics, not phase boundaries.
+maximum_cut_entropy_jump = 0.10
+# A fixed-theta increase in chi is expected to raise the finite-entanglement
+# entropy even without changing basin, so the anchor growth uses separate,
+# explicitly recorded bounds. Flux steps use the tighter bounds above/below.
+fixed_flux_growth_maximum_cut_entropy_jump = 0.35
+maximum_energy_term_rms_jump = 0.02
+maximum_magnetization_rms_jump = 0.001
+maximum_mean_schmidt_total_variation = 0.05
+fixed_flux_growth_maximum_mean_schmidt_total_variation = 0.15
+# A resolved transfer diagnostic follows the longest correlation length in the
+# neutral and spin-1 sectors. The ordinary-step bound is a numerical path-
+# following trust region; adaptive bisection can resolve a rapid but smooth
+# change. Fixed-theta chi growth has a separate finite-entanglement allowance.
+require_correlation_length_diagnostics = true
+correlation_length_physical_sz_sectors = [0.0, 1.0]
+correlation_length_tolerance = 1.0e-8
+correlation_length_krylov_dimension = 32
+maximum_log_correlation_length_jump = 0.05
+fixed_flux_growth_maximum_log_correlation_length_jump = 1.0
+require_u1_sector_diagnostics = true
+initial_state_file = "../output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+initial_state_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+
+[spectrum]
+physical_sz_sectors = [0.0, 1.0]
+neigs = 16
+tolerance = 1.0e-10
+krylov_dimension = 40
+random_seed = 101
+
+[runtime]
+output_directory = "../output/science/yc8_1/primary_forward_chi1024_parallel_bridge_20260831/seed_101/chi1024"
+blas_threads = 1
+strided_threads = 1
+threaded_blocksparse = true
+output_level = 1
+optimizer_checkpoint_every_iterations = 2

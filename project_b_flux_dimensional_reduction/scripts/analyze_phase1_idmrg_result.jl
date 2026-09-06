@@ -622,6 +622,10 @@ function main()
             canonicalization.right.subleading_eigenvalue
         file["validation/canonicalization/right_leading_magnitude_gap"] =
             canonicalization.right.leading_magnitude_gap
+        file["validation/canonicalization/right_hermitian_phase_overlap"] =
+            canonicalization.right.hermitian_phase_overlap
+        file["validation/canonicalization/right_hermitian_phase_factor"] =
+            canonicalization.right.hermitian_phase_factor
         file["validation/canonicalization/right_hermitian_relative_correction"] =
             canonicalization.right.hermitian_relative_correction
         file["validation/canonicalization/left_method"] =

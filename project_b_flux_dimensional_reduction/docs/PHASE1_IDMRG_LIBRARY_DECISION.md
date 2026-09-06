@@ -174,6 +174,33 @@ an automatically generated lightweight manifest/history artifact. Scratch is
 working storage rather than an archive, so accepted scientific states and
 their compact provenance remain in home/local durable copies.
 
+## First smaller-step outcome
+
+The benchmark selected two Julia threads in a four-logical-CPU solver step.
+After the zero-update Slurm failure of job `57608599`, the corrected 10-CPU
+outer-allocation/four-CPU exact-step retry completed as job `57611537` at
+theta/pi=0.175. It stopped after 371 updates with bond-matrix update norm
+`9.784243012995464e-6` and final-four intensive-energy span
+`1.6997034890664509e-9`, passing the predeclared working native profile.
+
+The first ITensor conversion exposed a numerical phase-selection defect in
+the transfer fixed point: phase alignment from one matrix pivot produced a
+`5.2672601943421586e-9` apparent Hermitian correction. The transfer
+eigen-residual was already `4.7470841273425886e-15` with a `0.19903524674262085`
+leading-magnitude gap. Replacing the pivot with the full
+Hermitian-partner-overlap phase reduced the correction to
+`3.726441839017409e-15`; the `1e-9` guard was not relaxed. A regression test
+pins this phase-invariant conversion, and the initial rejection remains an
+immutable analysis artifact.
+
+Full promotion analysis then measured parent overlap per site
+`0.9662443394038124`, below the fixed `0.99` primary-forward gate. The state is
+therefore native-converged but branch-rejected. The one-update VUMPS projected
+residual probe was correctly skipped; neither the native bond-matrix update
+norm nor zero discarded weight is relabeled as that probe. The result remains
+a numerical seed only, and the next scientific step bisects the failed interval
+to theta/pi=0.1625 from the accepted theta/pi=0.15 parent itself.
+
 ## Revisit conditions
 
 Reconsider TeNPy if MPSKit fails on Perlmutter for a library-specific reason,

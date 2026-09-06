@@ -3,7 +3,6 @@ using HDF5
 using ITensors
 using ITensorMPS
 using ITensorInfiniteMPS
-using Printf
 using TOML
 using TriangularJ1J2ProjectB
 
@@ -24,8 +23,36 @@ const BENCHMARK_SACCT_SHA256 =
     "5824d9e3e1a579dcf452ecbfcb4c475da13cd3f80f83c9c398f33d599d47c969"
 const BENCHMARK_STEPS_SACCT_SHA256 =
     "de9eeec59e116d0085615cb7ee829d8c6631920caaf1656e6a717b9f835f5200"
+const PREDECESSOR_JOB_ID = "57611537"
+const PREDECESSOR_CONTROL_SHA256 =
+    "a3b75247770cb86a3c155d48dfecf438b1e21b98119b3b8ed2db51a4868d02de"
+const PREDECESSOR_BRIDGE_SHA256 =
+    "533f772c47d715535e6db1da274fb48bde5162dcb90e11d2665bdb9e89fe5b61"
+const PREDECESSOR_RESULT_SHA256 =
+    "03734ddbc4389a45428d69f961a0fdd0adda80567641c383d2f97998be734676"
+const PREDECESSOR_LIGHTWEIGHT_SHA256 =
+    "e7a488e685e68026132a3d48cec09c1e019eb777df0d09e3b93669699fa70b78"
+const PREDECESSOR_CONVERSION_ANALYSIS_SHA256 =
+    "37562ba47872de88494894e61fdcde9da6f67954ecdbbf83fe80dd99526c62bd"
+const PREDECESSOR_FINAL_ANALYSIS_SHA256 =
+    "302b6db4a8e90d568dc61c82c2f8d2b37e588fa3125b69b5cced91752b99fe47"
+const PREDECESSOR_SACCT_SHA256 =
+    "6888060a71a20ef0b2dbdceeb34eebc093b94dac9bf31cf79dc7dd1187172a0d"
+const PREDECESSOR_LOG_SHA256 =
+    "4af8d9ed4adcd9c6612344c937478eb8e25b45c8b177e989a7f1d9547340939d"
+const PREDECESSOR_ELAPSED_SECONDS = 33423
+const PREDECESSOR_ALLOCATED_LOGICAL_CPUS = 10
+const PREDECESSOR_CHARGED_PHYSICAL_CORES = 5
+const PREDECESSOR_CHARGED_NODE_HOURS =
+    PREDECESSOR_ELAPSED_SECONDS / 3600 * PREDECESSOR_CHARGED_PHYSICAL_CORES / 128
+const PRIOR_PHASE1_CHARGED_NODE_HOURS =
+    12.252445747144446 + PREDECESSOR_CHARGED_NODE_HOURS
+const PRIOR_PROJECT_CHARGED_NODE_HOURS =
+    13.346878747144446 + PREDECESSOR_CHARGED_NODE_HOURS
+const NEXT_PACKAGE_BASENAME =
+    "theta_p0p16250000_from_38312fc996fe_working_shared16g_after_57611537"
 const PARENT_THETA_OVER_PI = 0.15
-const TARGET_THETA_OVER_PI = 0.175
+const TARGET_THETA_OVER_PI = 0.1625
 const PROJECT_ROOT = normpath(joinpath(@__DIR__, ".."))
 const WORKING_POLICY_PATH = joinpath(
     PROJECT_ROOT,
@@ -68,6 +95,35 @@ const BENCHMARK_RESULT_PATH = joinpath(
 const BENCHMARK_SACCT_PATH = joinpath(BENCHMARK_PACKAGE, "sacct-57576411.tsv")
 const BENCHMARK_STEPS_SACCT_PATH =
     joinpath(BENCHMARK_PACKAGE, "sacct-steps-57576411.tsv")
+const PREDECESSOR_PACKAGE = joinpath(
+    PROJECT_ROOT,
+    "output",
+    "phase1_idmrg",
+    "yc8_1",
+    "theta_p0p17500000_from_38312fc996fe_working_shared16g_retry_after_57608599",
+)
+const PREDECESSOR_CONTROL_PATH =
+    joinpath(PREDECESSOR_PACKAGE, "phase1_idmrg_sweep_step_control.toml")
+const PREDECESSOR_BRIDGE_PATH =
+    joinpath(PREDECESSOR_PACKAGE, "accepted_parent_to_mpskit_bridge.h5")
+const PREDECESSOR_RESULT_PATH = joinpath(PREDECESSOR_PACKAGE, "idmrg_result_bridge.h5")
+const PREDECESSOR_LIGHTWEIGHT_PATH =
+    joinpath(PREDECESSOR_PACKAGE, "idmrg_result_lightweight.h5")
+const PREDECESSOR_CONVERSION_ANALYSIS_PATH = joinpath(
+    PREDECESSOR_PACKAGE,
+    "analysis",
+    "analysis_idmrg_theta_p0p17500000_chi512_conversion_rejected_" *
+    "03734ddbc438_047345111a33.h5",
+)
+const PREDECESSOR_FINAL_ANALYSIS_PATH = joinpath(
+    PREDECESSOR_PACKAGE,
+    "analysis",
+    "analysis_idmrg_theta_p0p17500000_chi512_rejected_03734ddbc438.h5",
+)
+const PREDECESSOR_SACCT_PATH =
+    joinpath(PREDECESSOR_PACKAGE, "sacct-$PREDECESSOR_JOB_ID.tsv")
+const PREDECESSOR_LOG_PATH =
+    joinpath(PREDECESSOR_PACKAGE, "logs", "idmrg-$PREDECESSOR_JOB_ID.out")
 
 length(ARGS) == 3 || error(
     "usage: prepare_phase1_idmrg_sweep_step.jl ACCEPTED_PARENT.h5 " *
@@ -78,6 +134,9 @@ parent_path = abspath(ARGS[1])
 output_directory = abspath(ARGS[2])
 perlmutter_root = replace(normpath(ARGS[3]), '\\' => '/')
 startswith(perlmutter_root, "/") || error("Perlmutter project root must be absolute")
+basename(output_directory) == NEXT_PACKAGE_BASENAME || error(
+    "output directory must end in $NEXT_PACKAGE_BASENAME",
+)
 isdir(output_directory) && !isempty(readdir(output_directory)) && error(
     "refusing to populate nonempty control directory: $output_directory",
 )
@@ -114,6 +173,25 @@ verify_file(BENCHMARK_RESULT_PATH, BENCHMARK_RESULT_SHA256, "2-thread benchmark 
 verify_file(BENCHMARK_SACCT_PATH, BENCHMARK_SACCT_SHA256, "benchmark accounting")
 verify_file(BENCHMARK_STEPS_SACCT_PATH, BENCHMARK_STEPS_SACCT_SHA256,
     "benchmark step accounting")
+for (path, sha256, label) in (
+    (PREDECESSOR_CONTROL_PATH, PREDECESSOR_CONTROL_SHA256, "predecessor control"),
+    (PREDECESSOR_BRIDGE_PATH, PREDECESSOR_BRIDGE_SHA256, "predecessor bridge"),
+    (PREDECESSOR_RESULT_PATH, PREDECESSOR_RESULT_SHA256, "predecessor result"),
+    (PREDECESSOR_LIGHTWEIGHT_PATH, PREDECESSOR_LIGHTWEIGHT_SHA256,
+        "predecessor lightweight archive"),
+    (PREDECESSOR_CONVERSION_ANALYSIS_PATH, PREDECESSOR_CONVERSION_ANALYSIS_SHA256,
+        "predecessor conversion-rejection analysis"),
+    (PREDECESSOR_FINAL_ANALYSIS_PATH, PREDECESSOR_FINAL_ANALYSIS_SHA256,
+        "predecessor final branch analysis"),
+    (PREDECESSOR_SACCT_PATH, PREDECESSOR_SACCT_SHA256, "predecessor accounting"),
+    (PREDECESSOR_LOG_PATH, PREDECESSOR_LOG_SHA256, "predecessor log"),
+)
+    verify_file(path, sha256, label)
+end
+
+strip(read(PREDECESSOR_SACCT_PATH, String)) ==
+    "57611537|pb1-idmrg|COMPLETED|33423|720|1|10|0:0" ||
+    error("theta/pi=0.175 accounting contents changed")
 
 working_policy = TOML.parsefile(WORKING_POLICY_PATH)
 working_policy["artifact_kind"] ==
@@ -149,6 +227,46 @@ HDF5.h5open(FAILED_TARGET_ANALYSIS_PATH, "r") do file
         error("theta/pi=0.20 no longer fails the parent-overlap gate")
     String(read(file, "lineage/root_state_sha256")) == LINEAGE_ROOT_SHA256 ||
         error("theta/pi=0.20 analysis lineage root changed")
+end
+
+HDF5.h5open(PREDECESSOR_RESULT_PATH, "r") do file
+    String(read(file, "artifact_kind")) == "project_b_mpskit_idmrg_result_bridge" ||
+        error("unexpected theta/pi=0.175 result kind")
+    Bool(read(file, "optimizer/converged")) ||
+        error("theta/pi=0.175 no longer passes its predeclared native gate")
+    Int(read(file, "optimizer/iterations")) == 371 ||
+        error("theta/pi=0.175 iteration count changed")
+    isapprox(Float64(read(file, "optimizer/final_environment_error")),
+        9.784243012995464e-6; atol=5e-18, rtol=0) ||
+        error("theta/pi=0.175 final bond-matrix update norm changed")
+    String(read(file, "lineage/root_state_sha256")) == LINEAGE_ROOT_SHA256 ||
+        error("theta/pi=0.175 result lineage root changed")
+end
+
+HDF5.h5open(PREDECESSOR_CONVERSION_ANALYSIS_PATH, "r") do file
+    String(read(file, "analysis/stage")) == "promotion_blocked_conversion_failure" ||
+        error("initial theta/pi=0.175 conversion analysis changed")
+    !Bool(read(file, "continuation_accepted")) ||
+        error("initial conversion-rejected analysis was relabeled")
+end
+
+HDF5.h5open(PREDECESSOR_FINAL_ANALYSIS_PATH, "r") do file
+    String(read(file, "analysis/stage")) == "full_promotion_analysis" ||
+        error("theta/pi=0.175 final analysis stage changed")
+    Bool(read(file, "optimizer/converged")) ||
+        error("theta/pi=0.175 final analysis lost native convergence")
+    !Bool(read(file, "continuation_accepted")) ||
+        error("theta/pi=0.175 must remain branch-rejected")
+    overlap = Float64(read(file, "continuation/overlap_per_site"))
+    isapprox(overlap, 0.9662443394038124; atol=5e-15, rtol=0) ||
+        error("theta/pi=0.175 parent overlap changed")
+    overlap < 0.99 || error("theta/pi=0.175 no longer fails the parent-overlap gate")
+    !Bool(read(file, "validation/common_vumps_projected_residual_ran")) ||
+        error("VUMPS probe must remain skipped after the overlap rejection")
+    String(read(file, "source/result_bridge_sha256")) == PREDECESSOR_RESULT_SHA256 ||
+        error("theta/pi=0.175 analysis names a different result")
+    String(read(file, "lineage/root_state_sha256")) == LINEAGE_ROOT_SHA256 ||
+        error("theta/pi=0.175 analysis lineage root changed")
 end
 
 HDF5.h5open(BENCHMARK_RESULT_PATH, "r") do file
@@ -258,14 +376,12 @@ catch
 end
 bridge_sha256 = PB.file_sha256(bridge_path)
 
-target_label = "p" * replace(@sprintf("%.8f", TARGET_THETA_OVER_PI), "." => "p")
 scratch_subdirectory =
     "QSL/project_b_flux_dimensional_reduction/phase1_idmrg/yc8_1/" *
-    "theta_$(target_label)_from_$(first(LINEAGE_ROOT_SHA256, 12))_" *
-    "working_shared16g_charge_corrected"
+    NEXT_PACKAGE_BASENAME
 control = Dict{String,Any}(
     "artifact_kind" => "project_b_phase1_idmrg_control",
-    "schema_version" => 3,
+    "schema_version" => 5,
     "created_at_utc" => string(now(UTC)),
     "bridge" => Dict(
         "path" => basename(bridge_path),
@@ -339,14 +455,18 @@ control = Dict{String,Any}(
         "accept_lower_energy_without_branch_gates" => false,
     ),
     "source_evidence" => Dict(
-        "failed_target_theta_over_pi" => 0.2,
-        "failed_target_result_path" => package_relative(FAILED_TARGET_RESULT_PATH),
-        "failed_target_result_sha256" => FAILED_TARGET_RESULT_SHA256,
-        "failed_target_analysis_path" => package_relative(FAILED_TARGET_ANALYSIS_PATH),
-        "failed_target_analysis_sha256" => FAILED_TARGET_ANALYSIS_SHA256,
+        "failed_target_theta_over_pi" => 0.175,
+        "failed_target_result_path" => package_relative(PREDECESSOR_RESULT_PATH),
+        "failed_target_result_sha256" => PREDECESSOR_RESULT_SHA256,
+        "failed_target_analysis_path" => package_relative(PREDECESSOR_FINAL_ANALYSIS_PATH),
+        "failed_target_analysis_sha256" => PREDECESSOR_FINAL_ANALYSIS_SHA256,
         "failed_target_working_native_converged" => true,
-        "failed_target_parent_overlap_per_site" => 0.9662307284691443,
+        "failed_target_parent_overlap_per_site" => 0.9662443394038124,
         "failed_target_branch_accepted" => false,
+        "failed_target_common_vumps_probe_ran" => false,
+        "previous_failed_target_theta_over_pi" => 0.2,
+        "previous_failed_target_result_sha256" => FAILED_TARGET_RESULT_SHA256,
+        "previous_failed_target_analysis_sha256" => FAILED_TARGET_ANALYSIS_SHA256,
     ),
     "resource_selection" => Dict(
         "benchmark_job_id" => "57576411",
@@ -357,9 +477,38 @@ control = Dict{String,Any}(
         "benchmark_steps_sacct_path" => package_relative(BENCHMARK_STEPS_SACCT_PATH),
         "benchmark_steps_sacct_sha256" => BENCHMARK_STEPS_SACCT_SHA256,
         "selected_julia_threads" => 2,
-        "selected_slurm_logical_cpus" => 4,
+        "selected_solver_step_logical_cpus" => 4,
+        "allocation_logical_cpus" => 10,
         "selection_metric" =>
             "minimum projected Shared-QOS node-hours per 100 iDMRG updates",
+    ),
+    "predecessor_evidence" => Dict(
+        "job_id" => PREDECESSOR_JOB_ID,
+        "job_state" => "COMPLETED",
+        "job_exit_code" => "0:0",
+        "job_elapsed_seconds" => PREDECESSOR_ELAPSED_SECONDS,
+        "job_allocated_logical_cpus" => PREDECESSOR_ALLOCATED_LOGICAL_CPUS,
+        "job_charged_physical_cores" => PREDECESSOR_CHARGED_PHYSICAL_CORES,
+        "job_charged_node_hours" => PREDECESSOR_CHARGED_NODE_HOURS,
+        "control_path" => package_relative(PREDECESSOR_CONTROL_PATH),
+        "control_sha256" => PREDECESSOR_CONTROL_SHA256,
+        "bridge_path" => package_relative(PREDECESSOR_BRIDGE_PATH),
+        "bridge_sha256" => PREDECESSOR_BRIDGE_SHA256,
+        "result_path" => package_relative(PREDECESSOR_RESULT_PATH),
+        "result_sha256" => PREDECESSOR_RESULT_SHA256,
+        "lightweight_path" => package_relative(PREDECESSOR_LIGHTWEIGHT_PATH),
+        "lightweight_sha256" => PREDECESSOR_LIGHTWEIGHT_SHA256,
+        "conversion_analysis_path" => package_relative(PREDECESSOR_CONVERSION_ANALYSIS_PATH),
+        "conversion_analysis_sha256" => PREDECESSOR_CONVERSION_ANALYSIS_SHA256,
+        "final_analysis_path" => package_relative(PREDECESSOR_FINAL_ANALYSIS_PATH),
+        "final_analysis_sha256" => PREDECESSOR_FINAL_ANALYSIS_SHA256,
+        "sacct_path" => package_relative(PREDECESSOR_SACCT_PATH),
+        "sacct_sha256" => PREDECESSOR_SACCT_SHA256,
+        "log_path" => package_relative(PREDECESSOR_LOG_PATH),
+        "log_sha256" => PREDECESSOR_LOG_SHA256,
+        "native_converged" => true,
+        "branch_accepted" => false,
+        "classification" => "native_converged_primary_branch_overlap_rejected",
     ),
     "storage" => Dict(
         "backend" => "perlmutter_scratch",
@@ -376,7 +525,8 @@ control = Dict{String,Any}(
         "qos" => "shared",
         "nodes" => 1,
         "tasks" => 1,
-        "cpus_per_task" => 4,
+        "allocation_logical_cpus" => 10,
+        "solver_step_logical_cpus" => 4,
         "julia_threads" => 2,
         "memory" => "16G",
         "time_limit" => "12:00:00",
@@ -384,20 +534,21 @@ control = Dict{String,Any}(
         "maximum_jobs" => 1,
     ),
     "accounting" => Dict(
-        "previous_job_id" => "57576411",
+        "previous_job_id" => PREDECESSOR_JOB_ID,
         "previous_job_state" => "COMPLETED",
         "previous_job_exit_code" => "0:0",
-        "previous_job_elapsed_seconds" => 3131,
-        "previous_job_charged_node_hours" => 0.10871527777777777,
-        "previous_sacct_path" => package_relative(BENCHMARK_SACCT_PATH),
-        "previous_sacct_sha256" => BENCHMARK_SACCT_SHA256,
-        "prior_phase1_charged_node_hours" => 12.25235894158889,
+        "previous_job_elapsed_seconds" => PREDECESSOR_ELAPSED_SECONDS,
+        "previous_job_charged_node_hours" => PREDECESSOR_CHARGED_NODE_HOURS,
+        "previous_sacct_path" => package_relative(PREDECESSOR_SACCT_PATH),
+        "previous_sacct_sha256" => PREDECESSOR_SACCT_SHA256,
+        "prior_phase1_charged_node_hours" => PRIOR_PHASE1_CHARGED_NODE_HOURS,
         "phase1_ceiling_node_hours" => 20.0,
-        "prior_project_charged_node_hours" => 13.34679194158889,
+        "prior_project_charged_node_hours" => PRIOR_PROJECT_CHARGED_NODE_HOURS,
         "project_ceiling_node_hours" => 150.0,
     ),
     "authorization" => Dict(
-        "submission_authorized" => false,
+        "submission_authorized" => true,
+        "authorization_basis" => "standing_owner_authorization_20260825",
         "requires_explicit_submit_command" => true,
         "automatic_advance_allowed" => false,
     ),
@@ -435,6 +586,9 @@ println("Wrote immutable bridge: $bridge_path")
 println("Bridge SHA-256: $bridge_sha256")
 println("Wrote guarded control: $control_path")
 println("Control SHA-256: $(PB.file_sha256(control_path))")
-println("Resources: 2 Julia threads, 4 Slurm logical CPUs, 16G, Shared QOS")
+println("Predecessor evidence: job $PREDECESSOR_JOB_ID completed but failed the " *
+    "primary-branch overlap gate; charge=$(PREDECESSOR_CHARGED_NODE_HOURS) node-hours")
+println("Resources: 10 allocation logical CPUs, 4 solver-step logical CPUs, " *
+    "2 Julia threads, 16G, Shared QOS")
 println("Maximum forecast charge: 0.46875 node-hours")
-println("Submission authorization remains false; no job was submitted.")
+println("Standing owner submission authorization is recorded; this preparer did not submit a job.")

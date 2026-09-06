@@ -1,0 +1,6 @@
+theta_over_pi,legacy_iterations,first_residual,minimum_residual,final_residual,last10_log_slope,last10_r_squared,projected_batch_iteration_at_1e-5,policy_interpretation
+0.0,20,1.382286605e-4,1.504951901e-5,1.504951901e-5,-0.0458603,0.964250,28.91,"final chi-512 batch remains contracting; retain 1e-5 and allow more iterations"
+0.1,20,1.249155029e-2,1.002223553e-5,1.002223553e-5,-0.0675663,0.979641,20.03,"numerically indistinguishable from reaching the requested threshold at the next iteration"
+0.2,20,1.332301778e-2,1.127557518e-5,1.127557518e-5,-0.1042844,0.997436,21.15,"clean exponential contraction; retain 1e-5 and allow more iterations"
+0.3,20,1.486419178e-2,3.675894784e-5,3.675894784e-5,-0.1169722,0.997929,31.13,"clean exponential contraction; retain 1e-5 and allow about twelve more iterations"
+0.4,20,1.739201214e-2,5.489197800e-3,3.920756081e-2,0.1371199,0.999517,,"diverges after iteration 3; reject and bisect from the last accepted parent"

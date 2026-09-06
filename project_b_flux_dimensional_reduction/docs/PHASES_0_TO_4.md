@@ -13,7 +13,7 @@ the reserve and are not automatically reassigned.
 | Phase | Ceiling | Current status | Exit product |
 |---|---:|---|---|
 | 0 — correctness and resource calibration | 10 node-h | **Complete**; corrected seed, 13-candidate matrix, and chi=512 validation copied locally | Correct minimal-cell timing, peak RSS, and one recommended threading configuration |
-| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; chi-512 forward lineage is accepted through theta/pi=0.15; MPSKit iDMRG job 57500598 passes the owner-selected working native gate but is not promoted, and a locally validated Shared-QOS threading benchmark is prepared after three invalid benchmark attempts | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
+| 1 — metastable branch tracking and basin diagnostics | 20 node-h | **In progress**; primary YC8-1 chi-512 lineage remains accepted through theta/pi=0.15, while the independent YC6-1 period-6 comparison is accepted through 0.3375 under the strict profile and prepared to test `1e-4` from that parent | Forward threaded branches, independent competing basins, hysteresis, and approximate critical fluxes |
 | 2 — moderate-chi Hu reproduction | 35 node-h | Not started | Converged entropy response and momentum-resolved physical-Sz transfer flow |
 | 3 — critical-point chi ladders | 60 node-h | Not started | Controlled `S = (c/6) log(xi) + a` analysis at selected crossings |
 | 4 — one independent validation | 15 node-h | Not started | One decisive second route, seed, geometry, or width check |
@@ -246,6 +246,56 @@ preflights on both login and compute nodes. It propagates the validated Julia
 binary into the worker and hash-pins all three failed attempts. Its
 active-control SHA-256 is
 `8fb5a1c0b99e5fa3c955f9e0e914913735e08fe64e90681a648d9ca339a05110`.
+
+Benchmark job `57576411` then completed all four independent thread settings
+with exit `0:0` and selected two Julia threads with a four-logical-CPU solver
+step. Its Shared-QOS charge was `0.1087152778` node-hours. The subsequent
+theta/pi=0.175 science job `57608599` failed after eight seconds before Julia
+started: the 16-GiB request produced a 10-logical-CPU allocation, but the old
+launcher combined a memory-derived `SLURM_CPUS_PER_TASK=9` with
+`SLURM_TRES_PER_TASK=cpu=4`. No scientific update or result exists. Charging
+five physical cores for eight seconds contributes `0.0000868056` node-hours,
+bringing Phase 1 to `12.2524457471` and Project B including Phase 0 to
+`13.3468787471` node-hours. The immutable retry separates a 10-logical-CPU
+outer allocation from an exact four-logical-CPU solver step while retaining
+two Julia threads, 16 GiB, and the same five-core maximum-charge forecast.
+
+The corrected retry completed as job `57611537` after 33,423 seconds and 371
+one-site updates. It passed the predeclared working iDMRG gate with final
+bond-matrix update norm `9.784243013e-6` and final-four intensive-energy span
+`1.699703489e-9`. Full common-representation analysis nevertheless measured
+overlap per site `0.9662443394` with the accepted theta/pi=0.15 parent, below
+the fixed `0.99` branch gate, so theta/pi=0.175 remains rejected and cannot
+advance the lineage. The next package bisects to theta/pi=0.1625 and again uses
+the accepted 0.15 parent itself as its startup tensor. Job `57611537` charged
+`0.3626627604` node-hours, bringing Phase 1 to `12.6151085076` and Project B
+including Phase 0 to `13.7095415076` node-hours.
+
+Independent YC6-1 period-6 job `57629467` then accepted theta/pi through 0.3,
+rejected the divergent direct 0.4 candidate, and adaptively attempted 0.35 from
+the accepted 0.3 parent. The 0.35 residual contracted from `6.118223e-3` to
+`1.644340e-4` over 36 iterations, but the run reached its 48-hour limit before
+the old worker persisted an in-progress iterate. The accepted 0.3 SHA-256 is
+`741261e9fdef75b3793837f2b26f3daac4515c491baab622fc1e8d1e2c8bfe45`;
+the rejected 0.4 SHA-256 is
+`971c4fe5a92fda9ad811dcb09d69689a8570f0b27d2a97f888ee9aa6f00bb523`.
+The continuation restarts 0.35 from accepted 0.3, with immutable checkpoints
+every five iterations and after growth stages plus a one-hour Slurm USR1
+pre-timeout path. The status-derived `1.1251432292` node-hour charge brings
+Phase 1 to `13.7402517367` and Project B to `14.8346847367` node-hours.
+
+The next synced continuation retained the original `1e-5` gate, accepted
+adaptive points `0.325` and `0.3375`, and stopped at the scheduler boundary
+with an unclassified `0.35` checkpoint at residual `4.6601403116e-4`. The
+accepted `0.3375` SHA-256 is
+`ac239341c6b4103e4bbeae2a2468d4fd9253d5db1fbbd0d6d7b5448f9e85234b`.
+Its job ID and authoritative accounting row are not present in the current
+local sync, so the ledger remains unchanged; the launcher conservatively
+reserves the full `1.125` node-hour forecast until reconciliation. The owner
+then authorized an exploratory `1e-4` YC6-1 VUMPS residual profile. Its
+successor restarts `0.35` from the stricter accepted `0.3375` state, not from
+the old-tolerance checkpoint, and preserves every other solver and branch
+gate.
 
 Canonical evidence:
 
@@ -627,6 +677,29 @@ mark a converged state rejected solely because another branch has lower energy.
 | 2026-08-24 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.112775608** | Total including both zero-update benchmark failures; Project B total including Phase 0 is `13.207208608` node-hours; schema-3 retry control `1cbfc097ccd1...` is capped at an additional `0.1875` node-hours |
 | 2026-08-24 | 1 | 57574096 | 0.187500000 | 0.030868056 derived | Third Shared-QOS benchmark attempt completed five 2-thread iDMRG updates, then failed while HDF5 serialized a packed `BitVector`; the partial file has no timing histories, so no benchmark timing result is valid |
 | 2026-08-24 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.143643664** | Total including all three invalid benchmark attempts; Project B total including Phase 0 is `13.238076664` node-hours; schema-4 retry control `8fb5a1c0b99e...` is capped at an additional `0.1875` node-hours |
+| 2026-08-25 | 1 | 57576411 | 0.187500000 | 0.108715278 | Thread benchmark completed all 2/4/8/16-thread steps; independent analysis selected two Julia threads and a four-logical-CPU solver step by projected Shared-QOS node-hours per 100 updates |
+| 2026-08-25 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.252358942** | Total through benchmark job 57576411; Project B total including Phase 0 is `13.346791942` node-hours |
+| 2026-08-25 | 1 | 57608599 | 0.468750000 | 0.000086806 derived | First theta/pi=0.175 Shared-QOS science attempt failed after eight seconds before Julia because its four-CPU batch task conflicted with the memory-sized allocation; no scientific update or result exists |
+| 2026-08-25 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.252445747** | Total including zero-update infrastructure failure 57608599; Project B total including Phase 0 is `13.346878747` node-hours; the immutable retry retains the `0.46875`-node-hour ceiling |
+| 2026-08-26 | 1 | 57611537 | 0.468750000 | 0.362662760 | Theta/pi=0.175 retry completed 371 iDMRG updates and passed its predeclared working native gate, but parent overlap per site `0.9662443394` failed the fixed `0.99` primary-forward branch gate |
+| 2026-08-26 | **1 reconciled total** | All tracked Phase 1 jobs | — | **12.615108508** | Total through job 57611537; Project B total including Phase 0 is `13.709541508` node-hours; next theta/pi=0.1625 midpoint retains the `0.46875`-node-hour ceiling |
+| 2026-08-28 | 1 | 57629467 | 1.125000000 | 1.125143229 derived | Independent YC6-1 period-6 recovery accepted theta/pi through 0.3, rejected direct 0.4, then timed out after 36 contracting iterations at 0.35; no 0.35 state was persisted |
+| 2026-08-28 | **1 tracked total** | All tracked Phase 1 jobs | — | **13.740251737** | Status-derived total through TIMEOUT job 57629467; Project B total including Phase 0 is `14.834684737` node-hours; the continuation restarts from accepted theta/pi=0.3 |
+| 2026-08-29 | 1 | 57690953 | 1.125000000 | 1.104309896 | Strict YC6 continuation accepted theta/pi 0.325 and 0.3375, then preserved an unclassified theta/pi 0.35 pre-timeout checkpoint |
+| 2026-08-29 | **1 reconciled total** | All tracked Phase 1 jobs | — | **14.844561633** | Total through job 57690953; Project B total including Phase 0 is `15.938994633` node-hours |
+| 2026-08-31 | 1 | 57768008 | 1.125000000 | 0.333548177 | Relaxed YC6 diagnostic accepted theta/pi 0.35 at residual `9.840437e-5`, then was canceled during a diverging direct-0.4 trajectory |
+| 2026-08-31 | **1 reconciled total** | All tracked Phase 1 jobs | — | **15.178109810** | Total through job 57768008; Project B total including Phase 0 is `16.272542810` node-hours |
+| 2026-09-01 | 1 | 57793343 | 3.000000000 ledger | 0.144082031 corrected | Initial YC8 chi-1024 growth completed one outer iteration and honored its pre-timeout signal without making a scientific decision; Slurm allocated 18 rather than the ledger's 16 CPUs |
+| 2026-09-01 | **1 corrected total** | All tracked Phase 1 jobs | — | **15.322191841** | `sacct`-corrected total through job 57793343; Project B total including Phase 0 is `16.416624841` node-hours |
+| 2026-09-02 | 1 | 57801654 | 3.000000000 ledger | 2.439316406 corrected | Four-thread YC8 chi-1024 fixed-flux growth reached its 60-iteration cap while contracting, with best residual `4.860776e-4`; no chi-1024 state or theta step was accepted |
+| 2026-09-02 | **1 corrected total** | All tracked Phase 1 jobs | — | **17.761508247** | `sacct`-corrected total through job 57801654; Project B total including Phase 0 is `18.855941247` node-hours; Phase 1 has about `2.238491753` node-hours remaining before later corrections |
+
+The two 32-GiB YC8 jobs have `NCPUS=18` in synchronized `sacct.tsv` records,
+but their job ledgers, forecasts, and `charged_node_hours.txt` calculations use
+16. The measured charges and totals above correct that discrepancy. A full
+48-hour allocation at 18 CPUs costs `3.375` node-hours, not the recorded
+`3.0`; the launcher accounting guard must be corrected before another YC8
+submission and all totals must still be refreshed from live Perlmutter data.
 
 ## Decision log
 
@@ -677,10 +750,22 @@ mark a converged state rejected solely because another branch has lower energy.
 - 2026-08-23: job 57452187 completed with exit `0:0` and charged `1.824166667` node-hours, but its 80-iteration iDMRG result failed the unchanged native convergence gates. Reconciliation exposed that schema-1 `energy_density` stored cumulative growing-superblock energy; the valid intensive MPSKit history is the period-normalized iterator increment previously stored as `energy_density_delta`. Schema 2 makes that quantity canonical and retains cumulative energy only as a diagnostic. The corrected span still fails, so this semantics fix does not retroactively accept the state.
 - 2026-08-23: the rejected first iDMRG result passes the `0.99` overlap gate at `0.9999707484`, preserves all recorded U(1) sector multiplicities, and has smooth common observables. One continuation from its tensors is scientifically approved as a numerical retry, while the accepted theta/pi=0.15 state remains the immutable lineage parent and overlap reference. The new control permits at most 400 additional iterations and 10 node-hours without changing chi, solver, model, symmetry, gauge, period, or any tolerance; it has no automatic advance and is not submitted.
 - 2026-08-23: all new heavy iDMRG checkpoints are routed to Perlmutter `$PSCRATCH` with the Slurm scratch license. Home retains controls, logs, accounting, the restartable final bridge, analyses, and an automatic lightweight checkpoint manifest/history. The project owner deleted the job-57452187 checkpoints after canceling a Globus transfer made the copies untrustworthy. The prepared successor does not depend on them: it starts fresh from the hash-pinned final-result tensor bridge and uses a distinct empty scratch directory.
-- 2026-08-23: the iDMRG operator interface now mirrors the concise VUMPS workflow. A hash-pinned active-control reference permits bare `plan`, `submit`, `status`, `reconcile`, and local `analyze` commands; `submit` itself is the explicit authorization, account `m4863` is the overridable default, and the submitted job ID is recorded automatically. Immutable-input, branch, one-job, no-overwrite, scratch, and budget guards remain enforced.
+- 2026-08-23: the iDMRG operator interface now mirrors the concise VUMPS workflow. A hash-pinned active-control reference permits bare `plan`, `submit`, `status`, `reconcile`, and local `analyze` commands; `submit` is the literal operational mutation, account `m4863` is the overridable default, and the submitted job ID is recorded automatically. Immutable-input, branch, one-job, no-overwrite, scratch, and budget guards remain enforced. Standing authorization was granted separately on 2026-08-25.
 - 2026-08-24: job 57500598 completed 400 additional one-site iDMRG updates. Its energy-density span passed, but MPSKit's `norm(C_new-C_old)` stopping value remained `2.311349e-6` and was still contracting at the cap. The quantity had been mislabeled as an environment error in Project B artifacts; the legacy path remains readable, while new analysis names its actual bond-matrix-update semantics. Native failure now short-circuits ITensor promotion conversion and records a native-only rejected artifact.
 - 2026-08-24: detailed `sacct` evidence showed only 4.7586 average CPUs and 9.63 GiB MaxRSS in an exclusive full-node allocation that cost about 8.81 node-hours. Further regular-QOS iDMRG is blocked pending one 2/4/8/16-thread Shared-QOS benchmark with correct core binding, independent restarts, no checkpoints or full states, a 0.1875-node-hour ceiling, and no automatic scientific submission.
 - 2026-08-24: the project owner selected post-hoc working exploratory iDMRG thresholds of `1e-5` for the bond-matrix update norm and `1e-8` for the final-four intensive-energy span. Job 57500598 passes this working native gate, while its original predeclared-control rejection remains immutable and all branch-promotion gates remain outstanding.
 - 2026-08-24: benchmark job 57548405 failed `1:0` after 11 seconds because the batch worker derived the repository root from `BASH_SOURCE` after Slurm copied it below `/var/spool/slurmd`. It ran zero scientific iterations and produced no timing artifact. The corrected worker takes an explicit project root, `plan` invokes it in preflight mode, the job sets `--chdir`, and a regression test executes a copied worker from a spool-like temporary directory. A separate retry package preserves all failed-attempt hashes and carries forward its approximately `0.000381944` node-hour charge.
 - 2026-08-24: retry benchmark job 57550459 reached the correct source tree but failed `1:0` after 202 seconds at the first 2-thread step because the benchmark called `Base.cputime()`, which is absent from Julia 1.12. It completed zero iDMRG updates, wrote no timing result, and cost approximately `0.007013889` derived Shared-QOS node-hours. Its schema-3 retry replaced that unsupported call with libuv `uv_getrusage`, executed the timing helper during `plan`, propagated the exact validated Julia binary, tested the real MPSKit iterator locally, and made failed `reconcile`/`analyze` commands print recognized causes. Neither failed job is scientific nonconvergence or valid resource data.
 - 2026-08-24: retry benchmark job 57574096 proved that the corrected Perlmutter path, Julia 1.12 timing helper, U(1) seed conversion, state construction, and five 2-thread iDMRG updates execute successfully. It then failed `1:0` after 889 seconds because HDF5 0.17.3 cannot serialize a packed `BitVector` measured-mask. The partial file contains no timing histories, so the attempt is not benchmark data and says nothing about scientific convergence. Its derived Shared-QOS charge is `0.030868056` node-hours. Schema 4 uses a dense `UInt8` mask, cleans writer-owned temporary files on exceptions, rejects stale temporaries before submission, makes both login- and compute-node preflights execute the exact production writer/readback, and tests the analyzer against real writer output.
+- 2026-08-25: benchmark job 57576411 completed all independent 2/4/8/16-thread steps. The independent resource conclusion selected two Julia threads, a four-logical-CPU solver step, 16 GiB, Shared QOS, and core binding. Its reconciled charge was `0.108715278` node-hours; scientific convergence and promotion remained outside the benchmark.
+- 2026-08-25: theta/pi=0.175 job 57608599 failed before Julia because the 16-GiB memory-sized Shared allocation and the explicit four-CPU batch task produced conflicting Slurm task variables. It performed zero scientific updates and is charged a derived `0.0000868056` node-hours. The retry preserves every scientific setting and separates a 10-logical-CPU allocation from an exact, exclusive four-logical-CPU solver step; the five-physical-core maximum-charge forecast remains `0.46875` node-hours.
+- 2026-08-25: the project owner granted standing authorization for guarded Phase 1 iDMRG submissions after a successful live Perlmutter `plan`. Do not request another submission approval; cancellation, deletion, pruning, threshold or lineage changes, and automatic advance remain outside that authorization.
+- 2026-08-26: retry job 57611537 completed theta/pi=0.175 with native working-profile convergence but failed primary-forward promotion at overlap per site `0.9662443394 < 0.99`. A transfer-fixed-point conversion initially failed because phase alignment from one matrix pivot left a `5.267e-9` arbitrary phase. Full Hermitian-overlap phase alignment reduced the correction to `3.726e-15` without changing the `1e-9` guard, after which the branch rejection was independently established. The one-update VUMPS residual probe was not run after overlap failure. The state remains a numerical seed only; the next guarded point is theta/pi=0.1625 from the accepted 0.15 parent.
+- 2026-08-28: independent YC6-1 period-6 job 57629467 timed out after accepting theta/pi through 0.3, rejecting direct 0.4, and contracting for 36 iterations at the adaptive 0.35 midpoint. Because the old worker persisted only terminal candidates, the 0.35 iterate was lost. The prepared continuation hash-pins accepted 0.3, preserves rejected 0.4 only as evidence, writes full-state checkpoints every five iterations and after growth stages, and handles Slurm's one-hour USR1 warning by checkpointing at the next completed outer iteration without making a scientific classification.
+- 2026-08-29: heavy transient storage is generalized beyond iDMRG. Future YC6-1 VUMPS growth-stage, periodic, and pre-timeout checkpoints use a job-specific `$PSCRATCH` directory with the Slurm scratch license; home/project output keeps only compact hash-pinned resume controls plus durable terminal scientific states and provenance. The already-submitted continuation is not canceled or modified and may retain project-side checkpoints under its submitted worker; exclude that directory from routine sync-back.
+- 2026-08-30: the synced YC6-1 continuation accepted theta/pi 0.325 and 0.3375 under the strict `1e-5` residual profile, then preserved an unclassified 0.35 pre-timeout checkpoint. The owner explicitly authorized an exploratory `1e-4` VUMPS outer residual gate for future YC6-1 recovery points. The prepared successor repeats 0.35 from the strict accepted 0.3375 parent, does not import or relabel the old-tolerance checkpoint/rejected states, retains all continuity and solver settings, and does not change YC8-1 or iDMRG thresholds.
+- 2026-08-31: YC6 job 57768008 accepted theta/pi 0.35 under the separate `1e-4` profile, with state SHA-256 `23a5fc3ac5f33a1b928986d3152bf45712954129154428d643ddf8b117975857`, then developed a rapidly increasing residual at direct theta/pi 0.4 and was canceled. The accepted state remains an independent finite-size diagnostic and cannot promote the YC8-1 lineage.
+- 2026-09-02: YC8 job 57801654 completed the fixed-theta chi-512-to-1024 growth profile but missed the `1e-4` VUMPS residual target at its 60-iteration cap. It restored iteration 52 at residual `4.860776365e-4`; candidate SHA-256 `4e3a5f406f61cb791ea98ef6b0dc6cfb108877eb5199d4dc71d204f150c0a9e6` remains rejected and no continuity or theta-advance decision was made.
+- 2026-09-06: synchronized Slurm accounting showed that both 32-GiB YC8 jobs received 18 logical CPUs while their launcher ledgers assumed 16. Their corrected charges are `0.14408203125` and `2.43931640625` node-hours. The accounting guard must use the actual Shared-QOS allocation before another submission.
+- 2026-09-06: the owner's standing authorization applies to guarded Project B submissions after a successful live plan, not only to the earlier iDMRG launcher. Do not stop after plan or request a repeated submission approval. Cancellation, deletion, pruning, threshold or lineage changes, and unguarded automatic advance remain outside that authorization.
+- 2026-09-06: repository continuity was separated into durable `AGENTS.md` rules, rolling `PROJECT_STATE.md`, stable `ARCHITECTURE.md`, indexed plans and decisions, Git history, and a generic new-task prompt. Dated cross-device handoffs remain provenance rather than current state.

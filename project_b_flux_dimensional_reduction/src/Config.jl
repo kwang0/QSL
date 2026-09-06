@@ -49,9 +49,23 @@ Base.@kwdef struct ScanSettings
     minimum_step_over_pi::Float64 = 1 / 64
     save_rejected::Bool = true
     require_parent_overlap::Bool = false
+    continuity_policy::Symbol = :overlap_floor
     minimum_parent_overlap_per_site::Float64 = 0.99
     parent_overlap_tolerance::Float64 = 1e-8
     parent_overlap_krylov_dimension::Int = 16
+    maximum_cut_entropy_jump::Float64 = Inf
+    fixed_flux_growth_maximum_cut_entropy_jump::Float64 = Inf
+    maximum_energy_term_rms_jump::Float64 = Inf
+    maximum_magnetization_rms_jump::Float64 = Inf
+    maximum_mean_schmidt_total_variation::Float64 = Inf
+    fixed_flux_growth_maximum_mean_schmidt_total_variation::Float64 = Inf
+    require_correlation_length_diagnostics::Bool = false
+    correlation_length_physical_sz_sectors::Vector{Float64} = [0.0, 1.0]
+    correlation_length_tolerance::Float64 = 1e-8
+    correlation_length_krylov_dimension::Int = 16
+    maximum_log_correlation_length_jump::Float64 = Inf
+    fixed_flux_growth_maximum_log_correlation_length_jump::Float64 = Inf
+    require_u1_sector_diagnostics::Bool = false
     initial_state_file::Union{Nothing,String} = nothing
     initial_state_sha256::Union{Nothing,String} = nothing
     optimizer_checkpoint_file::Union{Nothing,String} = nothing
@@ -95,6 +109,7 @@ Base.@kwdef struct RuntimeSettings
     strided_threads::Int = 1
     threaded_blocksparse::Bool = false
     output_level::Int = 1
+    optimizer_checkpoint_every_iterations::Int = 0
 end
 
 Base.@kwdef struct ProjectSettings
@@ -247,6 +262,11 @@ function load_settings(config_path::AbstractString)
         minimum_step_over_pi=Float64(table_value(scan_table, "minimum_step_over_pi", 1 / 64)),
         save_rejected=Bool(table_value(scan_table, "save_rejected", true)),
         require_parent_overlap=Bool(table_value(scan_table, "require_parent_overlap", false)),
+        continuity_policy=Symbol(lowercase(String(table_value(
+            scan_table,
+            "continuity_policy",
+            "overlap_floor",
+        )))),
         minimum_parent_overlap_per_site=Float64(table_value(
             scan_table,
             "minimum_parent_overlap_per_site",
@@ -261,6 +281,71 @@ function load_settings(config_path::AbstractString)
             scan_table,
             "parent_overlap_krylov_dimension",
             16,
+        )),
+        maximum_cut_entropy_jump=Float64(table_value(
+            scan_table,
+            "maximum_cut_entropy_jump",
+            Inf,
+        )),
+        fixed_flux_growth_maximum_cut_entropy_jump=Float64(table_value(
+            scan_table,
+            "fixed_flux_growth_maximum_cut_entropy_jump",
+            table_value(scan_table, "maximum_cut_entropy_jump", Inf),
+        )),
+        maximum_energy_term_rms_jump=Float64(table_value(
+            scan_table,
+            "maximum_energy_term_rms_jump",
+            Inf,
+        )),
+        maximum_magnetization_rms_jump=Float64(table_value(
+            scan_table,
+            "maximum_magnetization_rms_jump",
+            Inf,
+        )),
+        maximum_mean_schmidt_total_variation=Float64(table_value(
+            scan_table,
+            "maximum_mean_schmidt_total_variation",
+            Inf,
+        )),
+        fixed_flux_growth_maximum_mean_schmidt_total_variation=Float64(table_value(
+            scan_table,
+            "fixed_flux_growth_maximum_mean_schmidt_total_variation",
+            table_value(scan_table, "maximum_mean_schmidt_total_variation", Inf),
+        )),
+        require_correlation_length_diagnostics=Bool(table_value(
+            scan_table,
+            "require_correlation_length_diagnostics",
+            false,
+        )),
+        correlation_length_physical_sz_sectors=Float64.(table_value(
+            scan_table,
+            "correlation_length_physical_sz_sectors",
+            [0.0, 1.0],
+        )),
+        correlation_length_tolerance=Float64(table_value(
+            scan_table,
+            "correlation_length_tolerance",
+            1e-8,
+        )),
+        correlation_length_krylov_dimension=Int(table_value(
+            scan_table,
+            "correlation_length_krylov_dimension",
+            16,
+        )),
+        maximum_log_correlation_length_jump=Float64(table_value(
+            scan_table,
+            "maximum_log_correlation_length_jump",
+            Inf,
+        )),
+        fixed_flux_growth_maximum_log_correlation_length_jump=Float64(table_value(
+            scan_table,
+            "fixed_flux_growth_maximum_log_correlation_length_jump",
+            table_value(scan_table, "maximum_log_correlation_length_jump", Inf),
+        )),
+        require_u1_sector_diagnostics=Bool(table_value(
+            scan_table,
+            "require_u1_sector_diagnostics",
+            false,
         )),
         initial_state_file=initial_state_file,
         initial_state_sha256=initial_state_sha256,
@@ -288,6 +373,11 @@ function load_settings(config_path::AbstractString)
         strided_threads=Int(table_value(runtime_table, "strided_threads", 1)),
         threaded_blocksparse=Bool(table_value(runtime_table, "threaded_blocksparse", false)),
         output_level=Int(table_value(runtime_table, "output_level", 1)),
+        optimizer_checkpoint_every_iterations=Int(table_value(
+            runtime_table,
+            "optimizer_checkpoint_every_iterations",
+            0,
+        )),
     )
 
     optimizer.maxdim >= 2 || throw(ArgumentError("optimizer.maxdim must be at least 2"))
@@ -335,12 +425,86 @@ function load_settings(config_path::AbstractString)
     0 < scan.minimum_parent_overlap_per_site <= 1 || throw(ArgumentError(
         "minimum_parent_overlap_per_site must lie in (0, 1]",
     ))
+    scan.continuity_policy in (:overlap_floor, :multimetric_trust_region) || throw(
+        ArgumentError(
+            "scan.continuity_policy must be 'overlap_floor' or " *
+            "'multimetric_trust_region'",
+        ),
+    )
+    for (name, value) in (
+        ("maximum_cut_entropy_jump", scan.maximum_cut_entropy_jump),
+        (
+            "fixed_flux_growth_maximum_cut_entropy_jump",
+            scan.fixed_flux_growth_maximum_cut_entropy_jump,
+        ),
+        ("maximum_energy_term_rms_jump", scan.maximum_energy_term_rms_jump),
+        ("maximum_magnetization_rms_jump", scan.maximum_magnetization_rms_jump),
+        (
+            "maximum_mean_schmidt_total_variation",
+            scan.maximum_mean_schmidt_total_variation,
+        ),
+        (
+            "fixed_flux_growth_maximum_mean_schmidt_total_variation",
+            scan.fixed_flux_growth_maximum_mean_schmidt_total_variation,
+        ),
+    )
+        value >= 0 || throw(ArgumentError("scan.$name must be nonnegative"))
+        if scan.continuity_policy === :multimetric_trust_region
+            isfinite(value) || throw(ArgumentError(
+                "scan.$name must be finite for multimetric_trust_region",
+            ))
+        end
+    end
     scan.parent_overlap_tolerance > 0 || throw(ArgumentError(
         "parent_overlap_tolerance must be positive",
     ))
     scan.parent_overlap_krylov_dimension >= 4 || throw(ArgumentError(
         "parent_overlap_krylov_dimension must be at least 4",
     ))
+    isempty(scan.correlation_length_physical_sz_sectors) && throw(ArgumentError(
+        "correlation_length_physical_sz_sectors cannot be empty",
+    ))
+    length(unique(scan.correlation_length_physical_sz_sectors)) ==
+        length(scan.correlation_length_physical_sz_sectors) || throw(ArgumentError(
+        "correlation_length_physical_sz_sectors contains duplicates",
+    ))
+    all(
+        value -> isfinite(value) && isapprox(2 * value, round(2 * value); atol=1e-12, rtol=0),
+        scan.correlation_length_physical_sz_sectors,
+    ) || throw(ArgumentError(
+        "correlation-length physical Sz sectors must be integers or half-integers",
+    ))
+    scan.correlation_length_tolerance > 0 || throw(ArgumentError(
+        "correlation_length_tolerance must be positive",
+    ))
+    scan.correlation_length_krylov_dimension >= 4 || throw(ArgumentError(
+        "correlation_length_krylov_dimension must be at least 4",
+    ))
+    for (name, value) in (
+        (
+            "maximum_log_correlation_length_jump",
+            scan.maximum_log_correlation_length_jump,
+        ),
+        (
+            "fixed_flux_growth_maximum_log_correlation_length_jump",
+            scan.fixed_flux_growth_maximum_log_correlation_length_jump,
+        ),
+    )
+        value >= 0 || throw(ArgumentError("scan.$name must be nonnegative"))
+        if scan.require_correlation_length_diagnostics
+            isfinite(value) || throw(ArgumentError(
+                "scan.$name must be finite when correlation-length diagnostics are required",
+            ))
+        end
+    end
+    if scan.require_correlation_length_diagnostics
+        scan.continuity_policy === :multimetric_trust_region || throw(ArgumentError(
+            "correlation-length gating requires multimetric_trust_region",
+        ))
+        any(iszero, scan.correlation_length_physical_sz_sectors) || throw(ArgumentError(
+            "correlation-length diagnostics require the neutral physical Sz=0 sector",
+        ))
+    end
     if scan.initial_state_file === nothing
         scan.initial_state_sha256 === nothing || throw(ArgumentError(
             "initial_state_sha256 requires initial_state_file",
@@ -369,9 +533,6 @@ function load_settings(config_path::AbstractString)
                 "optimizer_checkpoint_sha256 must contain 64 hexadecimal digits",
             ),
         )
-        scan.initial_state_file === nothing && throw(ArgumentError(
-            "an optimizer checkpoint requires a separate accepted initial_state_file",
-        ))
         scan.lineage_policy === :strict || throw(ArgumentError(
             "an optimizer checkpoint requires lineage_policy='strict'",
         ))
@@ -395,6 +556,9 @@ function load_settings(config_path::AbstractString)
     runtime.strided_threads >= 1 ||
         throw(ArgumentError("runtime.strided_threads must be positive"))
     runtime.output_level >= 0 || throw(ArgumentError("runtime.output_level cannot be negative"))
+    runtime.optimizer_checkpoint_every_iterations >= 0 || throw(ArgumentError(
+        "runtime.optimizer_checkpoint_every_iterations cannot be negative",
+    ))
 
     return ProjectSettings(
         model=model,

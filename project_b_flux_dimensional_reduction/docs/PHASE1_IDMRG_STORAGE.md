@@ -95,3 +95,29 @@ writes only a small timing HDF5 file. It therefore needs neither a scratch
 license nor a scratch transfer. A later scientific continuation will again use
 PSCRATCH for heavy checkpoints after the benchmark selects a right-sized
 Shared-QOS resource request.
+
+The first 16-GiB Shared-QOS science attempt, job `57608599`, failed before
+Julia started and therefore wrote no scientific result or checkpoint. Slurm
+expanded the memory-sized allocation to 10 logical CPUs, while the batch task
+still declared four; the inherited `SLURM_CPUS_PER_TASK=9` and
+`SLURM_TRES_PER_TASK=cpu=4` conflict caused `srun` to abort. Its immutable
+retry keeps the benchmarked four-logical-CPU solver step and two Julia threads
+but separates them from a 10-logical-CPU outer allocation. The step is launched
+with `srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task=4
+--cpu-bind=cores`. The 16-GiB, five-physical-core charge forecast is unchanged.
+
+Retry job `57611537` completed and synced a 16-MiB full result bridge plus its
+small lightweight archive, log, accounting, and two immutable analyses. Its
+PSCRATCH checkpoints remain restart-heavy working data and are not part of the
+home/local archive. The branch-rejected theta/pi=0.175 result is retained as
+numerical evidence only; it is not the theta/pi=0.1625 startup tensor.
+
+The next package uses the accepted theta/pi=0.15 parent bridge and a distinct
+scratch namespace:
+
+```text
+$PSCRATCH/QSL/project_b_flux_dimensional_reduction/phase1_idmrg/yc8_1/theta_p0p16250000_from_38312fc996fe_working_shared16g_after_57611537/checkpoints/
+```
+
+That directory must be absent or empty before submission. Nothing in the
+theta/pi=0.175 checkpoint tree is resumed, moved, deleted, or pruned.

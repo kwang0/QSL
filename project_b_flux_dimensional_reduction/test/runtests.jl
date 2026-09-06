@@ -18,6 +18,11 @@ const PROJECT_ROOT = normpath(joinpath(@__DIR__, ".."))
         joinpath("scripts", "archive_phase1_idmrg_checkpoints.jl"),
         joinpath("scripts", "prepare_phase1_idmrg_benchmark.jl"),
         joinpath("scripts", "analyze_phase1_idmrg_benchmark.jl"),
+        joinpath("scripts", "validate_yc6_1_recovery_config.jl"),
+        joinpath("scripts", "validate_yc8_1_chi1024_bridge_config.jl"),
+        joinpath("scripts", "prepare_yc8_1_chi1024_reverse_check.jl"),
+        joinpath("scripts", "analyze_yc8_1_chi1024_forward_reverse.jl"),
+        joinpath("scripts", "prepare_yc8_1_chi1024_full_sweep.jl"),
         joinpath("idmrg", "scripts", "run_idmrg.jl"),
         joinpath("idmrg", "scripts", "validate_control.jl"),
         joinpath("idmrg", "scripts", "run_benchmark.jl"),
@@ -36,9 +41,60 @@ const PROJECT_ROOT = normpath(joinpath(@__DIR__, ".."))
         end
         @test parsed
     end
+
+    yc6_launcher = read(
+        joinpath(PROJECT_ROOT, "slurm", "run_yc6_1_recovery_cpu.sh"),
+        String,
+    )
+    yc6_worker = read(
+        joinpath(PROJECT_ROOT, "slurm", "run_yc6_1_recovery_job.sh"),
+        String,
+    )
+    @test occursin("--signal=\"B:USR1@\$PRETIMEOUT_SIGNAL_SECONDS\"", yc6_launcher)
+    @test occursin("--licenses=scratch", yc6_launcher)
+    @test occursin("trap handle_pretimeout USR1", yc6_worker)
+    @test occursin("PROJECT_B_PRETIMEOUT_REQUEST_FILE", yc6_worker)
+    @test occursin("PROJECT_B_OPTIMIZER_CHECKPOINT_DIRECTORY", yc6_worker)
+    yc8_launcher = read(
+        joinpath(PROJECT_ROOT, "slurm", "run_yc8_1_chi1024_bridge_cpu.sh"),
+        String,
+    )
+    yc8_worker = read(
+        joinpath(PROJECT_ROOT, "slurm", "run_yc8_1_chi1024_bridge_job.sh"),
+        String,
+    )
+    @test occursin("--signal=\"B:USR1@\$PRETIMEOUT_SIGNAL_SECONDS\"", yc8_launcher)
+    @test occursin("--licenses=scratch", yc8_launcher)
+    @test occursin("reconciled_yc8_charge", yc8_launcher)
+    @test occursin("prior YC8 run is not reconciled", yc8_launcher)
+    @test occursin("readonly SOLVER_STEP_CPUS=8", yc8_launcher)
+    @test occursin("readonly JULIA_THREADS=4", yc8_launcher)
+    @test occursin("readonly SOLVER_STEP_CPUS=8", yc8_worker)
+    @test occursin("readonly JULIA_THREADS=4", yc8_worker)
+    @test occursin("--cpus-per-task=\"\$SOLVER_STEP_CPUS\"", yc8_worker)
+    @test occursin("JULIA_NUM_THREADS=\"\$JULIA_THREADS\"", yc8_worker)
+    @test occursin("PROJECT_B_STATE_OUTPUT_DIRECTORY", yc8_worker)
+    @test occursin("PROJECT_B_OPTIMIZER_CHECKPOINT_DIRECTORY", yc8_worker)
+    @test occursin("forward_full_sweep", read(
+        joinpath(PROJECT_ROOT, "scripts", "validate_yc8_1_chi1024_bridge_config.jl"),
+        String,
+    ))
 end
 
 include("test_idmrg_native_analysis.jl")
+
+@testset "iDMRG Hermitian fixed-point phase alignment" begin
+    for phase in (2.6336300971705697e-9, 0.37, -1.11)
+        raw_factor = cis(phase)
+        overlap = conj(raw_factor)^2
+        alignment = PB._hermitian_phase_factor(overlap)
+        aligned_factor = alignment * raw_factor
+        @test isapprox(abs(alignment), 1.0; atol=1e-15, rtol=0)
+        @test isapprox(imag(aligned_factor), 0.0; atol=1e-14, rtol=0)
+        @test isapprox(abs(real(aligned_factor)), 1.0; atol=1e-14, rtol=0)
+    end
+    @test_throws ErrorException PB._hermitian_phase_factor(0.0 + 0.0im)
+end
 
 @testset "Phase 1 iDMRG target bond table" begin
     geometry = YCGeometry(8, 1)
@@ -175,6 +231,11 @@ end
         @test occursin(string(direction), state_path)
         @test occursin("seed$(phase1.scan.random_seed)", state_path)
         @test occursin("chi128", state_path)
+        scratch_state_directory = joinpath(tempdir(), "project-b-state-routing-test")
+        withenv("PROJECT_B_STATE_OUTPUT_DIRECTORY" => scratch_state_directory) do
+            routed = PB.state_file_path(phase1, 1, first(fluxes), true)
+            @test dirname(routed) == scratch_state_directory
+        end
     end
     chi512 = load_settings(joinpath(
         PROJECT_ROOT,
@@ -202,6 +263,87 @@ end
     @test chi512.scan.minimum_parent_overlap_per_site == 0.99
     @test chi512.runtime.threaded_blocksparse
     @test occursin("chi512", chi512.runtime.output_directory)
+    yc6_recovery = load_settings(joinpath(
+        PROJECT_ROOT,
+        "configs",
+        "science_yc6_1_legacy_period6_chi512.toml",
+    ))
+    @test yc6_recovery.model.geometry == YCGeometry(6, 1)
+    @test model_mps_period(yc6_recovery.model) == 6
+    @test yc6_recovery.optimizer.maxdim == 512
+    @test yc6_recovery.optimizer.residual_tol == 1e-5
+    @test yc6_recovery.optimizer.max_iterations == 60
+    @test yc6_recovery.optimizer.record_krylov_diagnostics
+    @test yc6_recovery.optimizer.multisite_update_alg == "sequential"
+    @test !yc6_recovery.optimizer.restore_best_on_failure
+    @test yc6_recovery.optimizer.plateau_detection
+    @test yc6_recovery.scan.branch == "yc6_1_legacy_period6_recovery_chi512"
+    @test yc6_recovery.scan.preparation ==
+        "independent_theta0_legacy_period6_alternating"
+    @test yc6_recovery.scan.lineage_policy === :strict
+    @test yc6_recovery.scan.fluxes_over_pi == Float64.(0:10) ./ 10
+    @test yc6_recovery.scan.minimum_step_over_pi == 0.00625
+    @test yc6_recovery.scan.require_parent_overlap
+    @test yc6_recovery.scan.minimum_parent_overlap_per_site == 0.90
+    @test yc6_recovery.runtime.threaded_blocksparse
+    @test yc6_recovery.runtime.optimizer_checkpoint_every_iterations == 0
+    yc6_continuation = load_settings(joinpath(
+        PROJECT_ROOT,
+        "configs",
+        "science_yc6_1_legacy_period6_chi512_after_57629467.toml",
+    ))
+    @test yc6_continuation.scan.fluxes_over_pi ==
+        [0.35, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    @test yc6_continuation.scan.initial_state_sha256 ==
+        "741261e9fdef75b3793837f2b26f3daac4515c491baab622fc1e8d1e2c8bfe45"
+    @test yc6_continuation.scan.optimizer_checkpoint_file === nothing
+    @test yc6_continuation.runtime.optimizer_checkpoint_every_iterations == 5
+    @test occursin(
+        "legacy_period6_recovery_after_57629467",
+        yc6_continuation.runtime.output_directory,
+    )
+    yc6_relaxed = load_settings(joinpath(
+        PROJECT_ROOT,
+        "configs",
+        "science_yc6_1_legacy_period6_chi512_tol1e4_after_p0p3375.toml",
+    ))
+    @test yc6_relaxed.optimizer.residual_tol == 1e-4
+    @test yc6_relaxed.optimizer.max_iterations == 60
+    @test yc6_relaxed.scan.fluxes_over_pi ==
+        [0.35, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    @test yc6_relaxed.scan.initial_state_sha256 ==
+        "ac239341c6b4103e4bbeae2a2468d4fd9253d5db1fbbd0d6d7b5448f9e85234b"
+    @test yc6_relaxed.scan.optimizer_checkpoint_file === nothing
+    @test yc6_relaxed.runtime.optimizer_checkpoint_every_iterations == 5
+    @test occursin("tol1e4", yc6_relaxed.runtime.output_directory)
+    yc8_chi1024 = load_settings(joinpath(
+        PROJECT_ROOT,
+        "configs",
+        "science_yc8_1_primary_forward_chi1024_bridge.toml",
+    ))
+    @test yc8_chi1024.model.geometry == YCGeometry(8, 1)
+    @test model_mps_period(yc8_chi1024.model) == 2
+    @test yc8_chi1024.optimizer.maxdim == 1024
+    @test yc8_chi1024.optimizer.residual_tol == 1e-4
+    @test yc8_chi1024.optimizer.multisite_update_alg == "parallel"
+    @test yc8_chi1024.optimizer.restore_best_on_failure
+    @test yc8_chi1024.scan.fluxes_over_pi == collect(0.15:0.025:0.45)
+    @test yc8_chi1024.scan.continuity_policy === :multimetric_trust_region
+    @test yc8_chi1024.scan.minimum_parent_overlap_per_site == 0.90
+    @test yc8_chi1024.scan.maximum_cut_entropy_jump == 0.10
+    @test yc8_chi1024.scan.fixed_flux_growth_maximum_cut_entropy_jump == 0.35
+    @test yc8_chi1024.scan.maximum_energy_term_rms_jump == 0.02
+    @test yc8_chi1024.scan.maximum_magnetization_rms_jump == 0.001
+    @test yc8_chi1024.scan.maximum_mean_schmidt_total_variation == 0.05
+    @test yc8_chi1024.scan.fixed_flux_growth_maximum_mean_schmidt_total_variation == 0.15
+    @test yc8_chi1024.scan.require_correlation_length_diagnostics
+    @test yc8_chi1024.scan.correlation_length_physical_sz_sectors == [0.0, 1.0]
+    @test yc8_chi1024.scan.correlation_length_tolerance == 1e-8
+    @test yc8_chi1024.scan.correlation_length_krylov_dimension == 32
+    @test yc8_chi1024.scan.maximum_log_correlation_length_jump == 0.05
+    @test yc8_chi1024.scan.fixed_flux_growth_maximum_log_correlation_length_jump == 1.0
+    @test yc8_chi1024.scan.require_u1_sector_diagnostics
+    @test yc8_chi1024.runtime.optimizer_checkpoint_every_iterations == 2
     recovery = load_settings(joinpath(
         PROJECT_ROOT,
         "configs",
@@ -513,7 +655,7 @@ end
         0.2421875,
         "/test/rejected-checkpoint.h5",
     )
-    @test !PB.fixed_flux_optimizer_resume_requested(
+    @test PB.fixed_flux_optimizer_resume_requested(
         0.2421875,
         0.24609375,
         "/test/rejected-checkpoint.h5",
@@ -644,6 +786,41 @@ end
         @test resume_outcome["optimizer_cumulative_iterations"] == 720
         @test resume_outcome["optimizer_checkpoint_sha256"] == repeat("b", 64)
         @test !resume_outcome["physical_endpoint"]
+
+        pretimeout_directory = joinpath(directory, "pretimeout")
+        mkpath(pretimeout_directory)
+        pretimeout_settings = ProjectSettings(
+            model=settings.model,
+            optimizer=settings.optimizer,
+            scan=settings.scan,
+            spectrum=settings.spectrum,
+            runtime=RuntimeSettings(output_directory=pretimeout_directory),
+            config_path="/test/pretimeout.toml",
+            config_text="# pretimeout fixture\n",
+        )
+        pretimeout_diagnostic = PB.checkpoint_diagnostic(
+            diagnostic,
+            "pretimeout_checkpoint",
+        )
+        pretimeout_path = PB.write_pretimeout_scan_outcome(
+            pretimeout_settings,
+            0.35,
+            1,
+            pretimeout_diagnostic,
+            "/test/accepted-parent.h5",
+            repeat("a", 64),
+            (
+                path="/test/checkpoint.h5",
+                sha256=repeat("d", 64),
+                resume_configuration="/test/resume.toml",
+            ),
+        )
+        pretimeout_outcome = TOML.parsefile(pretimeout_path)
+        @test pretimeout_outcome["status"] == "pretimeout_checkpointed"
+        @test pretimeout_outcome["classification"] ==
+            "scheduler_boundary_not_scientific_endpoint"
+        @test pretimeout_outcome["optimizer_checkpoint_sha256"] == repeat("d", 64)
+        @test pretimeout_outcome["resume_configuration"] == "/test/resume.toml"
     end
 end
 
@@ -782,6 +959,43 @@ end
     @test isapprox(continuity.overlap_per_unit_cell, 1.0; atol=1e-10)
     @test isapprox(continuity.overlap_per_site, 1.0; atol=1e-10)
     @test iszero(continuity.mean_schmidt_total_variation)
+    multimetric_settings = ScanSettings(
+        branch=settings.scan.branch,
+        preparation=settings.scan.preparation,
+        direction=:forward,
+        lineage_policy=:strict,
+        fluxes_over_pi=[0.0, 0.25],
+        seed_pattern=settings.scan.seed_pattern,
+        random_seed=settings.scan.random_seed,
+        require_parent_overlap=true,
+        continuity_policy=:multimetric_trust_region,
+        minimum_parent_overlap_per_site=0.90,
+        parent_overlap_tolerance=1e-10,
+        parent_overlap_krylov_dimension=4,
+        maximum_cut_entropy_jump=0.10,
+        maximum_energy_term_rms_jump=0.02,
+        maximum_magnetization_rms_jump=0.001,
+        maximum_mean_schmidt_total_variation=0.05,
+        require_u1_sector_diagnostics=true,
+    )
+    shifted_observables = merge(
+        observables,
+        (energy_terms=observables.energy_terms .+ 0.10,),
+    )
+    multimetric_failure = PB.branch_continuity_diagnostics(
+        psi,
+        psi,
+        observables,
+        shifted_observables,
+        0.0,
+        0.0,
+        multimetric_settings,
+    )
+    @test !multimetric_failure.passed
+    @test !multimetric_failure.energy_term_gate_passed
+    @test multimetric_failure.u1_sector_diagnostics_passed
+    @test !multimetric_failure.overlap_alarm_triggered
+    @test multimetric_failure.reason == "failed_local_energy_pattern"
     krylov_record = PB.KrylovSolveDiagnostic(
         outer_iteration=1,
         solve_kind="center_C",
@@ -964,6 +1178,112 @@ end
         @test resumed_initial.optimizer_checkpoint_sha256 == checkpoint_sha256
         @test resumed_initial.optimizer_checkpoint_iterations == 360
         @test resumed_initial.optimizer_checkpoint_residual == 2.3e-5
+
+        target_checkpoint_path = joinpath(directory, "target-checkpoint.h5")
+        target_checkpoint_diagnostic = PB.checkpoint_diagnostic(
+            checkpoint_diagnostic,
+            "growth_stage_checkpoint",
+        )
+        growth_checkpoint_settings = ProjectSettings(
+            model=settings.model,
+            optimizer=OptimizerSettings(
+                maxdim=2,
+                residual_tol=1e-5,
+                max_iterations=180,
+                record_krylov_diagnostics=true,
+                plateau_detection=false,
+            ),
+            scan=settings.scan,
+            spectrum=settings.spectrum,
+            runtime=settings.runtime,
+            config_path=settings.config_path,
+            config_text=settings.config_text * "\n# growth-stage checkpoint fixture\n",
+        )
+        PB.write_state_file(
+            target_checkpoint_path,
+            growth_checkpoint_settings,
+            psi,
+            build_hamiltonian(settings.model, PB.siteinds(psi), 0.25),
+            target_checkpoint_diagnostic,
+            0.25,
+            2;
+            continuation_accepted=false,
+            parent_state_path=path,
+            parent_state_sha256=parent_sha256,
+            parent_flux_history_over_pi=[0.0],
+            precomputed_observables=observables,
+        )
+        target_checkpoint_sha256 = PB.file_sha256(target_checkpoint_path)
+        target_checkpoint_state = PB.read_state_file(target_checkpoint_path)
+        @test target_checkpoint_state.parent_flux_history_over_pi == [0.0]
+        @test target_checkpoint_state.flux_history_over_pi == [0.0, 0.25]
+        scratch_checkpoint_directory = joinpath(directory, "scratch-checkpoints")
+        withenv(
+            "PROJECT_B_OPTIMIZER_CHECKPOINT_DIRECTORY" =>
+                scratch_checkpoint_directory,
+        ) do
+            routed_checkpoint_path = PB.optimizer_checkpoint_file_path(
+                checkpoint_settings,
+                2,
+                0.25,
+                target_checkpoint_diagnostic,
+            )
+            @test dirname(routed_checkpoint_path) == scratch_checkpoint_directory
+        end
+        target_resume_scan = ScanSettings(
+            branch=settings.scan.branch,
+            preparation="default",
+            direction=:forward,
+            lineage_policy=:strict,
+            fluxes_over_pi=[0.25],
+            seed_pattern="alternating",
+            random_seed=1,
+            initial_state_file=path,
+            initial_state_sha256=parent_sha256,
+            optimizer_checkpoint_file=target_checkpoint_path,
+            optimizer_checkpoint_sha256=target_checkpoint_sha256,
+        )
+        target_resume_settings = ProjectSettings(
+            model=settings.model,
+            optimizer=growth_checkpoint_settings.optimizer,
+            scan=target_resume_scan,
+            spectrum=settings.spectrum,
+            runtime=settings.runtime,
+            config_path=settings.config_path,
+            config_text=settings.config_text * "\n# target-flux checkpoint fixture\n",
+        )
+        target_resumed_initial = PB.load_or_build_initial_state(target_resume_settings)
+        @test target_resumed_initial.initial_theta == 0.0
+        @test target_resumed_initial.optimizer_checkpoint_path == target_checkpoint_path
+        @test target_resumed_initial.psi !== nothing
+
+        yc6_checkpoint_settings = load_settings(joinpath(
+            PROJECT_ROOT,
+            "configs",
+            "science_yc6_1_legacy_period6_chi512_after_57629467.toml",
+        ))
+        generated_resume_path = PB.write_optimizer_resume_configuration(
+            yc6_checkpoint_settings,
+            target_checkpoint_path,
+            target_checkpoint_sha256,
+            0.35,
+            something(yc6_checkpoint_settings.scan.initial_state_file),
+            something(yc6_checkpoint_settings.scan.initial_state_sha256),
+            manifest_directory=directory,
+        )
+        generated_resume = TOML.parsefile(generated_resume_path)
+        @test generated_resume["scan"]["fluxes_over_pi"] == [0.35]
+        @test generated_resume["scan"]["optimizer_checkpoint_sha256"] ==
+            target_checkpoint_sha256
+        @test generated_resume["scan"]["optimizer_checkpoint_file"] ==
+            abspath(target_checkpoint_path)
+        @test generated_resume["runtime"]["optimizer_checkpoint_every_iterations"] == 5
+        @test occursin(
+            "resumes",
+            generated_resume["runtime"]["output_directory"],
+        )
+        @test dirname(generated_resume_path) == directory
+
         wrong_checkpoint_scan = ScanSettings(
             branch=resume_scan.branch,
             preparation=resume_scan.preparation,
@@ -1080,6 +1400,8 @@ end
             @test read(file, "continuation/continuity_passed")
             @test isapprox(read(file, "continuation/overlap_per_site"), 1.0; atol=1e-10)
             @test haskey(file, "continuation/mean_schmidt_total_variation")
+            @test haskey(file, "continuation/maximum_log_correlation_length_jump")
+            @test !read(file, "continuation/correlation_length_diagnostics_required")
             @test haskey(file, "psi")
         end
         child_path = joinpath(directory, "child.h5")
@@ -1136,7 +1458,7 @@ end
                 "maximum_iterations_contracting"
         end
         summary_rows = summarize_state_files(directory; include_hashes=true)
-        @test length(summary_rows) == 4
+        @test length(summary_rows) == 5
         @test all(row -> row.geometry == "YC6-1", summary_rows)
         @test all(row -> length(row.state_sha256) == 64, summary_rows)
         spectroscopy_settings = ProjectSettings(

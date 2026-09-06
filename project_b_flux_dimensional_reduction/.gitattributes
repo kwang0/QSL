@@ -1,0 +1,15 @@
+# Keep files executed or parsed on Perlmutter byte-stable across Windows clones.
+*.sh text eol=lf
+*.jl text eol=lf
+*.toml text eol=lf
+*.ref text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.csv text eol=lf
+*.tsv text eol=lf
+
+# Scientific and rendered artifacts are binary when deliberately tracked.
+*.h5 binary
+*.jld2 binary
+*.png binary
+*.pdf binary

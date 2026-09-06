@@ -1,8 +1,32 @@
-function optimize_candidate(hamiltonian, psi, optimizer::OptimizerSettings; output_level::Integer)
+function optimize_candidate(
+    hamiltonian,
+    psi,
+    optimizer::OptimizerSettings;
+    output_level::Integer,
+    checkpoint_every_iterations::Integer=0,
+    checkpoint_callback::Union{Nothing,Function}=nothing,
+    stop_requested::Function=() -> false,
+)
     if maxlinkdim(psi) < optimizer.maxdim
-        return grow_and_optimize(hamiltonian, psi, optimizer; output_level)
+        return grow_and_optimize(
+            hamiltonian,
+            psi,
+            optimizer;
+            output_level,
+            checkpoint_every_iterations,
+            checkpoint_callback,
+            stop_requested,
+        )
     elseif maxlinkdim(psi) == optimizer.maxdim
-        return run_vumps_iterations(hamiltonian, psi, optimizer; output_level)
+        return run_vumps_iterations(
+            hamiltonian,
+            psi,
+            optimizer;
+            output_level,
+            checkpoint_every_iterations,
+            checkpoint_callback,
+            stop_requested,
+        )
     end
     error("state chi=$(maxlinkdim(psi)) exceeds requested chi=$(optimizer.maxdim)")
 end
@@ -54,12 +78,14 @@ function evaluate_branch_continuity(
         parent_theta_over_pi=something(last_accepted_theta, NaN),
         candidate_theta_over_pi=theta_over_pi,
         minimum_overlap_per_site=settings.scan.minimum_parent_overlap_per_site,
+        policy=String(settings.scan.continuity_policy),
     )
     last_accepted_theta === nothing && return skipped_branch_continuity(
         "independent branch preparation has no accepted parent";
         passed=true,
         candidate_theta_over_pi=theta_over_pi,
         minimum_overlap_per_site=settings.scan.minimum_parent_overlap_per_site,
+        policy=String(settings.scan.continuity_policy),
     )
     isempty(parent_state_path) && error(
         "parent-overlap gate requires an immutable accepted parent state",
@@ -177,34 +203,57 @@ function load_optimizer_checkpoint(
     validate_strict_lineage(settings, checkpoint, checkpoint_path)
     validate_state_flux_history(checkpoint, "optimizer checkpoint")
     isapprox(
-        checkpoint.theta_over_pi,
-        accepted_state.theta_over_pi;
-        atol=1e-12,
-        rtol=0,
-    ) || error(
-        "optimizer checkpoint theta/pi=$(checkpoint.theta_over_pi) differs from the accepted " *
-        "parent theta/pi=$(accepted_state.theta_over_pi)",
-    )
-    isapprox(
         only(settings.scan.fluxes_over_pi),
         checkpoint.theta_over_pi;
         atol=1e-12,
         rtol=0,
     ) || error("optimizer-checkpoint resume flux must equal the checkpoint Hamiltonian flux")
-    checkpoint.parent_state_sha256 == accepted_sha256 || error(
-        "optimizer checkpoint does not name the configured accepted parent SHA-256",
+    parent_flux_history = if accepted_state === nothing
+        isempty(accepted_path) && isempty(accepted_sha256) || error(
+            "a parentless optimizer checkpoint cannot name an accepted parent",
+        )
+        isempty(checkpoint.parent_state_path) || error(
+            "parentless optimizer checkpoint unexpectedly names a parent path",
+        )
+        isempty(checkpoint.parent_state_sha256) || error(
+            "parentless optimizer checkpoint unexpectedly names a parent SHA-256",
+        )
+        isempty(checkpoint.parent_flux_history_over_pi) || error(
+            "parentless optimizer checkpoint has a nonempty parent flux history",
+        )
+        Float64[]
+    else
+        checkpoint.parent_state_sha256 == accepted_sha256 || error(
+            "optimizer checkpoint does not name the configured accepted parent SHA-256",
+        )
+        isempty(checkpoint.parent_state_path) && error(
+            "optimizer checkpoint lacks accepted-parent path metadata",
+        )
+        basename(checkpoint.parent_state_path) == basename(accepted_path) || error(
+            "optimizer checkpoint parent basename $(basename(checkpoint.parent_state_path)) " *
+            "does not match $(basename(accepted_path))",
+        )
+        flux_histories_match(
+            checkpoint.parent_flux_history_over_pi,
+            accepted_state.flux_history_over_pi,
+        ) || error(
+            "optimizer checkpoint parent flux history differs from the accepted lineage",
+        )
+        copy(accepted_state.flux_history_over_pi)
+    end
+    expected_checkpoint_history = copy(parent_flux_history)
+    if isempty(expected_checkpoint_history) || !isapprox(
+        last(expected_checkpoint_history),
+        checkpoint.theta_over_pi;
+        atol=1e-12,
+        rtol=0,
     )
-    isempty(checkpoint.parent_state_path) && error(
-        "optimizer checkpoint lacks accepted-parent path metadata",
-    )
-    basename(checkpoint.parent_state_path) == basename(accepted_path) || error(
-        "optimizer checkpoint parent basename $(basename(checkpoint.parent_state_path)) " *
-        "does not match $(basename(accepted_path))",
-    )
+        push!(expected_checkpoint_history, checkpoint.theta_over_pi)
+    end
     flux_histories_match(
         checkpoint.flux_history_over_pi,
-        accepted_state.flux_history_over_pi,
-    ) || error("optimizer checkpoint flux history differs from the accepted parent lineage")
+        expected_checkpoint_history,
+    ) || error("optimizer checkpoint flux history is inconsistent with its parent lineage")
     actual_checkpoint_maxdim = maxlinkdim(checkpoint.psi)
     checkpoint.maxlinkdim == actual_checkpoint_maxdim || error(
         "optimizer checkpoint maxlinkdim metadata $(checkpoint.maxlinkdim) disagrees with " *
@@ -214,13 +263,17 @@ function load_optimizer_checkpoint(
         "optimizer checkpoint requested chi=$(checkpoint.optimizer_requested_maxdim), but " *
         "the resume configuration requests chi=$(settings.optimizer.maxdim)",
     )
-    actual_checkpoint_maxdim == settings.optimizer.maxdim || error(
-        "optimizer checkpoint has chi=$actual_checkpoint_maxdim, but the resume configuration " *
-        "requests chi=$(settings.optimizer.maxdim)",
+    actual_checkpoint_maxdim <= settings.optimizer.maxdim || error(
+        "optimizer checkpoint has chi=$actual_checkpoint_maxdim, exceeding the resume " *
+        "configuration chi=$(settings.optimizer.maxdim)",
     )
-    checkpoint.optimizer_stop_reason == "maximum_iterations_contracting" || error(
-        "optimizer-checkpoint resume is restricted to maximum_iterations_contracting; got " *
-        checkpoint.optimizer_stop_reason,
+    checkpoint.optimizer_stop_reason in (
+        "maximum_iterations_contracting",
+        "periodic_checkpoint",
+        "growth_stage_checkpoint",
+        "pretimeout_checkpoint",
+    ) || error(
+        "unsupported optimizer-checkpoint stop reason: " * checkpoint.optimizer_stop_reason,
     )
     checkpoint.optimizer_iterations >= 1 || error(
         "optimizer checkpoint has no recorded outer iterations",
@@ -228,9 +281,11 @@ function load_optimizer_checkpoint(
     isfinite(checkpoint.optimizer_residual) || error(
         "optimizer checkpoint residual is not finite",
     )
-    checkpoint.optimizer_residual > settings.optimizer.residual_tol || error(
-        "optimizer checkpoint residual already satisfies the configured tolerance",
-    )
+    if actual_checkpoint_maxdim == settings.optimizer.maxdim
+        checkpoint.optimizer_residual > settings.optimizer.residual_tol || error(
+            "optimizer checkpoint already satisfies the configured tolerance at target chi",
+        )
+    end
     isapprox(
         checkpoint.optimizer_residual_tolerance,
         settings.optimizer.residual_tol;
@@ -265,6 +320,23 @@ end
 
 function load_or_build_initial_state(settings::ProjectSettings)
     if settings.scan.initial_state_file === nothing
+        if settings.scan.optimizer_checkpoint_file !== nothing
+            checkpoint = load_optimizer_checkpoint(settings, nothing, "", "")
+            return (;
+                psi=checkpoint.checkpoint.psi,
+                initial_theta=nothing,
+                parent_state_path="",
+                parent_state_sha256="",
+                parent_maxdim=0,
+                flux_history_over_pi=Float64[],
+                optimizer_checkpoint_path=checkpoint.path,
+                optimizer_checkpoint_sha256=checkpoint.sha256,
+                optimizer_checkpoint_iterations=checkpoint.cumulative_iterations,
+                optimizer_checkpoint_residual=checkpoint.residual,
+                optimizer_checkpoint_minimum_residual=checkpoint.minimum_residual,
+                optimizer_checkpoint_stop_reason=checkpoint.stop_reason,
+            )
+        end
         return (;
             psi=build_product_state(settings),
             initial_theta=nothing,
@@ -359,14 +431,7 @@ function fixed_flux_optimizer_resume_requested(
     candidate_theta::Real,
     optimizer_checkpoint_path::AbstractString,
 )
-    last_accepted_theta === nothing && return false
-    isempty(optimizer_checkpoint_path) && return false
-    return isapprox(
-        Float64(candidate_theta),
-        Float64(last_accepted_theta);
-        atol=1e-12,
-        rtol=0,
-    )
+    return !isempty(optimizer_checkpoint_path)
 end
 
 function numerical_continuation_classification(diagnostic::VumpsDiagnostics)
@@ -379,6 +444,205 @@ function numerical_continuation_classification(diagnostic::VumpsDiagnostics)
     diagnostic.stop_reason == "diverging_residual" &&
         return "numerical_divergence_not_physical_endpoint"
     return "numerical_not_physical_endpoint"
+end
+
+function optimizer_checkpoint_file_path(
+    settings::ProjectSettings,
+    point_index::Integer,
+    theta_over_pi::Real,
+    diagnostic::VumpsDiagnostics,
+)
+    reason = sanitize_label(diagnostic.stop_reason)
+    filename = @sprintf(
+        "checkpoint_point_%04d_theta_%s_chi%d_iter_%06d_%s_%s.h5",
+        point_index,
+        theta_label(theta_over_pi),
+        max(last(diagnostic.growth_dimensions), 0),
+        diagnostic.iterations,
+        reason,
+        config_identifier(settings),
+    )
+    requested_directory = strip(get(
+        ENV,
+        "PROJECT_B_OPTIMIZER_CHECKPOINT_DIRECTORY",
+        "",
+    ))
+    checkpoint_directory = if isempty(requested_directory)
+        joinpath(settings.runtime.output_directory, "optimizer_checkpoints")
+    else
+        isabspath(requested_directory) || error(
+            "PROJECT_B_OPTIMIZER_CHECKPOINT_DIRECTORY must be an absolute path",
+        )
+        normpath(requested_directory)
+    end
+    return joinpath(checkpoint_directory, filename)
+end
+
+function atomic_toml_write(path::AbstractString, data::AbstractDict)
+    mkpath(dirname(path))
+    temporary_path = path * ".tmp"
+    ispath(path) && error("refusing to overwrite immutable TOML artifact: $path")
+    ispath(temporary_path) && error("stale temporary TOML artifact exists: $temporary_path")
+    try
+        open(temporary_path, "w") do io
+            TOML.print(io, data; sorted=true)
+        end
+        Base.Filesystem.rename(temporary_path, path)
+    catch
+        isfile(temporary_path) && rm(temporary_path; force=true)
+        rethrow()
+    end
+    return path
+end
+
+function write_state_manifest(
+    settings::ProjectSettings,
+    saved,
+    diagnostic::VumpsDiagnostics,
+    continuity::BranchContinuityDiagnostics,
+    theta_over_pi::Real,
+    point_index::Integer,
+    accepted::Bool,
+    parent_state_path::AbstractString,
+    parent_state_sha256::AbstractString,
+)
+    filename = @sprintf(
+        "state_%04d_theta_%s_chi%d_%s_%s.toml",
+        point_index,
+        theta_label(theta_over_pi),
+        saved.observables.maxlinkdim,
+        accepted ? "accepted" : "rejected",
+        first(saved.state_sha256, 12),
+    )
+    path = joinpath(settings.runtime.output_directory, "state_manifests", filename)
+    external_state_directory = strip(get(ENV, "PROJECT_B_STATE_OUTPUT_DIRECTORY", ""))
+    storage_backend = isempty(external_state_directory) ?
+        "project_directory" : "perlmutter_scratch"
+    data = Dict{String,Any}(
+        "schema_version" => 1,
+        "artifact_kind" => "project_b_vumps_state_manifest",
+        "created_at_utc" => string(now(UTC)),
+        "config_id" => config_identifier(settings),
+        "point_index" => Int(point_index),
+        "theta_over_pi" => Float64(theta_over_pi),
+        "branch" => settings.scan.branch,
+        "direction" => string(settings.scan.direction),
+        "continuation_accepted" => accepted,
+        "full_state_path" => abspath(saved.path),
+        "full_state_sha256" => saved.state_sha256,
+        "full_state_bytes" => Int(stat(saved.path).size),
+        "storage_backend" => storage_backend,
+        "routine_sync_policy" => storage_backend == "perlmutter_scratch" ?
+            "exclude_full_state; sync_this_manifest" : "sync_with_project",
+        "parent_state_path" => String(parent_state_path),
+        "parent_state_sha256" => String(parent_state_sha256),
+        "maxlinkdim" => Int(saved.observables.maxlinkdim),
+        "energy_density" => Float64(saved.observables.energy_density),
+        "mean_von_neumann_entropy" =>
+            mean(Float64.(saved.observables.entropy.von_neumann)),
+        "optimizer_converged" => diagnostic.converged,
+        "optimizer_stop_reason" => diagnostic.stop_reason,
+        "optimizer_residual" => diagnostic.residual,
+        "optimizer_residual_tolerance" => diagnostic.residual_tolerance,
+        "continuity_policy" => continuity.policy,
+        "fixed_flux_bond_growth" => continuity.fixed_flux_bond_growth,
+        "continuity_passed" => continuity.passed,
+        "continuity_reason" => continuity.reason,
+        "overlap_per_site" => continuity.overlap_per_site,
+        "overlap_alarm_floor_per_site" => continuity.minimum_overlap_per_site,
+        "overlap_alarm_triggered" => continuity.overlap_alarm_triggered,
+        "maximum_cut_entropy_jump" => continuity.maximum_cut_entropy_jump,
+        "energy_term_rms_jump" => continuity.energy_term_rms_jump,
+        "magnetization_rms_jump" => continuity.magnetization_rms_jump,
+        "mean_schmidt_total_variation" => continuity.mean_schmidt_total_variation,
+        "correlation_length_diagnostics_passed" =>
+            continuity.correlation_length_diagnostics_passed,
+        "correlation_length_physical_sz_sectors" =>
+            continuity.correlation_length_physical_sz_sectors,
+        "parent_correlation_lengths" => continuity.parent_correlation_lengths,
+        "candidate_correlation_lengths" => continuity.candidate_correlation_lengths,
+        "maximum_log_correlation_length_jump" =>
+            continuity.maximum_log_correlation_length_jump,
+        "maximum_log_correlation_length_jump_threshold" =>
+            continuity.maximum_log_correlation_length_jump_threshold,
+        "correlation_length_gate_passed" => continuity.correlation_length_gate_passed,
+        "u1_sector_diagnostics_passed" => continuity.u1_sector_diagnostics_passed,
+        "u1_sector_labels_preserved" => continuity.u1_sector_labels_preserved,
+        "u1_sector_multiplicities_preserved" =>
+            continuity.u1_sector_multiplicities_preserved,
+    )
+    return atomic_toml_write(path, data)
+end
+
+function write_optimizer_resume_configuration(
+    settings::ProjectSettings,
+    checkpoint_path::AbstractString,
+    checkpoint_sha256::AbstractString,
+    theta_over_pi::Real,
+    parent_state_path::AbstractString,
+    parent_state_sha256::AbstractString,
+    ;
+    manifest_directory::AbstractString=joinpath(
+        settings.runtime.output_directory,
+        "checkpoint_manifests",
+    ),
+)
+    raw = TOML.parse(settings.config_text)
+    scan = raw["scan"]
+    runtime = raw["runtime"]
+    short_hash = first(checkpoint_sha256, 12)
+    resume_output = joinpath(
+        settings.runtime.output_directory,
+        "resumes",
+        "from_$short_hash",
+    )
+    scan["fluxes_over_pi"] = [Float64(theta_over_pi)]
+    if isempty(parent_state_path)
+        pop!(scan, "initial_state_file", nothing)
+        pop!(scan, "initial_state_sha256", nothing)
+    else
+        scan["initial_state_file"] = abspath(parent_state_path)
+        scan["initial_state_sha256"] = String(parent_state_sha256)
+    end
+    scan["optimizer_checkpoint_file"] = abspath(checkpoint_path)
+    scan["optimizer_checkpoint_sha256"] = String(checkpoint_sha256)
+    runtime["output_directory"] = abspath(resume_output)
+    resume_path = joinpath(
+        manifest_directory,
+        "resume_from_checkpoint_$short_hash.toml",
+    )
+    return atomic_toml_write(resume_path, raw)
+end
+
+function write_pretimeout_scan_outcome(
+    settings::ProjectSettings,
+    theta_over_pi::Real,
+    point_index::Integer,
+    diagnostic::VumpsDiagnostics,
+    parent_state_path::AbstractString,
+    parent_state_sha256::AbstractString,
+    checkpoint,
+)
+    checkpoint === nothing && error("pre-timeout stop has no completed checkpoint")
+    output_path = joinpath(settings.runtime.output_directory, "pretimeout_outcome.toml")
+    data = Dict{String,Any}(
+        "schema_version" => 1,
+        "artifact_kind" => "project_b_vumps_pretimeout_outcome",
+        "created_at_utc" => string(now(UTC)),
+        "status" => "pretimeout_checkpointed",
+        "classification" => "scheduler_boundary_not_scientific_endpoint",
+        "config_id" => config_identifier(settings),
+        "point_index" => Int(point_index),
+        "theta_over_pi" => Float64(theta_over_pi),
+        "optimizer_iterations_this_run" => diagnostic.iterations,
+        "optimizer_residual" => diagnostic.residual,
+        "accepted_parent_state_path" => String(parent_state_path),
+        "accepted_parent_state_sha256" => String(parent_state_sha256),
+        "optimizer_checkpoint_path" => checkpoint.path,
+        "optimizer_checkpoint_sha256" => checkpoint.sha256,
+        "resume_configuration" => checkpoint.resume_configuration,
+    )
+    return atomic_toml_write(output_path, data)
 end
 
 function write_bracketed_scan_outcome(
@@ -454,6 +718,17 @@ function write_bracketed_scan_outcome(
         "energy_term_rms_jump" => continuity.energy_term_rms_jump,
         "magnetization_rms_jump" => continuity.magnetization_rms_jump,
         "mean_schmidt_total_variation" => continuity.mean_schmidt_total_variation,
+        "correlation_length_diagnostics_passed" =>
+            continuity.correlation_length_diagnostics_passed,
+        "correlation_length_physical_sz_sectors" =>
+            continuity.correlation_length_physical_sz_sectors,
+        "parent_correlation_lengths" => continuity.parent_correlation_lengths,
+        "candidate_correlation_lengths" => continuity.candidate_correlation_lengths,
+        "maximum_log_correlation_length_jump" =>
+            continuity.maximum_log_correlation_length_jump,
+        "maximum_log_correlation_length_jump_threshold" =>
+            continuity.maximum_log_correlation_length_jump_threshold,
+        "correlation_length_gate_passed" => continuity.correlation_length_gate_passed,
         "accepted_state_path" => String(accepted_state_path),
         "accepted_state_sha256" => String(accepted_state_sha256),
         "rejected_state_path" => String(rejected_state_path),
@@ -546,6 +821,17 @@ function write_fixed_flux_expansion_outcome(
         "energy_term_rms_jump" => continuity.energy_term_rms_jump,
         "magnetization_rms_jump" => continuity.magnetization_rms_jump,
         "mean_schmidt_total_variation" => continuity.mean_schmidt_total_variation,
+        "correlation_length_diagnostics_passed" =>
+            continuity.correlation_length_diagnostics_passed,
+        "correlation_length_physical_sz_sectors" =>
+            continuity.correlation_length_physical_sz_sectors,
+        "parent_correlation_lengths" => continuity.parent_correlation_lengths,
+        "candidate_correlation_lengths" => continuity.candidate_correlation_lengths,
+        "maximum_log_correlation_length_jump" =>
+            continuity.maximum_log_correlation_length_jump,
+        "maximum_log_correlation_length_jump_threshold" =>
+            continuity.maximum_log_correlation_length_jump_threshold,
+        "correlation_length_gate_passed" => continuity.correlation_length_gate_passed,
         "source_state_path" => String(source_state_path),
         "source_state_sha256" => String(source_state_sha256),
         "candidate_state_path" => String(candidate_state_path),
@@ -656,6 +942,17 @@ function write_fixed_flux_optimizer_resume_outcome(
         "energy_term_rms_jump" => continuity.energy_term_rms_jump,
         "magnetization_rms_jump" => continuity.magnetization_rms_jump,
         "mean_schmidt_total_variation" => continuity.mean_schmidt_total_variation,
+        "correlation_length_diagnostics_passed" =>
+            continuity.correlation_length_diagnostics_passed,
+        "correlation_length_physical_sz_sectors" =>
+            continuity.correlation_length_physical_sz_sectors,
+        "parent_correlation_lengths" => continuity.parent_correlation_lengths,
+        "candidate_correlation_lengths" => continuity.candidate_correlation_lengths,
+        "maximum_log_correlation_length_jump" =>
+            continuity.maximum_log_correlation_length_jump,
+        "maximum_log_correlation_length_jump_threshold" =>
+            continuity.maximum_log_correlation_length_jump_threshold,
+        "correlation_length_gate_passed" => continuity.correlation_length_gate_passed,
         "accepted_parent_state_path" => String(accepted_parent_state_path),
         "accepted_parent_state_sha256" => String(accepted_parent_state_sha256),
         "optimizer_checkpoint_path" => String(optimizer_checkpoint_path),
@@ -707,6 +1004,9 @@ function run_flux_scan(settings::ProjectSettings)
     output_paths = String[]
     attempted = Set{Tuple{Float64,Float64}}()
     point_index = 0
+    pretimeout_request_file = get(ENV, "PROJECT_B_PRETIMEOUT_REQUEST_FILE", "")
+    stop_requested = () -> !isempty(pretimeout_request_file) &&
+        isfile(pretimeout_request_file)
 
     while !isempty(queue)
         theta_over_pi = popfirst!(queue)
@@ -730,12 +1030,95 @@ function run_flux_scan(settings::ProjectSettings)
             "chi=$(settings.optimizer.maxdim)",
         )
         hamiltonian = build_hamiltonian(settings.model, siteinds(psi), theta_over_pi)
+        latest_checkpoint = Ref{Any}(nothing)
+        checkpoint_callback = function (checkpoint_psi, checkpoint_diagnostic)
+            checkpoint_path = optimizer_checkpoint_file_path(
+                settings,
+                point_index,
+                theta_over_pi,
+                checkpoint_diagnostic,
+            )
+            checkpoint_continuity = skipped_branch_continuity(
+                "in-progress optimizer checkpoint; continuity is evaluated only after numerical convergence";
+                passed=false,
+                parent_theta_over_pi=something(last_accepted_theta, NaN),
+                candidate_theta_over_pi=theta_over_pi,
+                minimum_overlap_per_site=settings.scan.minimum_parent_overlap_per_site,
+                policy=String(settings.scan.continuity_policy),
+            )
+            saved_checkpoint = write_state_file(
+                checkpoint_path,
+                settings,
+                checkpoint_psi,
+                hamiltonian,
+                checkpoint_diagnostic,
+                theta_over_pi,
+                point_index;
+                continuation_accepted=false,
+                parent_state_path,
+                parent_state_sha256,
+                parent_flux_history_over_pi=flux_history,
+                optimizer_checkpoint_path,
+                optimizer_checkpoint_sha256,
+                optimizer_checkpoint_iterations,
+                optimizer_checkpoint_residual,
+                optimizer_checkpoint_minimum_residual,
+                optimizer_checkpoint_stop_reason,
+                continuity=checkpoint_continuity,
+            )
+            resume_configuration = write_optimizer_resume_configuration(
+                settings,
+                saved_checkpoint.path,
+                saved_checkpoint.state_sha256,
+                theta_over_pi,
+                parent_state_path,
+                parent_state_sha256,
+            )
+            checkpoint_record = (;
+                path=saved_checkpoint.path,
+                sha256=saved_checkpoint.state_sha256,
+                resume_configuration,
+            )
+            latest_checkpoint[] = checkpoint_record
+            push!(output_paths, saved_checkpoint.path)
+            @printf(
+                "Saved %s optimizer checkpoint after %d iterations: residual=%.6e -> %s\n",
+                checkpoint_diagnostic.stop_reason,
+                checkpoint_diagnostic.iterations,
+                checkpoint_diagnostic.residual,
+                saved_checkpoint.path,
+            )
+            println("Checkpoint SHA-256: $(saved_checkpoint.state_sha256)")
+            println("Ready resume configuration: $resume_configuration")
+            return nothing
+        end
         candidate, diagnostic = optimize_candidate(
             hamiltonian,
             psi,
             settings.optimizer;
             output_level=settings.runtime.output_level,
+            checkpoint_every_iterations=
+                settings.runtime.optimizer_checkpoint_every_iterations,
+            checkpoint_callback,
+            stop_requested,
         )
+        if diagnostic.stop_reason == "pretimeout_checkpoint"
+            outcome_path = write_pretimeout_scan_outcome(
+                settings,
+                theta_over_pi,
+                point_index,
+                diagnostic,
+                parent_state_path,
+                parent_state_sha256,
+                latest_checkpoint[],
+            )
+            println(
+                "Pre-timeout checkpoint completed; no acceptance, rejection, overlap, " *
+                "or adaptive-refinement decision was made for theta/pi=$theta_over_pi.",
+            )
+            println("Pre-timeout outcome: $outcome_path")
+            break
+        end
         candidate_observables = local_observables(candidate, hamiltonian)
         inner_solver_eligible = !settings.optimizer.record_krylov_diagnostics ||
             all_recorded_krylov_solves_converged(diagnostic)
@@ -759,6 +1142,7 @@ function run_flux_scan(settings::ProjectSettings)
             parent_theta_over_pi=something(last_accepted_theta, NaN),
             candidate_theta_over_pi=theta_over_pi,
             minimum_overlap_per_site=settings.scan.minimum_parent_overlap_per_site,
+            policy=String(settings.scan.continuity_policy),
         )
         accepted = numerically_eligible && continuity.passed
         path = state_file_path(settings, point_index, theta_over_pi, accepted)
@@ -786,6 +1170,17 @@ function run_flux_scan(settings::ProjectSettings)
                 precomputed_observables=candidate_observables,
             )
             push!(output_paths, saved.path)
+            manifest_path = write_state_manifest(
+                settings,
+                saved,
+                diagnostic,
+                continuity,
+                theta_over_pi,
+                point_index,
+                accepted,
+                parent_state_path,
+                parent_state_sha256,
+            )
             @printf(
                 "Saved %s point: E=%.12f, mean(S)=%.8f, residual=%.4e -> %s\n",
                 accepted ? "converged" :
@@ -797,17 +1192,32 @@ function run_flux_scan(settings::ProjectSettings)
                 saved.path,
             )
             println("State SHA-256: $(saved.state_sha256)")
+            println("Lightweight state manifest: $manifest_path")
         end
         if continuity.checked
             @printf(
-                "Parent continuity: overlap/cell=%.10g, overlap/site=%.10g, minimum=%.10g, passed=%s, deltaE=%.4e, deltaS=%.4e\n",
+                "Parent continuity: policy=%s, overlap/cell=%.10g, overlap/site=%.10g, alarm-floor=%.10g, overlap-alarm=%s, passed=%s, deltaE=%.4e, deltaS=%.4e\n",
+                continuity.policy,
                 continuity.overlap_per_unit_cell,
                 continuity.overlap_per_site,
                 continuity.minimum_overlap_per_site,
+                continuity.overlap_alarm_triggered,
                 continuity.passed,
                 continuity.energy_density_delta,
                 continuity.mean_entropy_delta,
             )
+            if continuity.correlation_length_diagnostics_required
+                @printf(
+                    "Correlation-length trust region: sectors=%s, parent=%s, candidate=%s, max|delta log(xi)|=%.4e, threshold=%.4e, eigensolves=%s, passed=%s\n",
+                    string(continuity.correlation_length_physical_sz_sectors),
+                    string(continuity.parent_correlation_lengths),
+                    string(continuity.candidate_correlation_lengths),
+                    continuity.maximum_log_correlation_length_jump,
+                    continuity.maximum_log_correlation_length_jump_threshold,
+                    continuity.correlation_length_diagnostics_passed,
+                    continuity.correlation_length_gate_passed,
+                )
+            end
         end
         if fixed_flux_optimizer_resume
             println(

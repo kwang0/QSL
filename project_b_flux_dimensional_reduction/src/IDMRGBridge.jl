@@ -12,9 +12,11 @@ implementation follows its polar canonicalization but:
 
 1. requires the relative imaginary component to remain below the explicit
    `eigenvalue_imag_tolerance`;
-2. Hermitian-symmetrizes the transfer fixed point before taking its square
+2. removes the Arnoldi vector's arbitrary global phase using its full
+   Hermitian-partner overlap rather than a potentially tiny matrix pivot;
+3. Hermitian-symmetrizes the transfer fixed point before taking its square
    root; and
-3. returns the measured numerical corrections for provenance.
+4. returns the measured numerical corrections for provenance.
 
 The physical MPS tensors are not modified; only their canonical gauge is
 constructed.
@@ -86,6 +88,14 @@ function _hermitian_partner(tensor::ITensor)
     return swapinds(dag(tensor), reverse(Pair(inds(tensor)...)))
 end
 
+function _hermitian_phase_factor(phase_overlap::Number)
+    magnitude = abs(phase_overlap)
+    magnitude > eps(Float64) || error(
+        "iDMRG transfer fixed point has an unresolved Hermitian phase",
+    )
+    return sqrt(phase_overlap / magnitude)
+end
+
 function _right_orthogonalize_tolerant(
     psi::ITensorInfiniteMPS.InfiniteMPS;
     left_tags=ts"Left",
@@ -136,8 +146,11 @@ function _right_orthogonalize_tolerant(
         "exceeds $eigenvalue_imag_tolerance",
     )
 
-    pivot = fixed_point[1, 1]
-    iszero(pivot) || (fixed_point .*= conj(sign(pivot)))
+    partner = _hermitian_partner(fixed_point)
+    fixed_point_norm = norm(fixed_point)
+    phase_overlap = dot(fixed_point, partner) / fixed_point_norm^2
+    phase_factor = _hermitian_phase_factor(phase_overlap)
+    fixed_point .*= phase_factor
     partner = _hermitian_partner(fixed_point)
     hermitian_relative_correction = norm(fixed_point - partner) /
         max(norm(fixed_point), eps(Float64))
@@ -165,6 +178,8 @@ function _right_orthogonalize_tolerant(
         subleading_eigenvalue=ComplexF64(values[2]),
         leading_magnitude_gap=Float64(leading_magnitude_gap),
         relative_imaginary=Float64(relative_imaginary),
+        hermitian_phase_overlap=ComplexF64(phase_overlap),
+        hermitian_phase_factor=ComplexF64(phase_factor),
         hermitian_relative_correction=Float64(hermitian_relative_correction),
     )
     return centers, right, lambda, diagnostics

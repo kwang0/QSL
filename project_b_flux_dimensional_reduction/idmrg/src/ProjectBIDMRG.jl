@@ -96,7 +96,8 @@ function load_control(path::AbstractString)
     raw = TOML.parsefile(absolute)
     get(raw, "artifact_kind", "") == "project_b_phase1_idmrg_control" ||
         error("not a Project B iDMRG control file: $absolute")
-    get(raw, "schema_version", 0) in (1, 2, 3) || error("unsupported control schema")
+    get(raw, "schema_version", 0) in (1, 2, 3, 4, 5) ||
+        error("unsupported control schema")
     bridge = raw["bridge"]
     bridge_path = isabspath(bridge["path"]) ? bridge["path"] :
         normpath(joinpath(dirname(absolute), bridge["path"]))

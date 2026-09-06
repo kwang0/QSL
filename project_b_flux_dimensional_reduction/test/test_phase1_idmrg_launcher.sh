@@ -80,6 +80,10 @@ if grep -q 'PROJECT_B_IDMRG_SUBMIT_AUTHORIZED' \
 fi
 grep -Fq 'run_idmrg.jl $control_path $result_path")"' \
   "$project_root/slurm/run_idmrg_cpu.sh"
+grep -Fq -- '--cpus-per-task="$allocation_cpus"' \
+  "$project_root/slurm/run_idmrg_cpu.sh"
+grep -Fq -- '--wrap="srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task=$solver_step_cpus --cpu-bind=cores' \
+  "$project_root/slurm/run_idmrg_cpu.sh"
 
 if JULIA_BIN="$julia_bin" PHASE1_ACCOUNT=m1234 \
     bash "$project_root/slurm/run_idmrg_cpu.sh" submit "$fixture/control.toml" \

@@ -1,0 +1,90 @@
+artifact_kind = "project_b_phase1_multimetric_continuity_policy"
+schema_version = 1
+created_at_utc = "2026-08-31T00:00:00Z"
+
+[scope]
+profile = "yc8_1_primary_forward_chi1024_multimetric_20260831"
+geometry = "YC8-1"
+mps_period = 2
+twist_gauge = "uniform"
+u1_conserved = true
+branch = "primary_forward_chi512_legacy_0p1"
+immutable_lineage_root_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+
+[acceptance]
+overlap_alarm_floor_per_site = 0.90
+overlap_is_alarm_not_single_acceptance_gate = true
+maximum_cut_entropy_jump = 0.10
+maximum_energy_term_rms_jump = 0.02
+maximum_magnetization_rms_jump = 0.001
+maximum_mean_schmidt_total_variation = 0.05
+require_correlation_length_diagnostics = true
+correlation_length_physical_sz_sectors = [0.0, 1.0]
+correlation_length_tolerance = 1.0e-8
+correlation_length_krylov_dimension = 32
+maximum_log_correlation_length_jump = 0.05
+require_vumps_outer_residual = true
+require_all_recorded_inner_krylov_solves = true
+require_u1_sector_diagnostics = true
+require_reverse_consistency_before_full_sweep_promotion = true
+
+[fixed_flux_growth]
+maximum_cut_entropy_jump = 0.35
+maximum_mean_schmidt_total_variation = 0.15
+maximum_log_correlation_length_jump = 1.0
+reason = "finite-entanglement entropy and Schmidt weights may change when chi grows at fixed theta"
+
+[smooth_calibration]
+parent_theta_over_pi = 0.10
+candidate_theta_over_pi = 0.15
+parent_state_path = "../output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512/states/state_0002_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p10000000_accepted_12126bd1b66b.h5"
+parent_state_sha256 = "f71fc084883ea98535e012801d47c2c0b3c0b5ce58e08c72592e46410a27b7cc"
+candidate_state_path = "../output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+candidate_state_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+overlap_per_site = 0.9999782682
+energy_term_rms_jump = 0.00127307058
+mean_entropy_delta = 0.006054497
+maximum_cut_entropy_jump = 0.006768785
+magnetization_rms_jump = 0.000001842
+mean_schmidt_total_variation = 0.002171048
+parent_neutral_correlation_length = 4.666659346261152
+candidate_neutral_correlation_length = 4.676856116056721
+parent_spin1_correlation_length = 4.2156983476980345
+candidate_spin1_correlation_length = 4.203821516926195
+maximum_log_correlation_length_jump = 0.002821262694460036
+parent_spectrum_path = "../output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512/spectra/spectrum_state_0002_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p10000000_accepted_12126bd1b66b.h5"
+parent_spectrum_sha256 = "a3926216c9e821d9b10ffdf49834c1a26f69ec54fa7a540f3eab93528329bad5"
+candidate_spectrum_path = "../output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512/spectra/spectrum_state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+candidate_spectrum_sha256 = "a99169ad0402e9ccee83822ac33b28269d60315b42b6a4a3826e6082e12ff67e"
+
+[discontinuous_calibration]
+parent_theta_over_pi = 0.15
+candidate_theta_over_pi = 0.175
+candidate_result_path = "../output/phase1_idmrg/yc8_1/theta_p0p17500000_from_38312fc996fe_working_shared16g_retry_after_57608599/idmrg_result_bridge.h5"
+candidate_result_sha256 = "03734ddbc4389a45428d69f961a0fdd0adda80567641c383d2f97998be734676"
+candidate_analysis_path = "../output/phase1_idmrg/yc8_1/theta_p0p17500000_from_38312fc996fe_working_shared16g_retry_after_57608599/analysis/analysis_idmrg_theta_p0p17500000_chi512_rejected_03734ddbc438.h5"
+candidate_analysis_sha256 = "302b6db4a8e90d568dc61c82c2f8d2b37e588fa3125b69b5cced91752b99fe47"
+overlap_per_site = 0.9662443394038124
+energy_density_delta = -0.0030374543306439516
+energy_term_rms_jump = 0.12780630496839465
+mean_entropy_delta = 0.7790477726721923
+maximum_cut_entropy_jump = 0.8557495614613737
+magnetization_rms_jump = 0.00003062394001695651
+mean_schmidt_total_variation = 0.3066696306797643
+parent_neutral_correlation_length = 4.676856114194451
+candidate_neutral_correlation_length = 4.505756042522685
+parent_spin1_correlation_length = 4.203821516926195
+candidate_spin1_correlation_length = 4.533724401362266
+maximum_log_correlation_length_jump = 0.07554976878233412
+correlation_length_reconstruction_source = "candidate_result_path"
+u1_sector_labels_and_multiplicities_unchanged = true
+
+[interpretation]
+thresholds_are_empirical_numerical_trust_region = true
+thresholds_are_not_physical_phase_boundaries = true
+correlation_length_bound_is_a_path_resolution_guard = true
+correlation_length_is_not_a_standalone_phase_boundary_test = true
+overlap_below_alarm_floor_requires_review = true
+rejected_idmrg_state_remains_numerical_seed_only = true
+discarded_weight_is_not_vumps_residual = true
+idmrg_bond_matrix_update_norm_is_not_vumps_residual = true

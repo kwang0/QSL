@@ -15,6 +15,32 @@ all five requested 2-thread updates, then failed while HDF5 serialized a packed
 immutable failed packages are preserved. The active pointer names a fourth,
 locally validated package that fixes and tests all three code paths.
 
+That schema-4 package subsequently ran as job `57576411` and completed every
+2/4/8/16-thread step with exit `0:0`. Independent analysis selected two Julia
+threads and a four-logical-CPU solver step by minimum projected Shared-QOS
+node-hours per 100 iDMRG updates. The job charged `0.10871527777777777`
+node-hours, bringing Phase 1 to `12.25235894158889` and Project B including
+Phase 0 to `13.34679194158889` node-hours.
+
+The first science use of that selection, job `57608599` at theta/pi=0.175,
+failed after eight seconds before Julia. A 16-GiB memory request produced a
+10-logical-CPU Shared allocation, while the old launcher declared a four-CPU
+batch task; `srun` rejected conflicting `SLURM_CPUS_PER_TASK=9` and
+`SLURM_TRES_PER_TASK=cpu=4`. The job performed zero scientific updates. Its
+derived five-core charge is `0.00008680555555555556` node-hours, so the
+carried-forward totals are `12.252445747144446` for Phase 1 and
+`13.346878747144446` for Project B. The active science retry uses a distinct
+immutable package, 10 allocation logical CPUs, an exact four-logical-CPU
+solver step, and the same two Julia threads and 16-GiB/five-core charge ceiling.
+
+That retry completed as job `57611537` in 33,423 seconds. With five charged
+physical cores, it used `0.3626627604166666` node-hours, bringing Phase 1 to
+`12.615108507561112` and Project B including Phase 0 to
+`13.709541507561113` node-hours. It independently validates the benchmarked
+two-thread/four-logical-CPU execution choice for science production. The state
+passed its working native gate but failed the separate `0.99` parent-overlap
+branch gate, so resource success does not imply scientific promotion.
+
 The owner-facing commands remain short:
 
 ```bash

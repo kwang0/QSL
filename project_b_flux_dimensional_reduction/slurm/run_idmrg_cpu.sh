@@ -132,7 +132,8 @@ validation="$($julia_bin --startup-file=no --project="$project_root/idmrg" \
   "$project_root/idmrg/scripts/validate_control.jl" "${validator_arguments[@]}")"
 IFS=$'\t' read -r control_sha bridge_sha parent_path parent_sha seed_path seed_sha \
   result_path lightweight_path storage_backend scratch_subdirectory checkpoint_leaf \
-  parent_theta target_theta nodes cpus julia_threads memory time_limit qos \
+  parent_theta target_theta nodes allocation_cpus solver_step_cpus julia_threads \
+  memory time_limit qos \
   maximum_new_node_hours maximum_jobs \
   prior_phase1_node_hours phase1_ceiling_node_hours prior_project_node_hours \
   project_ceiling_node_hours previous_sacct_path previous_sacct_sha previous_job_id \
@@ -140,6 +141,12 @@ IFS=$'\t' read -r control_sha bridge_sha parent_path parent_sha seed_path seed_s
 [[ "$control_sha" =~ ^[0-9a-f]{64}$ ]] || die "validator returned an invalid control hash"
 [[ "$bridge_sha" =~ ^[0-9a-f]{64}$ ]] || die "validator returned an invalid bridge hash"
 [[ "$maximum_jobs" == 1 ]] || die "validator did not preserve the one-job guard"
+[[ "$allocation_cpus" =~ ^[1-9][0-9]*$ ]] ||
+  die "validator returned invalid allocation logical CPUs"
+[[ "$solver_step_cpus" =~ ^[1-9][0-9]*$ ]] ||
+  die "validator returned invalid solver-step logical CPUs"
+(( solver_step_cpus <= allocation_cpus )) ||
+  die "solver step cannot exceed its allocation"
 manifest_sha="$(sha256_file "$project_root/idmrg/Manifest.toml")"
 package_directory="$(dirname "$result_path")"
 job_id_file="$package_directory/job_id.txt"
@@ -213,7 +220,7 @@ Project B Phase 1 one-point iDMRG plan
   target: YC8-1, period 2, U(1), uniform gauge, chi 512
   solver: MPSKit 0.13.13 one-site IDMRG
   account: $phase1_account
-  resources: nodes=$nodes cpus-per-task=$cpus julia-threads=$julia_threads memory=$memory qos=$qos time=$time_limit
+  resources: nodes=$nodes allocation-logical-cpus=$allocation_cpus solver-step-logical-cpus=$solver_step_cpus julia-threads=$julia_threads memory=$memory qos=$qos time=$time_limit
   maximum forecast charge: $maximum_new_node_hours node-hours; maximum new jobs: $maximum_jobs
   Phase 1 budget: prior=$prior_phase1_node_hours ceiling=$phase1_ceiling_node_hours node-hours
   project budget: prior=$prior_project_node_hours ceiling=$project_ceiling_node_hours node-hours
@@ -267,7 +274,7 @@ case "$command_name" in
       --qos="$qos"
       --nodes="$nodes"
       --ntasks=1
-      --cpus-per-task="$cpus"
+      --cpus-per-task="$allocation_cpus"
       --mem="$memory"
       --time="$time_limit"
       --output="$package_directory/logs/idmrg-%j.out"
@@ -277,7 +284,7 @@ case "$command_name" in
       sbatch_args+=(--licenses=scratch)
     fi
     raw_job_id="$(sbatch "${sbatch_args[@]}" \
-      --wrap="srun --cpu-bind=cores env JULIA_NUM_THREADS=$julia_threads OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 $julia_bin --startup-file=no --project=$project_root/idmrg $project_root/idmrg/scripts/run_idmrg.jl $control_path $result_path")"
+      --wrap="srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task=$solver_step_cpus --cpu-bind=cores env JULIA_NUM_THREADS=$julia_threads OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 $julia_bin --startup-file=no --project=$project_root/idmrg $project_root/idmrg/scripts/run_idmrg.jl $control_path $result_path")"
     job_id="${raw_job_id%%;*}"
     [[ "$job_id" =~ ^[0-9]+$ ]] || die "Slurm returned an invalid job ID: $raw_job_id"
     printf 'Slurm accepted job %s.\n' "$job_id"

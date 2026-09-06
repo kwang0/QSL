@@ -1,10 +1,17 @@
 # Project B Phase 1 cross-device handoff
 
+> Historical snapshot: this file records the 2026-08-25 transfer boundary and
+> is retained for provenance. It is not the current operational entry point.
+> Start with `AGENTS.md`, `docs/PROJECT_STATE.md`,
+> `docs/ARCHITECTURE.md`, and `docs/NEW_TASK_PROMPT.md`. Where a dated status
+> here differs from `PROJECT_STATE.md` or current Perlmutter evidence, use the
+> latter sources.
+
 Snapshot date: 2026-08-25 (America/Los_Angeles)
 
-This is the current handoff for continuing Project B on another device through
-GitHub. It supersedes `docs/PHASE1_IDMRG_HANDOFF.md` as the operational entry
-point; that older file remains the immutable pre-iDMRG handoff.
+This was the handoff used to continue Project B on another device through
+GitHub. It superseded `docs/PHASE1_IDMRG_HANDOFF.md` at that transfer boundary;
+both files are now historical evidence rather than operational entry points.
 
 ## Start here on the other device
 

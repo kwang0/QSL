@@ -6,6 +6,24 @@ YC geometry, Hamiltonian, VUMPS loop, state storage, transfer spectroscopy,
 finite-entanglement scaling, plotting, and diagnostics were refactored into one
 small Julia package.
 
+## Start or resume work
+
+For a fresh conversation or a different computer, begin with
+[`AGENTS.md`](AGENTS.md),
+[`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md), and
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Then run the same read-only
+audit on Windows or Perlmutter:
+
+```text
+julia --startup-file=no scripts/audit_project_context.jl
+```
+
+[`docs/NEW_TASK_PROMPT.md`](docs/NEW_TASK_PROMPT.md) contains a reusable
+bootstrap prompt with no embedded job status. Active and historical workstreams
+are indexed in [`docs/plans/README.md`](docs/plans/README.md); durable choices
+are indexed in [`docs/decisions/README.md`](docs/decisions/README.md). The old
+cross-device handoff is a dated provenance snapshot, not current state.
+
 The immediate diagnosis of the existing YC6-1 result is in
 [`docs/YC6_1_DIAGNOSIS.md`](docs/YC6_1_DIAGNOSIS.md). The feature near
 `theta=0.4 pi` is an unconverged optimization/basin jump, not the expected
@@ -108,16 +126,16 @@ with `sacct`. It also refuses a configuration whose output directory already
 contains immutable state artifacts, preventing a retry from spending compute
 only to collide with an existing deterministic filename.
 
-Phase 1 continuation uses two independent gates. The configured VUMPS residual
-checks numerical stationarity; it does not select the global minimum and does
-not by itself establish branch identity. Every child of an accepted state must
-also have mixed-transfer overlap per site at least `0.99` with that parent.
-The independently prepared first point has no parent, so only the numerical
-gate applies there. A failed overlap gate triggers the same interval refinement
-as a residual failure, but is classified separately as a possible basin jump.
-When Krylov diagnostics are enabled, every recorded inner solve must also
-report convergence before a candidate is numerically eligible or an interval
-may be refined automatically.
+Phase 1 continuation separates numerical stationarity from branch identity.
+The legacy scout controls use a mixed-transfer overlap floor of `0.99`; that
+value is a campaign-specific numerical guard, not a physical law. The current
+chi-1024 bridge instead uses the multimetric trust region declared in
+`configs/phase1_yc8_1_multimetric_continuity.toml`, with overlap retained as an
+alarm rather than a single acceptance criterion. See
+[`docs/YC8_1_CHI1024_BRIDGE.md`](docs/YC8_1_CHI1024_BRIDGE.md) for the exact
+metrics and scope. In every campaign, a numerical failure and a continuity
+failure are classified separately, and every recorded inner Krylov solve must
+converge before automatic scientific acceptance.
 
 When adaptive continuation reaches `minimum_step_over_pi` without satisfying a
 gate, the scan writes an immutable `scan_outcome.toml` and exits normally.

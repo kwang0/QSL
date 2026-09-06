@@ -7,11 +7,16 @@ the project owner use bare `plan`, `submit`, `status`, `reconcile`, and
 Update it only after a new iDMRG control has been generated and locally
 validated; never choose an active package by modification time.
 
-The current pointer selects the guarded `theta/pi=0.15 -> 0.175` recovery step
-described in `docs/PHASE1_IDMRG_SWEEP_RECOVERY.md`. It starts from the accepted
-lineage parent itself, uses the predeclared working convergence profile and the
-benchmarked 2-thread/4-CPU Shared allocation, and has no automatic submission
-or advance.
+The current pointer selects the guarded `theta/pi=0.15 -> 0.1625` midpoint
+described in `docs/PHASE1_IDMRG_SWEEP_RECOVERY.md`. Job `57611537` completed
+the preceding theta/pi=0.175 retry and passed its predeclared working native
+gate, but its `0.9662443394038124` overlap with the accepted theta/pi=0.15
+parent failed the unchanged `0.99` branch gate. The midpoint package hash-pins
+that result and both immutable analyses, starts from the accepted lineage
+parent rather than the rejected tensor, requests 10 allocation logical CPUs,
+and launches the benchmarked two-Julia-thread solver in an exact
+four-logical-CPU step. Standing owner authorization covers guarded submission
+after a successful live plan; automatic advance remains disabled.
 
 `phase1_idmrg_benchmark_active_control.ref` is the separate two-line pointer
 for the low-cost iDMRG resource benchmark. It supports the same bare
@@ -46,6 +51,26 @@ value or the policy digest differs.
 
 The supplied files cover the first Project B calculations:
 
+- `science_yc6_1_legacy_period6_chi512.toml`: independent scientific
+  recreation of the legacy YC6-1 chi-512 six-site-supercell trajectory. It
+  retains the `1e-5` VUMPS residual target, records inner-solver and continuity
+  diagnostics, and adaptively brackets the old basin jump without touching the
+  accepted YC8-1 lineage. Use only through
+  `slurm/run_yc6_1_recovery_cpu.sh`; see
+  `docs/YC6_1_CHI512_RECOVERY.md`.
+- `science_yc6_1_legacy_period6_chi512_after_57629467.toml`: strict-lineage
+  continuation after the 48-hour timeout. It hash-pins the accepted
+  `theta/pi=0.3` state (`741261e9...`), restarts at `0.35`, preserves the
+  rejected `0.4` state only as evidence, writes to a distinct output tree, and
+  requests a full-state optimizer checkpoint every five completed iterations.
+  Launcher 1.2.0 routes those heavy checkpoints to a job-specific `$PSCRATCH`
+  directory and leaves only compact resume controls in the project output.
+- `science_yc6_1_legacy_period6_chi512_tol1e4_after_p0p3375.toml`:
+  explicitly authorized exploratory continuation with a `1e-4` VUMPS outer
+  residual gate. It hash-pins the stricter-profile accepted `theta/pi=0.3375`
+  state (`ac239341...`), repeats `0.35` without importing the old-tolerance
+  checkpoint, preserves all other solver and branch gates, and writes to a
+  distinct `tol1e4` output tree. This is launcher 1.3.0's default.
 - `pilot_yc6_1.toml`: a low-cost regression geometry matching the legacy scan.
 - `phase1_yc8_1_forward_chi128.toml`: primary two-flavor threaded branch.
 - `phase1_yc8_1_forward_recovery_from_0p21875_chi128.toml`: strict-lineage
@@ -109,22 +134,32 @@ remaining schedule as a compatibility fallback. The legacy resume generator
 remains only for manual recovery of older runs and must not replace the pinned
 final control.
 
-An optimizer checkpoint is intentionally more restrictive than an ordinary
-restart. It requires strict lineage, exactly one fixed flux, both SHA-256
-digests, the same model and branch metadata, the same accepted-parent hash, the
-requested chi already present in the checkpoint MPS, and
-`stop_reason=maximum_iterations_contracting`. A rejected artifact must never be
-placed in `initial_state_file` or have its acceptance flag edited.
+An optimizer checkpoint is intentionally separate from an accepted restart. It
+requires strict lineage, exactly one target flux, immutable SHA-256 provenance,
+matching model and branch metadata, and—when an accepted parent exists—the
+same accepted-parent hash and parent flux history. A checkpoint MPS may be at
+an intermediate growth dimension not exceeding the requested chi. Supported
+numerical-seed reasons are `periodic_checkpoint`, `growth_stage_checkpoint`,
+`pretimeout_checkpoint`, and the historical
+`maximum_iterations_contracting`. Each new checkpoint receives a generated
+hash-pinned one-point resume configuration. A checkpoint or rejected artifact
+remains a numerical seed: it must never be placed in `initial_state_file`, have
+its acceptance flag edited, or replace the accepted lineage parent.
 
-All Phase 1 configs set `require_parent_overlap = true`. Once a point has an
-accepted parent, continuation acceptance requires both the optimizer residual
-and a mixed-transfer overlap per site of at least
-`minimum_parent_overlap_per_site`. `parent_overlap_tolerance` and
-`parent_overlap_krylov_dimension` control only that one-eigenvalue diagnostic.
-The first independently prepared endpoint is exempt because it has no parent.
-The default `0.99` threshold is a configurable branch trust-region guard, not a
-claim about a universal physical fidelity cutoff; inspect the stored overlaps
-and audit metrics after the first real continuation job.
+All Phase 1 configs set `require_parent_overlap = true`, so the mixed-transfer
+overlap and the associated observable diagnostics are always computed after a
+parent exists. Historical controls use `continuity_policy = "overlap_floor"`
+implicitly and retain their immutable cutoff semantics. The new
+`science_yc8_1_primary_forward_chi1024_bridge.toml` instead uses
+`continuity_policy = "multimetric_trust_region"`: its `0.90` overlap value is
+an alarm floor, while entropy, local-energy, magnetization, Schmidt-spectrum,
+resolved neutral/spin-1 correlation-length, and U(1)-sector diagnostics decide
+branch acceptance. Its execution profile pins parallel VUMPS, four Julia
+threads in an eight-logical-CPU solver step, single-threaded BLAS and Strided,
+and threaded BlockSparse contractions. See
+`docs/YC8_1_CHI1024_BRIDGE.md` for its calibration and reverse-consistency
+requirement. The same document describes the hash-gated generator that can
+emit the `0.475:0.025:1.0` successor only after all reverse comparisons pass.
 
 The `hu_yc8_*_forward.toml` files remain later-phase templates with different
 tolerance, spectrum, and threading settings; do not substitute them for the
