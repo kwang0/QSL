@@ -44,12 +44,15 @@ The owner prefers Git for source sync. The follow-up source branch is
 status. The owner has now initialized Git in `~/QSL`, fetched both upstream
 branches and attached `main` without overwriting working files. The export
 shows missing, modified and untracked files across several projects; these
-differences are preserved. The next step in
-[the Git guide](PERLMUTTER_GIT_SYNC.md) is a clean, sparse linked source
-worktree at `~/QSL-project-b` that reuses the existing canonical Project B
-output through a directory link. Its creation is prepared and tested locally
-but has not yet been reported complete on Perlmutter. Globus continues to
-carry ignored controls and selected data to the original output path.
+differences are preserved. The owner completed the clean sparse worktree at
+`~/QSL-project-b`, including the link to the original Project B output, and
+reported a clean worktree tracking the published branch. Its first preflight
+stopped before any live checks or submission because the ignored
+`output/review_followup/solver_pilot_control_v2.toml` is missing through that
+link. The next step is a checksum-verified Globus transfer of this existing
+local control to the same relative location in the original `~/QSL` output,
+then retrying the guarded sequence from the new source worktree. The local
+7,255-byte control still matches the pinned SHA-256 above.
 
 Standing owner authorization: publish tested Project B source, tests and
 documentation to `https://github.com/kwang0/QSL.git` on
@@ -217,10 +220,9 @@ was unavailable.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
 - Whether later Perlmutter accounting exists beyond the synchronized files.
-- Whether the clean Project B source worktree and its canonical output link
-  have been created successfully. The existing export's differences are
-  preserved for later review; no forced checkout or source replacement follows
-  from adopting Git.
+- Whether the sealed v2 control has been transferred to the original output
+  directory and is visible through the new worktree's link. The owner has
+  confirmed the clean source worktree and completed link-creation command.
 - Whether any selected scratch state has been promoted to durable storage
   since the last sync.
 

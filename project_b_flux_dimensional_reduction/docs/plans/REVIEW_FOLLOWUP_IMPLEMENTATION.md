@@ -12,6 +12,8 @@ execution is always manual by the owner; Codex implements and tests locally.
 - [x] Immutable, hash-pinned chi-512 MPSKit VUMPS/gradient pilot, at most 0.5 node-hours.
 - [x] Local pilot smoke tests and common-representation analysis.
 - [x] Owner supplies live terminal status, queue snapshot, and step-level accounting.
+- [x] Owner creates the clean Git source worktree and canonical output link.
+- [ ] Owner checksum-syncs the ignored v2 control to the original output path.
 - [ ] Owner completes common live reconciliation and hash-verified scratch audit.
 - [ ] Owner runs successful live plan then submits the pilot; reconcile and analyze.
 - [ ] Select scientific successor using pilot and continuity evidence.
@@ -44,6 +46,14 @@ The owner prefers Git for future source synchronization. The
 [Git adoption guide](../PERLMUTTER_GIT_SYNC.md) preserves the existing remote
 working files; Globus remains the transport for ignored artifacts. Source
 export validation remains available while Git is being established.
+
+The owner has completed the clean sparse source worktree and output link;
+Git reports it clean and tracking the published branch. The first preflight
+there stopped at the missing sealed v2 control, before reconciliation, scratch
+auditing or submission. Transfer the existing control from Windows to
+`~/QSL/project_b_flux_dimensional_reduction/output/review_followup/` via
+Globus, preserving its filename. The existing checkout then sees it through
+the output link; no new control preparation or source change is needed.
 
 ## Prepared experiment
 

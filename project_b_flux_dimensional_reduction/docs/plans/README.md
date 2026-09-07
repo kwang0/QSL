@@ -8,7 +8,7 @@ historical handoffs.
 
 | Workstream | State | Plan |
 |---|---|---|
-| Review follow-up: accounting, evidence audit, matched solver pilot | v2 control validated; Git attached; owner clean source worktree/live retry pending | [REVIEW_FOLLOWUP_IMPLEMENTATION.md](REVIEW_FOLLOWUP_IMPLEMENTATION.md) |
+| Review follow-up: accounting, evidence audit, matched solver pilot | clean remote source worktree confirmed; ignored v2 control transfer/live retry pending | [REVIEW_FOLLOWUP_IMPLEMENTATION.md](REVIEW_FOLLOWUP_IMPLEMENTATION.md) |
 | YC8-1 primary-forward chi-1024 bridge and full theta sweep | blocked at fixed-flux chi growth; no theta advance | [`../YC8_1_CHI1024_BRIDGE.md`](../YC8_1_CHI1024_BRIDGE.md) |
 | Phase 1 allocation and phase ordering | active | [`../PHASES_0_TO_4.md`](../PHASES_0_TO_4.md) |
 
