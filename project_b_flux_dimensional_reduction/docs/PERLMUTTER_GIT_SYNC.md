@@ -62,7 +62,7 @@ files, a separate project's edits and a linked data directory. All 14
 preservation and ignore-rule assertions passed. The transcript is
 `output/review_audit/sparse_worktree_preservation_test_final.log`.
 
-## Pull and execute the pilot
+## Pull and review the completed pilot
 
 The owner has completed the worktree setup above. The first preflight exposed
 an ignored control missing on Perlmutter. That control now lives at tracked
@@ -76,12 +76,50 @@ Run manually on Perlmutter:
 cd ~/QSL-project-b &&
 git pull --ff-only &&
 cd project_b_flux_dimensional_reduction &&
-bash slurm/run_mpskit_solver_pilot_cpu.sh preflight &&
-bash slurm/run_mpskit_solver_pilot_cpu.sh submit &&
-bash slurm/run_mpskit_solver_pilot_cpu.sh status
+bash slurm/run_mpskit_solver_pilot_cpu.sh reconcile &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh analyze
 ```
 
-The chain stops on any failure and submits only after `PREFLIGHT PASSED`.
+Job `58005544` has completed. This chain reconciles and displays its results;
+it does not submit another job. Future launch commands come from the active plan.
+
+## Return results from Perlmutter to Windows
+
+Run Project B commands in `~/QSL-project-b/project_b_flux_dimensional_reduction`.
+Its `output` is a link, so the physical result directory and existing Globus
+data endpoint remain under the original `~/QSL` tree. The Windows checkout
+also stays in its original location.
+
+Use the owner's existing NERSC and Windows Globus collections with these roots:
+
+- Perlmutter source:
+  `/global/homes/k/kwang98/QSL/project_b_flux_dimensional_reduction/output/`
+- Windows destination:
+  `C:\Users\Kevin\Documents\VS Code\QSL\project_b_flux_dimensional_reduction\output\`
+  (Select this folder within the Windows collection.)
+
+After a job is terminal and reconciliation succeeds, copy the completed run
+package and updated accounting into the same relative paths under the local
+output root. For pilot `58005544`, select:
+
+```text
+mpskit_solver_pilot_jobs/20260907T023735Z_969b69b1c40d/
+accounting/
+review_followup/checkpoint_audit_57801654_v2.toml
+```
+
+Preserve those subdirectories rather than flattening their contents into
+`output/`. Use checksum comparison to transfer new or changed files, enable
+transfer integrity verification, and keep destination deletion/mirroring off.
+Wait for successful completion before treating the local copies as updated.
+The compact pilot package includes its logs, metrics, histories, control and
+analysis summaries/HDF5 diagnostics; full solver tensors remain in scratch.
+
+Source, sealed launch controls and documentation continue through Git. A result
+sync does not copy either checkout or its Git metadata. If source was edited on
+Perlmutter, commit and push those reviewed changes from the clean worktree,
+then pull the same branch on Windows separately. Ordinary runs write ignored
+output and need no source commit.
 
 ## Routine updates
 
