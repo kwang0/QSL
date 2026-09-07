@@ -41,10 +41,15 @@ the candidate plus checkpoints 52 and 60 with visible progress.
 
 The owner prefers Git for source sync. The follow-up source branch is
 `codex/project-b-review-followup`; inspect Git for its publication and commit
-status. [The Git adoption guide](PERLMUTTER_GIT_SYNC.md) connects the existing
-remote directory without overwriting its files. Git setup and the initial
-remote source differences still need the owner's output; Globus continues to
-carry ignored controls and selected data.
+status. The owner has now initialized Git in `~/QSL`, fetched both upstream
+branches and attached `main` without overwriting working files. The export
+shows missing, modified and untracked files across several projects; these
+differences are preserved. The next step in
+[the Git guide](PERLMUTTER_GIT_SYNC.md) is a clean, sparse linked source
+worktree at `~/QSL-project-b` that reuses the existing canonical Project B
+output through a directory link. Its creation is prepared and tested locally
+but has not yet been reported complete on Perlmutter. Globus continues to
+carry ignored controls and selected data to the original output path.
 
 ## Non-negotiable scientific state
 
@@ -206,8 +211,10 @@ was unavailable.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
 - Whether later Perlmutter accounting exists beyond the synchronized files.
-- The existing remote source differences when its Git history is attached;
-  no forced checkout or source replacement is authorized by adopting Git.
+- Whether the clean Project B source worktree and its canonical output link
+  have been created successfully. The existing export's differences are
+  preserved for later review; no forced checkout or source replacement follows
+  from adopting Git.
 - Whether any selected scratch state has been promoted to durable storage
   since the last sync.
 

@@ -90,13 +90,16 @@ writes the destination, checksum-sync the ignored
 The existing accepted parent and MPSKit bridge remain the input files; no new
 full-state copy is needed. Verify publication of
 `codex/project-b-review-followup` before the first fetch.
-The initial `main` adoption preserves existing files and needs review before
-switching to that source branch.
+The owner completed the initial `main` adoption. Because the existing export
+has differences across several projects, use the clean sparse source worktree
+and canonical output link in [the Git guide](../PERLMUTTER_GIT_SYNC.md).
+Its 14 local preservation assertions pass. The source worktree is the new
+execution directory; the original output path remains the Globus destination.
 
 Run manually on Perlmutter:
 
 ```bash
-cd ~/QSL/project_b_flux_dimensional_reduction
+cd ~/QSL-project-b/project_b_flux_dimensional_reduction
 bash slurm/run_mpskit_solver_pilot_cpu.sh preflight
 ```
 

@@ -1,6 +1,7 @@
 .DS_Store
 tmp/
 .julia/
-output/
+# Ignore the canonical data directory and a worktree symlink to it.
+/output
 *.h5
 *.jld2

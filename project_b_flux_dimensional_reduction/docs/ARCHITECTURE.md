@@ -28,6 +28,11 @@ checksum sync to Windows for analysis and development
   authority.
 - The project-side `output/` tree contains durable or synchronized compact
   evidence but is ignored by Git and may be stale on another device.
+- A clean source worktree can link its ignored `output` path to one canonical
+  data directory. Linked source worktrees share that directory's accounting,
+  submission lock and one-job guard. Data synchronization targets the canonical
+  directory; source updates target the clean worktree. Git's common metadata
+  repository must remain available to its linked worktrees.
 - `$PSCRATCH` holds large restart-only tensors and optimizer checkpoints. It is
   purge-eligible, is not part of routine synchronization, and must be checked
   before a resume.

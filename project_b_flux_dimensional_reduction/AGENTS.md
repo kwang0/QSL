@@ -130,6 +130,10 @@ worktree change unless the owner explicitly asks to discard it.
 - Prefer Git for versioned source, configuration templates and documentation
   between Windows and Perlmutter. Preserve the existing remote directory when
   adopting Git; do not use a hard reset or a forced checkout to align it.
+- A separate source worktree may link to the canonical ignored `output`
+  directory. Such worktrees share the same evidence, submission lock and
+  project budget; they are not independent campaigns. Keep the repository
+  holding their common Git metadata and the canonical output directory intact.
 - Use Globus for ignored controls, compact results and selected durable data.
   The normal cycle is Perlmutter to Windows first, wait for checksum sync,
   edit while no project job writes the tree, then sync needed artifacts back
