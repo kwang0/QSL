@@ -51,6 +51,12 @@ output through a directory link. Its creation is prepared and tested locally
 but has not yet been reported complete on Perlmutter. Globus continues to
 carry ignored controls and selected data to the original output path.
 
+Standing owner authorization: publish tested Project B source, tests and
+documentation to `https://github.com/kwang0/QSL.git` on
+`codex/project-b-review-followup`, including future updates to that branch.
+Ignored run data remain excluded. Perlmutter commands and transfers continue
+to be executed manually by the owner.
+
 ## Non-negotiable scientific state
 
 - Model and representation: triangular-lattice `J1=1`, `J2=0.12`, YC8-1,
