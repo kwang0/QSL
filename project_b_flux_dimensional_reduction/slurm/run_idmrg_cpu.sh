@@ -10,6 +10,7 @@ readonly WORKING_CONVERGENCE_POLICY="configs/phase1_idmrg_working_convergence.to
 readonly ACCEPTED_PARENT_RELATIVE="output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$project_root/slurm/lib/project_b_resources.sh"
 julia_bin="${JULIA_BIN:-julia}"
 phase1_account="${PHASE1_ACCOUNT:-$DEFAULT_ACCOUNT}"
 
@@ -42,7 +43,11 @@ EOF
 }
 
 sha256_file() {
-  shasum -a 256 "$1" | awk '{print $1}'
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
 }
 
 is_perlmutter=false
@@ -237,11 +242,15 @@ EOF
     printf '  reconciled predecessor job: %s (%s)\n' "$previous_job_id" "$previous_sacct_path"
   fi
   verify_submission_targets
+  local tmp_worker
+  tmp_worker="$(mktemp -d)"
+  cp "$project_root/slurm/run_idmrg_job.sh" "$tmp_worker/worker.sh"
+  bash "$tmp_worker/worker.sh" preflight "$project_root" "$control_path" "$result_path" "$solver_step_cpus" "$julia_threads" "$julia_bin"
+  rm -r "$tmp_worker"
   if [[ "$is_perlmutter" == true ]]; then
     verify_authoritative_inputs
     command -v squeue >/dev/null || die "squeue is unavailable"
-    active="$(squeue -h -u "$USER" -n pb1-idmrg -o '%A' | wc -l | tr -d ' ')"
-    [[ "$active" == 0 ]] || die "an active pb1-idmrg job already consumes the one-job budget"
+    pb_guard "$project_root" "$maximum_new_node_hours" live
     printf '  accounting authority: live Perlmutter checks passed\n'
   else
     printf '  accounting authority: LOCAL STRUCTURAL PLAN ONLY; Perlmutter state not verified\n'
@@ -264,6 +273,7 @@ case "$command_name" in
     print_plan plan
     ;;
   submit)
+    pb_submission_lock "$project_root"
     print_plan submit
     mkdir -p "$package_directory/logs" "$checkpoint_directory"
     sbatch_args=(
@@ -284,7 +294,7 @@ case "$command_name" in
       sbatch_args+=(--licenses=scratch)
     fi
     raw_job_id="$(sbatch "${sbatch_args[@]}" \
-      --wrap="srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task=$solver_step_cpus --cpu-bind=cores env JULIA_NUM_THREADS=$julia_threads OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 $julia_bin --startup-file=no --project=$project_root/idmrg $project_root/idmrg/scripts/run_idmrg.jl $control_path $result_path")"
+      "$project_root/slurm/run_idmrg_job.sh" run "$project_root" "$control_path" "$result_path" "$solver_step_cpus" "$julia_threads" "$julia_bin")"
     job_id="${raw_job_id%%;*}"
     [[ "$job_id" =~ ^[0-9]+$ ]] || die "Slurm returned an invalid job ID: $raw_job_id"
     printf 'Slurm accepted job %s.\n' "$job_id"
@@ -296,14 +306,14 @@ case "$command_name" in
     ;;
   status)
     job_id="$(resolve_job_id "$job_id_argument")"
-    squeue -j "$job_id" -o '%.18i %.12T %.10M %.10l %.6D %.6C %R' || true
+    squeue -j "$job_id" -o '%.18i %.12T %.10M %.10l %.6D %.6C %R' 2>/dev/null || true
     sacct -j "$job_id" --starttime=2026-08-01 \
-      --format=JobIDRaw,JobName,State,Elapsed,Timelimit,NNodes,NCPUS,ExitCode -X
+      --format=JobIDRaw,JobName,State,Elapsed,Timelimit,NNodes,NCPUS,ExitCode,MaxRSS,AveRSS,ReqMem
     ;;
   reconcile)
     job_id="$(resolve_job_id "$job_id_argument")"
     reconciliation="$package_directory/sacct-${job_id}.tsv"
-    [[ ! -e "$reconciliation" ]] || die "refusing to overwrite reconciliation: $reconciliation"
+    if [[ -e "$reconciliation" ]]; then pb_reconcile "$project_root"; exit 0; fi
     temporary="$reconciliation.tmp"
     sacct -j "$job_id" --starttime=2026-08-01 -n -P \
       --format=JobIDRaw,JobName,State,ElapsedRaw,TimelimitRaw,NNodes,NCPUS,ExitCode -X \
@@ -322,6 +332,7 @@ case "$command_name" in
         ;;
     esac
     mv "$temporary" "$reconciliation"
+    pb_reconcile "$project_root"
     printf 'Reconciled terminal job %s (%s): %s\n' \
       "$job_id" "$job_state" "$reconciliation"
     ;;

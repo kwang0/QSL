@@ -65,8 +65,8 @@ const PROJECT_ROOT = normpath(joinpath(@__DIR__, ".."))
     )
     @test occursin("--signal=\"B:USR1@\$PRETIMEOUT_SIGNAL_SECONDS\"", yc8_launcher)
     @test occursin("--licenses=scratch", yc8_launcher)
-    @test occursin("reconciled_yc8_charge", yc8_launcher)
-    @test occursin("prior YC8 run is not reconciled", yc8_launcher)
+    @test occursin("pb_guard", yc8_launcher)
+    @test occursin("pb_reconcile", yc8_launcher)
     @test occursin("readonly SOLVER_STEP_CPUS=8", yc8_launcher)
     @test occursin("readonly JULIA_THREADS=4", yc8_launcher)
     @test occursin("readonly SOLVER_STEP_CPUS=8", yc8_worker)
@@ -1515,6 +1515,10 @@ end
     @test length(PB.input_inds(mixed)) == 2
     @test length(PB.output_inds(mixed)) == 2
 end
+
+include("accounting.jl")
+include("pilot_operations.jl")
+include("review_physics.jl")
 
 if get(ENV, "PROJECT_B_RUN_VUMPS_SMOKE", "0") == "1"
     @testset "One-iteration VUMPS API smoke test" begin

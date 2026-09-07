@@ -8,6 +8,7 @@ readonly DEFAULT_ACCOUNT="m4863"
 readonly ACTIVE_CONTROL_REF="configs/phase1_idmrg_benchmark_active_control.ref"
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$project_root/slurm/lib/project_b_resources.sh"
 julia_bin="${JULIA_BIN:-julia}"
 phase1_account="${PHASE1_ACCOUNT:-$DEFAULT_ACCOUNT}"
 
@@ -34,7 +35,11 @@ EOF
 }
 
 sha256_file() {
-  shasum -a 256 "$1" | awk '{print $1}'
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
 }
 
 is_perlmutter=false
@@ -187,20 +192,19 @@ Project B Phase 1 iDMRG resource benchmark plan
   submission authorization: literal submit command
 EOF
   verify_submission_targets
+  local tmp_worker
+  tmp_worker="$(mktemp -d)"
+  cp "$project_root/slurm/run_idmrg_benchmark_job.sh" "$tmp_worker/worker.sh"
   worker_preflight="$(PROJECT_B_JULIA_BIN="$julia_bin" \
-    bash "$project_root/slurm/run_idmrg_benchmark_job.sh" \
+    bash "$tmp_worker/worker.sh" \
     preflight "$project_root" "$control_path")"
+  rm -r "$tmp_worker"
   grep -q 'Benchmark worker preflight passed' <<<"$worker_preflight" ||
     die "benchmark worker preflight did not confirm success"
   printf '  worker preflight: passed with explicit root, Julia timing, and HDF5 result I/O\n'
   if [[ "$is_perlmutter" == true ]]; then
     command -v squeue >/dev/null || die "squeue is unavailable"
-    active_benchmark="$(squeue -h -u "$USER" -n pb1-idmrg-bench -o '%A' | wc -l | tr -d ' ')"
-    active_science="$(squeue -h -u "$USER" -n pb1-idmrg -o '%A' | wc -l | tr -d ' ')"
-    [[ "$active_benchmark" == 0 ]] ||
-      die "an active pb1-idmrg-bench job already exists"
-    [[ "$active_science" == 0 ]] ||
-      die "an active pb1-idmrg science job exists; benchmark separately"
+    pb_guard "$project_root" "$maximum_new_node_hours" live
     printf '  accounting authority: live Perlmutter checks passed\n'
   else
     printf '  accounting authority: LOCAL STRUCTURAL PLAN ONLY; Perlmutter state not verified\n'
@@ -223,6 +227,7 @@ case "$command_name" in
     print_plan plan
     ;;
   submit)
+    pb_submission_lock "$project_root"
     print_plan submit
     mkdir -p "$package_directory/logs"
     raw_job_id="$(sbatch --parsable --job-name=pb1-idmrg-bench \
@@ -255,8 +260,8 @@ case "$command_name" in
     job_id="$(resolve_job_id "$job_id_argument")"
     summary="$package_directory/sacct-${job_id}.tsv"
     steps="$package_directory/sacct-steps-${job_id}.tsv"
-    [[ ! -e "$summary" && ! -e "$steps" ]] ||
-      die "refusing to overwrite benchmark accounting evidence"
+    if [[ -e "$summary" && -e "$steps" ]]; then pb_reconcile "$project_root"; exit 0; fi
+    [[ ! -e "$summary" && ! -e "$steps" ]] || die "partial accounting exists; use common reconcile"
     summary_temporary="$summary.tmp"
     steps_temporary="$steps.tmp"
     sacct -j "$job_id" --starttime=2026-08-01 -n -P -X \
@@ -282,6 +287,7 @@ case "$command_name" in
     [[ -s "$steps_temporary" ]] || die "step accounting has not populated for $job_id"
     mv "$summary_temporary" "$summary"
     mv "$steps_temporary" "$steps"
+    pb_reconcile "$project_root"
     printf 'Reconciled terminal benchmark job %s (%s).\n' "$job_id" "$job_state"
     printf 'Step efficiency evidence: %s\n' "$steps"
     if [[ "$normalized_state" != COMPLETED ]]; then

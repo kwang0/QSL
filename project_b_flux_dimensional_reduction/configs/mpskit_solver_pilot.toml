@@ -1,0 +1,58 @@
+artifact_kind = "project_b_mpskit_solver_pilot_recipe"
+schema_version = 1
+parent_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+bridge_path = "output/phase1_idmrg/yc8_1/theta_p0p20000000_from_38312fc996fe/accepted_parent_to_mpskit_bridge.h5"
+chi = 512
+maximum_iterations = 60
+minimum_iterations = 4
+energy_window = 4
+energy_span_tolerance = 1.0e-8
+vumps_galerkin_tolerance = 1.0e-5
+grassmann_gradient_tolerance = 1.0e-5
+model_energy_tolerance = 1.0e-6
+canonical_relation_tolerance = 1.0e-8
+checkpoint_every = 10
+automatic_promotion = false
+automatic_advance = false
+checkpoint_audit_path = "output/review_followup/checkpoint_audit_57801654_v2.toml"
+
+[resources]
+qos = "shared"
+allocation_cpus = 10
+step_cpus = 4
+julia_threads = 2
+blas_threads = 1
+memory = "16G"
+time_limit = "12:00:00"
+maximum_node_hours = 0.5
+forecast_node_hours = 0.46875
+pretimeout_seconds = 1800
+
+[continuity]
+minimum_overlap_per_site = 0.99
+maximum_cut_entropy_jump = 0.1
+maximum_energy_term_rms_jump = 0.02
+maximum_magnetization_rms_jump = 0.001
+maximum_mean_schmidt_total_variation = 0.05
+maximum_log_correlation_length_jump = 0.05
+require_u1_sector_diagnostics = true
+require_correlation_length_diagnostics = true
+correlation_length_units = "complete MPS transfer cells"
+
+[[stages]]
+name = "baseline_vumps"
+algorithm = "VUMPS"
+theta_over_pi = 0.15
+maximum_seconds = 3600
+
+[[stages]]
+name = "difficult_vumps"
+algorithm = "VUMPS"
+theta_over_pi = 0.2
+maximum_seconds = 10800
+
+[[stages]]
+name = "difficult_gradient"
+algorithm = "GradientGrassmann"
+theta_over_pi = 0.2
+maximum_seconds = 10800

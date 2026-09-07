@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 
-using SHA
+include(joinpath(@__DIR__,"lib/FileIntegrity.jl"))
 
 const PROJECT_ROOT = normpath(joinpath(@__DIR__, ".."))
 const REQUIRED_CONTEXT = [
@@ -13,6 +13,7 @@ const REQUIRED_CONTEXT = [
 ]
 
 function run_capture(argv::AbstractVector{<:AbstractString})
+    isnothing(Sys.which(first(argv))) && return false, "executable unavailable: $(first(argv))"
     buffer = IOBuffer()
     process = run(pipeline(ignorestatus(Cmd(String.(argv))); stdout=buffer, stderr=buffer))
     return success(process), chomp(String(take!(buffer)))
@@ -28,7 +29,7 @@ function relative_display(path::AbstractString)
 end
 
 function file_sha256(path::AbstractString)
-    return bytes2hex(sha256(read(path)))
+    return FileIntegrity.file_sha256(path)
 end
 
 function print_block(label::AbstractString, value::AbstractString)
@@ -49,11 +50,36 @@ println("expected_interactive_shell: ", Sys.iswindows() ? "PowerShell" : "POSIX 
 
 errors = String[]
 warnings = String[]
+source_export = length(ARGS)==2 && ARGS[1]=="--source-export"
+isempty(ARGS) || source_export || error("usage: audit_project_context.jl [--source-export CONTROL]")
 
 root_ok, git_root = run_capture(["git", "-C", PROJECT_ROOT, "rev-parse", "--show-toplevel"])
 if !root_ok
-    push!(errors, "Git root lookup failed: $git_root")
+    if source_export
+        push!(warnings, "Git history unavailable in source export; sealed source hashes are checked below")
+    else
+        push!(errors, "Git root lookup failed: $git_root")
+    end
     git_root = "<unavailable>"
+end
+
+if source_export
+    println("source_export_control: ", abspath(ARGS[2])); flush(stdout)
+    try
+        include(joinpath(@__DIR__,"lib/SolverPilotControl.jl"))
+        control=SolverPilotControl.validate(abspath(ARGS[2]);code_only=true)
+        required=["scripts/audit_project_context.jl","scripts/lib/SolverPilotControl.jl",
+            "scripts/lib/FileIntegrity.jl","Project.toml","Manifest.toml",
+            "idmrg/Project.toml","idmrg/Manifest.toml"]
+        all(p->any(r->r["path"]==p,control["inputs"]),required) ||
+            error("source-export control lacks required source or manifest pins")
+        println("source_export_sha256: ",file_sha256(abspath(ARGS[2])))
+        println("source_export_hash_result: MATCH")
+        println("source_export_data_hashes: deferred to full pilot plan")
+        println("source_export_git_history: not established by this mode")
+    catch exception
+        push!(errors,"Source-export validation failed: $(sprint(showerror,exception))")
+    end
 end
 println("git_root: ", git_root)
 

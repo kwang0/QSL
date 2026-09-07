@@ -38,8 +38,13 @@ SLURM_CPUS_PER_TASK=5 \
 
 grep -Fqx -- "--project=$project_dir" "$mock_srun_args"
 grep -Fqx -- "$project_dir/scripts/run_scan.jl" "$mock_srun_args"
-grep -Fqx -- "PROJECT_DIR=$project_dir" "$run_dir/worker.env"
+grep -Fqx -- "PROJECT_DIR=$(printf '%q' "$project_dir")" "$run_dir/worker.env"
 grep -Fqx -- 'exit_code=0' "$run_dir/job.result"
+
+PATH="$fixture_bin:$PATH" PHASE1_JULIA=julia \
+  bash "$staged_launcher" _preflight "$config" "$config_sha" "$run_dir" "$project_dir" \
+  >"$temporary_root/preflight.out"
+grep -Fq -- 'Copied scan worker preflight passed:' "$temporary_root/preflight.out"
 
 cancel_root="$temporary_root/cancel-runs"
 cancel_run="$cancel_root/test-run"
@@ -72,6 +77,10 @@ grep -Fq -- 'last_theta_over_pi = 0.25' "$cancel_run/termination.toml"
 advance_root="$temporary_root/advance-runs"
 advance_run="$advance_root/manual-run"
 advance_output="$temporary_root/advance.out"
+advance_artifact_run="$advance_run"
+if command -v cygpath >/dev/null 2>&1; then
+  advance_artifact_run="$(cygpath -w "$advance_run")"
+fi
 mkdir -p "$advance_run"
 cp "$config" "$advance_run/config.snapshot.toml"
 printf 'job_id\n789\n' >"$advance_run/job.tsv"
@@ -86,7 +95,7 @@ reason = "fixture requires manual review"
 schema_version = 1
 source_job_id = "789"
 source_config_sha256 = "$config_sha"
-source_run_directory = "$advance_run"
+source_run_directory = '$advance_artifact_run'
 source_scheduler_state = "COMPLETED"
 submit_permitted = false
 transition = "manual_review"

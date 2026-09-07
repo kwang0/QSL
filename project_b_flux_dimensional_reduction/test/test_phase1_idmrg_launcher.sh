@@ -11,17 +11,20 @@ if [[ -z "$julia_bin" ]]; then
   exit 0
 fi
 
+hash_file() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi
+}
 fixture="$(mktemp -d)"
 trap 'rm -rf "$fixture"' EXIT
 printf 'immutable bridge fixture\n' >"$fixture/bridge.h5"
-bridge_sha="$(shasum -a 256 "$fixture/bridge.h5" | awk '{print $1}')"
-idmrg_manifest_sha="$(shasum -a 256 "$project_root/idmrg/Manifest.toml" | awk '{print $1}')"
-solver_module_sha="$(shasum -a 256 "$project_root/idmrg/src/ProjectBIDMRG.jl" | awk '{print $1}')"
-root_manifest_sha="$(shasum -a 256 "$project_root/Manifest.toml" | awk '{print $1}')"
-analyzer_sha="$(shasum -a 256 "$project_root/scripts/analyze_phase1_idmrg_result.jl" | awk '{print $1}')"
-launcher_sha="$(shasum -a 256 "$project_root/slurm/run_idmrg_cpu.sh" | awk '{print $1}')"
-decision_sha="$(shasum -a 256 "$project_root/docs/PHASE1_IDMRG_LIBRARY_DECISION.md" | awk '{print $1}')"
-working_policy_sha="$(shasum -a 256 \
+bridge_sha="$(hash_file "$fixture/bridge.h5" | awk '{print $1}')"
+idmrg_manifest_sha="$(hash_file "$project_root/idmrg/Manifest.toml" | awk '{print $1}')"
+solver_module_sha="$(hash_file "$project_root/idmrg/src/ProjectBIDMRG.jl" | awk '{print $1}')"
+root_manifest_sha="$(hash_file "$project_root/Manifest.toml" | awk '{print $1}')"
+analyzer_sha="$(hash_file "$project_root/scripts/analyze_phase1_idmrg_result.jl" | awk '{print $1}')"
+launcher_sha="$(hash_file "$project_root/slurm/run_idmrg_cpu.sh" | awk '{print $1}')"
+decision_sha="$(hash_file "$project_root/docs/PHASE1_IDMRG_LIBRARY_DECISION.md" | awk '{print $1}')"
+working_policy_sha="$(hash_file \
   "$project_root/configs/phase1_idmrg_working_convergence.toml" | awk '{print $1}')"
 
 sed \
@@ -78,12 +81,12 @@ if grep -q 'PROJECT_B_IDMRG_SUBMIT_AUTHORIZED' \
   printf 'launcher still requires the redundant submit acknowledgement\n' >&2
   exit 1
 fi
-grep -Fq 'run_idmrg.jl $control_path $result_path")"' \
+grep -Fq '"$project_root/slurm/run_idmrg_job.sh" run "$project_root" "$control_path" "$result_path"' \
   "$project_root/slurm/run_idmrg_cpu.sh"
 grep -Fq -- '--cpus-per-task="$allocation_cpus"' \
   "$project_root/slurm/run_idmrg_cpu.sh"
-grep -Fq -- '--wrap="srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task=$solver_step_cpus --cpu-bind=cores' \
-  "$project_root/slurm/run_idmrg_cpu.sh"
+grep -Fq -- 'exec srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task="$step_cpus" --cpu-bind=cores' \
+  "$project_root/slurm/run_idmrg_job.sh"
 
 if JULIA_BIN="$julia_bin" PHASE1_ACCOUNT=m1234 \
     bash "$project_root/slurm/run_idmrg_cpu.sh" submit "$fixture/control.toml" \

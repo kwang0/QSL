@@ -72,6 +72,7 @@ for threads in "${thread_values[@]}"; do
   srun --exact --exclusive --nodes=1 --ntasks=1 \
     --cpus-per-task="$step_cpus" --cpu-bind=cores \
     --job-name="pb1-idmrg-t${threads}" --kill-on-bad-exit=1 \
+    /usr/bin/time -v -o "$result_directory/resource_threads_${threads}.time" \
     env JULIA_NUM_THREADS="$threads" OPENBLAS_NUM_THREADS=1 \
     MKL_NUM_THREADS=1 OMP_NUM_THREADS=1 \
     "$julia_bin" --startup-file=no --project="$project_root/idmrg" \

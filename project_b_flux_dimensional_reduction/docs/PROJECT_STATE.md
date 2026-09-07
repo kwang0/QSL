@@ -14,10 +14,37 @@ quickly as the numerical and allocation guards allow. The immediate scientific
 blocker is convergence of the fixed-`theta/pi=0.15` growth from chi 512 to chi
 1024. No chi-1024 theta continuation has begun.
 
-The active execution plan is
+The immediate execution plan is
+[`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
+repair accounting, audit the chi1024 evidence, and run a bounded matched
+chi512 MPSKit solver diagnostic. The longer-term campaign remains
 [`YC8_1_CHI1024_BRIDGE.md`](YC8_1_CHI1024_BRIDGE.md). The allocation-wide plan
 is [`PHASES_0_TO_4.md`](PHASES_0_TO_4.md). See
 [`plans/README.md`](plans/README.md) for workstream status.
+
+Local implementation and validation are complete. The sealed pilot control is
+`output/review_followup/solver_pilot_control_v2.toml`, SHA-256
+`969b69b1c40d3a70e07c58fe9b12d123564781c5f40b9a4058b74f4382278818`,
+selected by `configs/mpskit_solver_pilot_active_control.ref`. The initial
+control and its full chi512 cross-library validation are preserved. This
+revision fixes operational preflight failures without changing the scientific
+recipe, except for its new audit report path. The revised copied worker passes.
+Remaining steps require the owner's manual Perlmutter reconciliation, scratch
+audit, successful live plan and pilot execution.
+
+The first remote attempt failed context validation because the transferred
+tree lacks `.git`, and reconciliation because the accounting date range was
+too wide. Ctrl-C interrupted later hashing/compilation; no successful scratch
+audit, live plan or pilot submission has been established. The new `preflight`
+action stops at the first failure, uses 28-day accounting windows and audits
+the candidate plus checkpoints 52 and 60 with visible progress.
+
+The owner prefers Git for source sync. The follow-up source branch is
+`codex/project-b-review-followup`; inspect Git for its publication and commit
+status. [The Git adoption guide](PERLMUTTER_GIT_SYNC.md) connects the existing
+remote directory without overwriting its files. Git setup and the initial
+remote source differences still need the owner's output; Globus continues to
+carry ignored controls and selected data.
 
 ## Non-negotiable scientific state
 
@@ -101,11 +128,11 @@ hashes as of this update:
 Always rerun the context audit after a transfer; table entries are a dated
 state record, not a replacement for hash validation.
 
-## Accounting state and known guard defect
+## Accounting state and completed guard repair
 
 The locally synced `sacct.tsv` files show that Slurm allocated 18 logical CPUs
 to each 32-GiB YC8 bridge job, although their launcher ledgers record 16. The
-two `charged_node_hours.txt` files therefore undercount those jobs. Using the
+two original `charged_node_hours.txt` files therefore undercount those jobs. Using the
 actual `NCPUS=18` values gives:
 
 | Job | Status | Charge used here (node-hours) |
@@ -123,32 +150,73 @@ The corresponding Project B total including Phase 0 is
 48-hour 16-CPU forecast of 3.0 node-hours is not conservative when Slurm grants
 18 CPUs; the full-limit charge would be 3.375 node-hours.
 
-This accounting mismatch must be resolved in the launcher guard before another
-YC8 submission. A live Perlmutter plan must recompute the ledger from remote
-evidence; do not rely on these dated totals if another job has run.
+The shared accounting guard now derives charges across all Phase 1 run roots
+from allocated CPUs, with append-only corrections for both YC8 charge files.
+Its unrounded local total is 17.761508246528 node-hours, leaving
+2.238491753472. A live Perlmutter plan must reconcile later jobs or changed
+accounting before submission. Original exports, controls and charge files are
+preserved.
 
 ## Current priorities
 
-1. Correct and test the YC8 Shared-QOS accounting guard so it forecasts and
-   reconciles the actually allocated CPU count and cannot exceed the Phase 1
-   ceiling.
-2. Decide the smallest scientifically justified chi-1024 anchor continuation
-   from the contracting, hash-pinned checkpoint evidence. Do not advance theta
-   until the fixed-flux anchor is numerically accepted and passes its declared
-   continuity policy.
-3. Update the active bridge plan with that decision and prepare a new immutable
-   control only after the accounting and scratch checks pass.
+1. Complete the owner's manual Perlmutter reconciliation and hash-verified
+   scratch audit using the follow-up plan's single `preflight` command after
+   source/ignored-artifact synchronization. Local implementation includes
+   memory-rounded accounting, Julia RSS, step accounting, physics tests and a
+   reproducible scalar audit. No remote commands are run by the agent.
+2. Run the guarded matched chi512 MPSKit pilot after a successful live plan:
+   VUMPS at 0.15, then VUMPS and GradientGrassmann at 0.2, independently from
+   the accepted parent. Its 12-hour Shared-QOS reservation is 0.46875 node-hours.
+   All outputs remain diagnostic until reviewed.
+3. Compare native convergence, common-representation continuity, runtime and
+   RSS before choosing a scientific successor. The chi1024 entropy warning and
+   weak late residual trend remain unresolved; no theta advance or parent
+   change follows automatically.
 4. Once an accepted `theta/pi=0.45` endpoint exists, run the planned reverse
    consistency check before generating the remainder of the full sweep.
 
+## September 6 review findings
+
+The assessment of `docs/claude/ancient-cooking-wombat.md` is recorded in
+[`decisions/002-review-followup-diagnostics.md`](decisions/002-review-followup-diagnostics.md).
+It uses the synchronized evidence retrospectively; live SSH authentication
+was unavailable.
+
+- The accepted chi-512 parent's mean cut entropy is `2.3288520835887656`;
+  the returned chi-1024 candidate manifest records `3.2646479577628575`.
+  Their difference, `0.9357958741740919`, lower-bounds the maximum per-cut
+  jump and exceeds the declared fixed-flux bound `0.35`. This is a diagnostic
+  warning about that unconverged tensor, not a retroactive continuity decision
+  or proof of a basin change.
+- The last ten logged residuals have a positive log-linear slope, while the
+  last twenty have a weak negative fit (`R^2=0.398`). The immutable whole-run
+  contracting classification is retained; its projected iteration `99.6173`
+  is insufficient justification for another cap extension.
+- The cited rejected iDMRG candidate at `theta/pi=0.175` has alternating local
+  energy terms with difference `0.1398747801`, versus `0.1156656312` for the
+  accepted 0.15 parent. It does not establish the review's proposed uniform
+  lower-energy basin. Spinodal and topological-sector interpretations remain
+  hypotheses.
+
 ## Known unknowns to establish remotely
 
-- Whether any Project B job is currently queued or running.
+- Recheck the queue immediately before submission. The owner's September 6
+  live snapshot contained no Project B job; queued `lmf1-*` jobs belong to
+  another project.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
 - Whether later Perlmutter accounting exists beyond the synchronized files.
+- The existing remote source differences when its Git history is attached;
+  no forced checkout or source replacement is authorized by adopting Git.
 - Whether any selected scratch state has been promoted to durable storage
   since the last sync.
+
+The owner also supplied step-level sacct for 57801654: the Julia step used
+8 logical CPUs for 124833 seconds and reported MaxRSS=2776996K (about
+2.65 GiB), while the allocation held 18 CPUs. The launcher status now
+suppresses the expected missing-job warning from squeue after completion and
+shows step accounting. The owner always executes Perlmutter work manually;
+the command handoff is in the active follow-up plan.
 
 These are live-state questions. Use the relevant launcher `status`/`plan` and
 small hash or file-presence checks on Perlmutter; do not infer them from chat or

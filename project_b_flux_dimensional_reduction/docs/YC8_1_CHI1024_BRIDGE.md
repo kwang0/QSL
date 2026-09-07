@@ -189,10 +189,11 @@ incomplete reverse comparison.
 The guarded job requests one Shared-QOS CPU allocation with 16 logical CPUs,
 32 GiB, and 48 hours. The solver step uses eight logical CPUs and four Julia
 threads. BLAS and Strided remain single-threaded, while NDTensors BlockSparse
-threading remains enabled for the U(1)-resolved contractions. CPU and memory each
-reserve one sixteenth of a Perlmutter CPU node, so the conservative worst-case
-charge is 3.0 node-hours. The launcher retains the one-Project-B-job guard and
-checks the Phase 1 ceiling before submission. After the first YC8 job, it
+threading remains enabled for the U(1)-resolved contractions. The 32-GiB memory
+request actually reserves nine physical cores (18 logical CPUs), so the
+48-hour worst-case charge is 3.375 node-hours. The implemented launcher still
+uses 3.0 and must be repaired before another submission. It retains the
+one-Project-B-job guard and checks the Phase 1 ceiling. After the first YC8 job, it
 requires every earlier YC8 run package to be reconciled and adds the immutable
 `charged_node_hours.txt` records to its accounting baseline; bridge, reverse,
 and full-sweep jobs therefore cannot reuse the same nominal allowance.
@@ -230,3 +231,19 @@ charges are `0.14408203125` and `2.43931640625` node-hours, respectively; a
 full 48-hour allocation at 18 CPUs would cost `3.375` node-hours. The launcher
 accounting guard must be corrected and tested before another YC8 submission.
 The rolling totals and ordered next actions are in `PROJECT_STATE.md`.
+
+## Successor review, September 6
+
+The [review assessment](decisions/002-review-followup-diagnostics.md) found
+that the returned candidate's mean cut entropy exceeds the accepted parent's
+by `0.9357958742`, already larger than the fixed-flux maximum cut-jump bound
+`0.35`. Its late residual trend is also much weaker than the whole-run fit
+underlying the iteration-99.6 projection. These observations do not change the
+immutable numerical rejection or establish physical branch loss, but they
+make continuity inspection necessary before a cap extension is justified.
+
+Repair accounting, measure the actual Julia RSS, and inspect hash-verified
+remote checkpoint evidence before choosing a successor. A small matched
+MPSKit pilot is proposed for review; no new control, tolerance, lineage parent,
+or production solver has been adopted. The eventual bridge/reverse/full-sweep
+sequence above remains conditional on numerical and continuity acceptance.

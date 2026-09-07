@@ -63,7 +63,7 @@ command -v srun >/dev/null 2>&1 || die "srun is unavailable"
 allocation_cpus="${SLURM_CPUS_PER_TASK:-0}"
 [[ "$allocation_cpus" =~ ^[1-9][0-9]*$ ]] ||
   die "invalid SLURM_CPUS_PER_TASK=$allocation_cpus"
-(( allocation_cpus >= 6 )) ||
+(( allocation_cpus == 6 )) ||
   die "the recovery allocation needs at least six logical CPUs"
 
 job_id="${SLURM_JOB_ID:-}"
@@ -118,8 +118,8 @@ trap handle_pretimeout USR1
 cd "$project_root" || die "cannot enter project root"
 
 set +e
-/usr/bin/time -v -o "$run_dir/metrics/resource.time" \
-  srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task=4 --cpu-bind=cores \
+srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task=4 --cpu-bind=cores \
+  /usr/bin/time -v -o "$run_dir/metrics/resource.time" \
   env PROJECT_B_PRETIMEOUT_REQUEST_FILE="$pretimeout_request" \
   PROJECT_B_OPTIMIZER_CHECKPOINT_DIRECTORY="$checkpoint_directory" \
   JULIA_NUM_THREADS=2 JULIA_NUM_BLAS_THREADS=1 OMP_NUM_THREADS=1 \

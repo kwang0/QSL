@@ -497,39 +497,38 @@ active_snapshot() {
 }
 
 phase1_reconciled_snapshot() {
-  local total=0 unreconciled=""
-  local job_file run_dir charge_file job_id
-  [[ -d "$run_root" ]] || {
-    printf '0.000000000|\n'
-    return
-  }
-  while IFS= read -r job_file; do
-    run_dir="$(dirname "$job_file")"
-    charge_file="$run_dir/charged_node_hours.txt"
-    job_id="$(awk -F '\t' 'NR == 2 { print $1 }' "$job_file")"
-    [[ -n "$job_id" ]] || die "malformed job record: $job_file"
-    if [[ -f "$charge_file" ]]; then
-      local charge
-      charge="$(tr -d '[:space:]' <"$charge_file")"
-      validate_nonnegative_number "$charge" "reconciled charge for job $job_id"
-      total="$(float_add "$total" "$charge")"
-    else
-      unreconciled="${unreconciled}${unreconciled:+,}${job_id}"
-    fi
-  done < <(find "$run_root" -mindepth 2 -maxdepth 2 -name job.tsv -type f | sort)
-  printf '%s|%s\n' "$total" "$unreconciled"
+  "$PHASE1_JULIA" --startup-file=no "$project_dir/scripts/project_b_accounting.jl" ledger
+}
+
+run_worker_preflight() {
+  local config="$1" temporary
+  temporary="$(mktemp -d)"
+  cp "$script_path" "$temporary/worker.sh"
+  if ! PHASE1_JULIA="$PHASE1_JULIA" bash "$temporary/worker.sh" _preflight \
+      "$config" "$(sha256_file "$config")" "$temporary" "$project_dir"; then
+    rm -r "$temporary"
+    die "copied scan worker preflight failed"
+  fi
+  rm -r "$temporary"
 }
 
 print_plan() {
   validate_project
+  source "$project_dir/slurm/lib/project_b_resources.sh"
   require_command "$PHASE1_JULIA"
   local config_path="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
   local record geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement multisite_update_alg restore_best_on_failure ignored
   record="$(config_record "$config_path")"
+  run_worker_preflight "$config_path"
   IFS=$'\t' read -r geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement multisite_update_alg restore_best_on_failure ignored <<<"$record"
   local forecast reconciled unreconciled project_active phase1_active active_ids
   local maximum_effective_cpus existing_state_count
   forecast="$(reservation_node_hours "$PHASE1_SLURM_CPUS" "$PHASE1_MEMORY" "$PHASE1_TIME")"
+  if command -v squeue >/dev/null 2>&1; then
+    JULIA_BIN="$PHASE1_JULIA" pb_guard "$project_dir" "$forecast" live
+  else
+    JULIA_BIN="$PHASE1_JULIA" pb_guard "$project_dir" "$forecast" local
+  fi
   maximum_effective_cpus="$(maximum_effective_logical_cpus "$PHASE1_SLURM_CPUS" "$PHASE1_MEMORY")"
   existing_state_count=0
   if [[ -d "$output/states" ]]; then
@@ -586,13 +585,16 @@ EOF
 
 submit_scan() {
   validate_project
+  source "$project_dir/slurm/lib/project_b_resources.sh"
   require_command "$PHASE1_JULIA"
   require_command sbatch
+  pb_submission_lock "$project_dir"
   require_command squeue
   require_command scontrol
   local config_path="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
   local record geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement multisite_update_alg restore_best_on_failure ignored
   record="$(config_record "$config_path")"
+  run_worker_preflight "$config_path"
   IFS=$'\t' read -r geometry period gauge branch preparation direction seed_pattern random_seed chi fluxes tolerance require_overlap minimum_overlap overlap_tolerance overlap_krylov output initial initial_sha optimizer_checkpoint optimizer_checkpoint_sha max_iterations solver_krylov solver_max_iterations record_krylov plateau_detection plateau_warmup plateau_patience plateau_improvement multisite_update_alg restore_best_on_failure ignored <<<"$record"
 
   local existing_state=""
@@ -616,6 +618,11 @@ submit_scan() {
   float_greater "$phase1_active" 0 && die \
     "refusing submission: Phase 1 already has an active reservation ($phase1_active node-hours)"
   forecast="$(reservation_node_hours "$PHASE1_SLURM_CPUS" "$PHASE1_MEMORY" "$PHASE1_TIME")"
+  if command -v squeue >/dev/null 2>&1; then
+    JULIA_BIN="$PHASE1_JULIA" pb_guard "$project_dir" "$forecast" live
+  else
+    JULIA_BIN="$PHASE1_JULIA" pb_guard "$project_dir" "$forecast" local
+  fi
 
   local phase1_projected project_spent project_projected
   phase1_projected="$(float_add "$reconciled" "$phase1_active")"
@@ -811,6 +818,8 @@ EOF
 
 reconcile_run() {
   require_command sacct
+  source "$project_dir/slurm/lib/project_b_resources.sh"
+  JULIA_BIN="$PHASE1_JULIA" pb_reconcile "$project_dir"
   local run_dir
   run_dir="$(resolve_run_dir "${1:-}")"
   local job_file="$run_dir/job.tsv"
@@ -819,18 +828,19 @@ reconcile_run() {
   job_id="$(awk -F '\t' 'NR == 2 { print $1 }' "$job_file")"
   cpus="$(awk -F '\t' 'NR == 2 { print $13 }' "$job_file")"
   memory="$(awk -F '\t' 'NR == 2 { print $14 }' "$job_file")"
+  [[ ! -e "$run_dir/sacct.tsv" ]] || return 0
   local allocation state elapsed
   allocation="$(sacct -X -j "$job_id" --noheader --parsable2 \
-    --format=JobIDRaw,State,ElapsedRaw | awk -F '|' -v id="$job_id" '$1 == id { print $2 "|" $3; exit }')"
+    --format=JobIDRaw,State,ElapsedRaw,AllocCPUS | awk -F '|' -v id="$job_id" '$1 == id { print $2 "|" $3 "|" $4; exit }')"
   [[ -n "$allocation" ]] || die "sacct has no allocation row for job $job_id"
-  IFS='|' read -r state elapsed <<<"$allocation"
+  IFS='|' read -r state elapsed cpus <<<"$allocation"
   case "$state" in
     COMPLETED*|FAILED*|CANCELLED*|TIMEOUT*|OUT_OF_MEMORY*|NODE_FAIL*|PREEMPTED*|DEADLINE*|BOOT_FAIL*|REVOKED*) ;;
     *) die "job $job_id is not terminal (state=$state)" ;;
   esac
   [[ "$elapsed" =~ ^[0-9]+$ ]] || die "invalid ElapsedRaw for job $job_id: $elapsed"
   local charge
-  charge="$(node_hours_for_seconds "$cpus" "$memory" "$elapsed")"
+  charge="$(awk -v cpus="$cpus" -v sec="$elapsed" 'BEGIN {printf "%.12f", sec/3600*int((cpus+1)/2)/128}')"
   sacct -j "$job_id" --noheader --parsable2 \
     --format=JobIDRaw,JobName,State,ElapsedRaw,AllocCPUS,ReqMem,MaxRSS \
     >"$run_dir/sacct.tsv"
@@ -853,7 +863,7 @@ status_run() {
     squeue -j "$job_id" -o '%.18i %.12j %.10T %.10M %.10l %.6D %R' 2>/dev/null || true
   fi
   if command -v sacct >/dev/null 2>&1; then
-    sacct -X -j "$job_id" -o JobIDRaw,State,Elapsed,AllocCPUS,ReqMem || true
+    sacct -j "$job_id" -o JobIDRaw,State,Elapsed,AllocCPUS,ReqMem,MaxRSS,AveRSS || true
   fi
   [[ ! -f "$run_dir/job.result" ]] || cat "$run_dir/job.result"
   [[ ! -f "$run_dir/charged_node_hours.txt" ]] ||
@@ -971,12 +981,13 @@ EOF
 }
 
 run_worker() {
-  [[ "$#" -eq 4 ]] || die "internal _run usage: CONFIG SHA256 RUN_DIR PROJECT_DIR"
+  [[ "$#" -eq 4 || "$#" -eq 5 ]] || die "internal worker usage: CONFIG SHA256 RUN_DIR PROJECT_DIR [MODE]"
   local config_path="$1"
   local expected_sha="$2"
   local run_dir="$3"
   local submitted_project_dir="$4"
-  [[ -n "${SLURM_JOB_ID:-}" ]] || die "_run is only valid inside a Slurm allocation"
+  local mode="${5:-run}"
+  [[ "$mode" == run || "$mode" == preflight ]] || die "invalid worker mode"
   [[ "$submitted_project_dir" == /* ]] || die \
     "submitted project directory is not absolute: $submitted_project_dir"
   [[ -d "$submitted_project_dir" ]] || die \
@@ -986,11 +997,17 @@ run_worker() {
     "Project.toml not found under submitted project directory $submitted_project_dir"
   [[ -f "$submitted_project_dir/scripts/run_scan.jl" ]] || die \
     "run_scan.jl not found under submitted project directory $submitted_project_dir"
-  local effective_cpus="${SLURM_CPUS_PER_TASK:-}"
-  validate_effective_cpu_allocation "$effective_cpus"
   [[ "$(sha256_file "$config_path")" == "$expected_sha" ]] || die \
     "configuration changed after submission; refusing to run"
+  project_dir="$submitted_project_dir"
   config_record "$config_path" >/dev/null
+  if [[ "$mode" == preflight ]]; then
+    printf 'Copied scan worker preflight passed: %s\n' "$submitted_project_dir"
+    return 0
+  fi
+  [[ -n "${SLURM_JOB_ID:-}" ]] || die "_run is only valid inside a Slurm allocation"
+  local effective_cpus="${SLURM_CPUS_PER_TASK:-}"
+  validate_effective_cpu_allocation "$effective_cpus"
   require_command scontrol
   require_command "$PHASE1_GNU_TIME"
   local details
@@ -1019,8 +1036,8 @@ run_worker() {
   local started finished exit_code
   started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   set +e
-  "$PHASE1_GNU_TIME" -v -o "$run_dir/metrics/process.time" \
-    srun --ntasks=1 --cpus-per-task="$PHASE1_SLURM_CPUS" --cpu-bind=cores \
+  srun --exact --exclusive --nodes=1 --ntasks=1 --cpus-per-task="$PHASE1_SLURM_CPUS" --cpu-bind=cores \
+    "$PHASE1_GNU_TIME" -v -o "$run_dir/metrics/process.time" \
     "$PHASE1_JULIA" --project="$submitted_project_dir" --startup-file=no \
     "$submitted_project_dir/scripts/run_scan.jl" "$config_path"
   exit_code=$?
@@ -1093,6 +1110,11 @@ case "$command_name" in
   _run)
     shift
     run_worker "$@"
+    ;;
+  _preflight)
+    shift
+    [[ "$#" -eq 4 ]] || die "invalid preflight arguments"
+    run_worker "$@" preflight
     ;;
   help|-h|--help)
     usage

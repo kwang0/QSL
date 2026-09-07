@@ -1,0 +1,12 @@
+artifact_kind = "project_b_accounting_policy"
+schema_version = 1
+start_date = "2026-08-01"
+sacct_query_max_days = 28
+memory_mib_per_logical_cpu = 1952
+physical_cores_per_node = 128
+phase0_estimated_node_hours = 1.094433
+phase0_estimate_source = "docs/PHASES_0_TO_4.md"
+phase1_ceiling_node_hours = 20.0
+project_ceiling_node_hours = 150.0
+automatic_submission_ceiling_node_hours = 140.0
+run_roots = ["output/phase1_jobs", "output/phase1_idmrg", "output/yc6_1_recovery_jobs", "output/yc8_1_chi1024_bridge_jobs", "output/mpskit_solver_pilot_jobs"]

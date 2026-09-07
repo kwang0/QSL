@@ -19,6 +19,11 @@ checksum sync to Windows for analysis and development
 ```
 
 - Git is the exact code and documentation history.
+- Git is also the preferred source transport between Windows and Perlmutter;
+  Globus transports ignored run artifacts and selected data. A deliberate
+  Git-free export can pass an explicit sealed-source audit, which establishes
+  file identity without establishing commit history. Runtime data hashes
+  remain mandatory in the full plan.
 - Perlmutter is the live scheduler, accounting, run-artifact, and scratch
   authority.
 - The project-side `output/` tree contains durable or synchronized compact
@@ -36,7 +41,7 @@ Project B deliberately has two Julia environments:
 | Environment | Role | Main implementation |
 |---|---|---|
 | repository root | ITensor infinite-MPS VUMPS, bridge I/O, observables, spectra, plots | `src/`, `scripts/` |
-| `idmrg/` | isolated MPSKit one-site iDMRG | `idmrg/src/ProjectBIDMRG.jl`, `idmrg/scripts/` |
+| `idmrg/` | isolated MPSKit one-site iDMRG and diagnostic VUMPS/Grassmann pilot | `idmrg/src/ProjectBIDMRG.jl`, `idmrg/src/SolverPilot.jl`, `idmrg/scripts/` |
 
 Both environments are pinned by their own `Project.toml` and `Manifest.toml`.
 They exchange states through explicit, round-trip-validated bridge artifacts;
@@ -66,6 +71,29 @@ bulk-renormalized as part of this policy change.
 Because Slurm stages batch scripts outside the repository, every worker is
 passed the validated absolute project root. It may not derive the project from
 its staged `BASH_SOURCE` path.
+
+The Phase 1 launchers share `scripts/lib/ProjectBAccounting.jl` through
+`slurm/lib/project_b_resources.sh`. Allocation rows are deduplicated by job ID
+across all declared run roots. Live reconciliation preserves original exports
+and appends hash-backed evidence and corrections under `output/accounting/`.
+Forecasts include memory rounding; charges use Slurm's allocated CPUs. A
+common submission lock, all-Project-B queue check, unreconciled-job check,
+Phase 1 ceiling, and project ceiling guard each submission. Other projects'
+jobs do not count toward Project B's one-job rule. Julia RSS is measured
+inside the `srun` step; accounting retains allocation and step rows.
+Live history is queried in contiguous bounded date windows, preserving
+whole-job rows and deduplicating boundary records by job ID. A failed window
+fails the reconciliation rather than publishing a partial accounting total.
+
+The pilot's `preflight` action runs context validation, live reconciliation,
+the selected scratch audit and the full live plan in a child Bash process.
+It stops on the first failed check and never submits. Linux hashes use the
+system SHA-256 utility, with a streaming Julia fallback; scalar extraction
+reuses a hash already verified during the same audit.
+
+All Perlmutter commands, submissions and transfers are run manually by the
+owner. Local code prepares the artifacts and commands; a local plan cannot
+establish live scheduler or scratch facts.
 
 ## Scientific data plane
 
@@ -99,6 +127,15 @@ to the ITensor bridge is an explicit analysis/promotion boundary rather than a
 substitute convergence metric.
 
 ## Storage classes
+
+The solver pilot has a distinct result schema. It exports AL, C and AR in
+the pinned bridge basis, validates left/right isometries, center relations
+and energy equality on import, then evaluates common ITensor observables.
+It avoids reconstructing a right transfer fixed point from AL alone. Native
+MPSKit Galerkin error and Grassmann gradient norm retain separate names.
+Tensor checkpoints and candidate payloads stay in scratch; compact histories
+and analyses stay in the project. No pilot result automatically changes the
+accepted lineage.
 
 | Class | Examples | Location | Routine sync |
 |---|---|---|---|
@@ -138,8 +175,9 @@ run it.
    perform analysis or development with PowerShell-compatible commands.
 4. Persist current conclusions in `PROJECT_STATE.md`, the relevant plan, and a
    decision record only where their semantic roles require it.
-5. Commit and transfer tracked changes through Git. Checksum-sync required
-   ignored project artifacts separately.
+5. Commit and transfer tracked changes through Git. For an existing source
+   export, follow [the Git adoption guide](PERLMUTTER_GIT_SYNC.md) without
+   replacing its working files. Checksum-sync ignored artifacts separately.
 6. Before remote execution, sync Windows to Perlmutter while no job writes the
    destination, then run the live guarded plan.
 

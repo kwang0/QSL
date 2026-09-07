@@ -7,6 +7,7 @@ existing links and immutable controls do not break.
 | Decision | Status | Source |
 |---|---|---|
 | Make repository state authoritative over conversation history | accepted | [`001-repository-state-over-conversation-history.md`](001-repository-state-over-conversation-history.md) |
+| Diagnose the chi-1024 candidate before another continuation | local follow-up implemented; live pilot pending | [`002-review-followup-diagnostics.md`](002-review-followup-diagnostics.md) |
 | Preserve labeled branches instead of building a minimum-energy envelope | accepted | [`../REPRODUCTION_PROTOCOL.md`](../REPRODUCTION_PROTOCOL.md) |
 | Promote the SHA-pinned parallel-VUMPS chi-512 `theta/pi=0.15` state | accepted | [`../PHASE1_PARALLEL_VUMPS_PROMOTION.md`](../PHASE1_PARALLEL_VUMPS_PROMOTION.md) |
 | Use MPSKit one-site iDMRG in an isolated Julia environment | accepted | [`../PHASE1_IDMRG_LIBRARY_DECISION.md`](../PHASE1_IDMRG_LIBRARY_DECISION.md) |

@@ -11,6 +11,9 @@ Before substantive work in a fresh task or on a different computer:
 1. Read `docs/PROJECT_STATE.md` and `docs/ARCHITECTURE.md` completely.
 2. Run `julia --startup-file=no scripts/audit_project_context.jl` from this
    directory and report its Git, control-reference, and local-mirror findings.
+   For a deliberate Git-free source export, use the active plan's explicit
+   `--source-export CONTROL` mode. It validates sealed source hashes without
+   claiming Git history; the full plan must still validate data hashes.
 3. Read the active plan and decision sources linked from the project-state
    file. Read older phase documents only when the state file routes to them.
 4. Establish any live scheduler or scratch fact on Perlmutter before relying
@@ -27,6 +30,9 @@ worktree change unless the owner explicitly asks to discard it.
 - Perlmutter is a separate Linux system. Commands under `slurm/` are Bash
   commands for the owner's interactive Perlmutter SSH shell. Clearly label
   local and remote commands.
+- The owner always runs Perlmutter commands manually. Do not initiate SSH,
+  remote commands, jobs, or transfers. Prepare tested commands for the owner
+  and request the smallest required output while continuing local work.
 - Never put `set -e` or `set -euo pipefail` in commands intended for that
   interactive SSH shell. A normal missing-file check must not terminate the
   connection.
@@ -81,7 +87,8 @@ worktree change unless the owner explicitly asks to discard it.
 ## Mutations, launchers, and budget guards
 
 - Use the concise guarded launcher interface documented by the active plan:
-  `plan`, `submit`, `status`, `reconcile`, and `analyze`. Do not bypass its
+  `preflight` where provided, `plan`, `submit`, `status`, `reconcile`, and
+  `analyze`. Do not bypass its
   one-job, immutable-output, control-hash, or node-hour checks with direct
   `sbatch`.
 - A successful live `plan` is the required preflight immediately before a
@@ -89,8 +96,10 @@ worktree change unless the owner explicitly asks to discard it.
   Perlmutter accounting.
 - The project owner has standing authorization for guarded Project B
   submissions after a successful live plan, including the Phase 1 iDMRG and
-  campaign launchers. Do not stop after plan, ask for another submission
-  approval, or add a redundant acknowledgement variable. This does not
+  campaign launchers. Provide the owner both guarded `plan` and `submit`
+  commands with submission conditional on a successful live plan; the owner
+  executes them manually. Do not request another submission approval or add
+  a redundant acknowledgement variable. This does not
   authorize cancellation, deletion, pruning, threshold changes,
   lineage-parent changes, or an unguarded automatic advance.
 - Honor any later standing authorization recorded in
@@ -118,11 +127,15 @@ worktree change unless the owner explicitly asks to discard it.
 - Scratch is purge-eligible and not backed up. Before removing a scratch
   package, deliberately promote any reviewed state needed for continuation or
   publication and verify its hash and compact manifest.
-- The normal Globus cycle is Perlmutter to Windows first, wait for checksum
-  sync to complete, edit while no project job is writing the tree, then Windows
-  to Perlmutter before a live plan. Keep destination mirroring/deletion off;
-  exclude dot directories, `.julia`, and `$PSCRATCH`. Do not substitute
-  `rsync` unless requested.
+- Prefer Git for versioned source, configuration templates and documentation
+  between Windows and Perlmutter. Preserve the existing remote directory when
+  adopting Git; do not use a hard reset or a forced checkout to align it.
+- Use Globus for ignored controls, compact results and selected durable data.
+  The normal cycle is Perlmutter to Windows first, wait for checksum sync,
+  edit while no project job writes the tree, then sync needed artifacts back
+  before a live plan. Keep destination mirroring/deletion off; exclude `.git`,
+  other dot directories, `.julia`, and `$PSCRATCH`. A source export may use
+  checksum sync during Git setup. Do not substitute `rsync` unless requested.
 - A job already submitted under an older storage policy is not canceled just
   to migrate its checkpoint path. Apply the policy to its successor.
 

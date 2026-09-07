@@ -9,7 +9,7 @@ readonly LAUNCHER_VERSION="1.1.0"
 readonly DEFAULT_ACCOUNT="m4863"
 readonly DEFAULT_CONFIG_RELATIVE="configs/science_yc8_1_primary_forward_chi1024_bridge.toml"
 readonly JOB_NAME="pb1-yc8b"
-readonly ALLOCATION_CPUS=16
+readonly ALLOCATION_CPUS=18
 readonly SOLVER_STEP_CPUS=8
 readonly JULIA_THREADS=4
 readonly MEMORY="32G"
@@ -17,14 +17,12 @@ readonly TIME_LIMIT="48:00:00"
 readonly QOS="shared"
 readonly PRETIMEOUT_SIGNAL_SECONDS=7200
 readonly SCRATCH_SUBDIRECTORY="QSL/project_b_flux_dimensional_reduction/phase1_vumps/yc8_1"
-readonly FORECAST_NODE_HOURS="3.000000000"
-readonly PRIOR_PHASE1_NODE_HOURS="14.865251736727779"
+readonly FORECAST_NODE_HOURS="3.375000000"
 readonly PHASE1_CEILING_NODE_HOURS="20.0"
-readonly PRIOR_PROJECT_NODE_HOURS="15.959684736727780"
 readonly PROJECT_CEILING_NODE_HOURS="150.0"
-readonly PRIOR_ACCOUNTING_NOTE="base conservatively includes the latest YC6 reservation; every YC8 job is added from its immutable reconciliation before another submission"
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$project_root/slurm/lib/project_b_resources.sh"
 worker="$project_root/slurm/run_yc8_1_chi1024_bridge_job.sh"
 validator="$project_root/scripts/validate_yc8_1_chi1024_bridge_config.jl"
 run_root="$project_root/output/yc8_1_chi1024_bridge_jobs"
@@ -98,7 +96,8 @@ run_worker_preflight() {
   local config_sha="$2"
   local temporary_directory
   temporary_directory="$(mktemp -d)"
-  if ! bash "$worker" "$project_root" "$config_path" "$config_sha" \
+  cp "$worker" "$temporary_directory/worker.sh"
+  if ! bash "$temporary_directory/worker.sh" "$project_root" "$config_path" "$config_sha" \
       "$temporary_directory" "$julia_bin" --preflight; then
     rm -rf "$temporary_directory"
     die "batch worker preflight failed"
@@ -106,49 +105,13 @@ run_worker_preflight() {
   rm -rf "$temporary_directory"
 }
 
-projected_total() {
-  awk -v prior="$1" -v forecast="$FORECAST_NODE_HOURS" \
-    'BEGIN { printf "%.9f", prior + forecast }'
-}
-
-reconciled_yc8_charge() {
-  local total="0.000000000" job_file prior_run charged_file charged
-  [[ -d "$run_root" ]] || {
-    printf '%s\n' "$total"
-    return 0
-  }
-  while IFS= read -r job_file; do
-    prior_run="$(dirname "$job_file")"
-    charged_file="$prior_run/charged_node_hours.txt"
-    [[ -f "$charged_file" ]] || die \
-      "prior YC8 run is not reconciled: $prior_run (run reconcile before another plan or submission)"
-    charged="$(tr -d '[:space:]' <"$charged_file")"
-    [[ "$charged" =~ ^[0-9]+([.][0-9]+)?$ ]] || die \
-      "invalid reconciled YC8 charge in $charged_file: $charged"
-    total="$(awk -v left="$total" -v right="$charged" \
-      'BEGIN { printf "%.9f", left + right }')"
-  done < <(find "$run_root" -mindepth 2 -maxdepth 2 -type f -name job.tsv | sort)
-  printf '%s\n' "$total"
-}
-
-effective_prior() {
-  local base="$1" added="$2"
-  awk -v base="$base" -v added="$added" 'BEGIN { printf "%.9f", base + added }'
-}
-
 verify_budget() {
-  local added phase1_prior project_prior phase1_projected project_projected
-  added="$(reconciled_yc8_charge)"
-  phase1_prior="$(effective_prior "$PRIOR_PHASE1_NODE_HOURS" "$added")"
-  project_prior="$(effective_prior "$PRIOR_PROJECT_NODE_HOURS" "$added")"
-  phase1_projected="$(projected_total "$phase1_prior")"
-  project_projected="$(projected_total "$project_prior")"
-  awk -v value="$phase1_projected" -v ceiling="$PHASE1_CEILING_NODE_HOURS" \
-    'BEGIN { exit !(value <= ceiling) }' ||
-    die "Phase 1 projected charge $phase1_projected exceeds $PHASE1_CEILING_NODE_HOURS"
-  awk -v value="$project_projected" -v ceiling="$PROJECT_CEILING_NODE_HOURS" \
-    'BEGIN { exit !(value <= ceiling) }' ||
-    die "Project B projected charge $project_projected exceeds $PROJECT_CEILING_NODE_HOURS"
+  local authority=local
+  [[ "$is_perlmutter" != true ]] || authority=live
+  local allocated forecast
+  IFS=$'\t' read -r allocated forecast <<<"$(pb_forecast "$project_root" "$ALLOCATION_CPUS" "$MEMORY" "$TIME_LIMIT" "$QOS")"
+  [[ "$allocated" == "$ALLOCATION_CPUS" ]] || die "allocation forecast changed"
+  pb_guard "$project_root" "$forecast" "$authority"
 }
 
 active_project_jobs() {
@@ -194,9 +157,6 @@ print_plan() {
     scratch_display="\$PSCRATCH/$SCRATCH_SUBDIRECTORY/job_<slurm-job-id>_${config_sha:0:12}"
   fi
   verify_budget
-  added="$(reconciled_yc8_charge)"
-  phase1_prior="$(effective_prior "$PRIOR_PHASE1_NODE_HOURS" "$added")"
-  project_prior="$(effective_prior "$PRIOR_PROJECT_NODE_HOURS" "$added")"
   cat <<EOF
 Project B YC8-1 chi=1024 bridge plan
   operator action: $action
@@ -224,10 +184,6 @@ Project B YC8-1 chi=1024 bridge plan
   Slurm pre-timeout signal: USR1 at $PRETIMEOUT_SIGNAL_SECONDS seconds remaining
   resources: allocation-logical-cpus=$ALLOCATION_CPUS solver-step-logical-cpus=$SOLVER_STEP_CPUS julia-threads=$JULIA_THREADS memory=$MEMORY qos=$QOS time=$TIME_LIMIT
   worst-case charge: $FORECAST_NODE_HOURS node-hours
-  newly reconciled YC8 charge since base: $added node-hours
-  Phase 1 budget: prior=$phase1_prior projected=$(projected_total "$phase1_prior") ceiling=$PHASE1_CEILING_NODE_HOURS
-  Project B budget: prior=$project_prior projected=$(projected_total "$project_prior") ceiling=$PROJECT_CEILING_NODE_HOURS
-  prior accounting note: $PRIOR_ACCOUNTING_NOTE
   compact output: $output
   immutable theta/pi=0.15 lineage parent changed: no
 EOF
@@ -288,6 +244,7 @@ case "$command_name" in
     run_worker_preflight "$config_path" "$config_sha"
     print_plan "$command_name" "$config_path" "$validation"
     if [[ "$command_name" == submit ]]; then
+      pb_submission_lock "$project_root"
       verify_live_submission_state
       verify_budget
       verify_clean_target "$output"
@@ -329,9 +286,9 @@ case "$command_name" in
     [[ -z "$requested_job_id" || "$requested_job_id" =~ ^[0-9]+$ ]] || die "invalid job ID"
     run_dir="$(resolve_run_dir "$requested_job_id")"
     job_id="$(resolve_job_id "$run_dir")"
-    squeue -j "$job_id" -o '%.18i %.12T %.10M %.10l %.6D %.6C %R' || true
+    squeue -j "$job_id" -o '%.18i %.12T %.10M %.10l %.6D %.6C %R' 2>/dev/null || true
     sacct -j "$job_id" --starttime=2026-08-01 \
-      --format=JobIDRaw,JobName,State,Elapsed,Timelimit,NNodes,NCPUS,ExitCode,MaxRSS,AveRSS,ReqMem -X
+      --format=JobIDRaw,JobName,State,Elapsed,Timelimit,NNodes,NCPUS,ExitCode,MaxRSS,AveRSS,ReqMem
     ;;
   reconcile)
     [[ $# -le 1 ]] || usage
@@ -340,30 +297,7 @@ case "$command_name" in
     [[ -z "$requested_job_id" || "$requested_job_id" =~ ^[0-9]+$ ]] || die "invalid job ID"
     run_dir="$(resolve_run_dir "$requested_job_id")"
     job_id="$(resolve_job_id "$run_dir")"
-    reconciliation="$run_dir/sacct.tsv"
-    [[ ! -e "$reconciliation" ]] || die "refusing to overwrite $reconciliation"
-    temporary="$reconciliation.tmp"
-    sacct -j "$job_id" --starttime=2026-08-01 -n -P \
-      --format=JobIDRaw,JobName,State,ElapsedRaw,TimelimitRaw,NNodes,NCPUS,ExitCode,MaxRSS,AveRSS,ReqMem -X \
-      >"$temporary"
-    [[ -s "$temporary" ]] || die "Perlmutter accounting has not populated for job $job_id"
-    job_state="$(awk -F '|' -v job_id="$job_id" '$1 == job_id {print $3; exit}' "$temporary")"
-    elapsed_seconds="$(awk -F '|' -v job_id="$job_id" '$1 == job_id {print $4; exit}' "$temporary")"
-    [[ -n "$job_state" ]] || die "accounting has no exact record for job $job_id"
-    normalized_state="${job_state%% *}"
-    normalized_state="${normalized_state%%+*}"
-    case "$normalized_state" in
-      COMPLETED|FAILED|CANCELLED|TIMEOUT|NODE_FAIL|OUT_OF_MEMORY|PREEMPTED|BOOT_FAIL|DEADLINE|REVOKED|SPECIAL_EXIT) ;;
-      *) rm -f "$temporary"; die "job $job_id is not terminal (state $job_state)" ;;
-    esac
-    [[ "$elapsed_seconds" =~ ^[0-9]+$ ]] || die "invalid elapsed time in accounting"
-    mv "$temporary" "$reconciliation"
-    # Sixteen logical CPUs and 32 GiB both reserve one sixteenth of a CPU node:
-    # eight of 128 charged physical cores.
-    awk -v seconds="$elapsed_seconds" 'BEGIN {printf "%.9f\n", seconds / 3600.0 * 8.0 / 128.0}' \
-      >"$run_dir/charged_node_hours.txt"
-    printf 'Reconciled terminal job %s (%s): %s\n' "$job_id" "$job_state" "$reconciliation"
-    printf 'Recorded charged node-hours: %s\n' "$(tr -d '[:space:]' <"$run_dir/charged_node_hours.txt")"
+    pb_reconcile "$project_root"
     ;;
   *)
     usage

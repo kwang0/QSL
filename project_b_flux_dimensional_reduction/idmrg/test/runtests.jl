@@ -195,3 +195,4 @@ end
 end
 
 include("test_benchmark_analysis.jl")
+include("solver_pilot.jl")

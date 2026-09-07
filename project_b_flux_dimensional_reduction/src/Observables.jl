@@ -24,7 +24,9 @@ function triangular_flux_opsum(
     opsum = OpSum()
     for site in 1:Int(period)
         opsum += 0.0, "Id", site
-        !iszero(model.Bz) && (opsum += -model.Bz, "Sz", site)
+        if !iszero(model.Bz)
+            opsum += -model.Bz, "Sz", site
+        end
     end
     for bond in bonds
         coupling, anisotropy = bond.family === :NN ?

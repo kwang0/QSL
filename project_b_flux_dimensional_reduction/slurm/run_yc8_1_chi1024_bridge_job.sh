@@ -5,7 +5,7 @@
 
 set -u
 
-readonly REQUIRED_ALLOCATION_CPUS=16
+readonly REQUIRED_ALLOCATION_CPUS=18
 readonly SOLVER_STEP_CPUS=8
 readonly JULIA_THREADS=4
 
@@ -65,7 +65,7 @@ command -v srun >/dev/null 2>&1 || die "srun is unavailable"
 allocation_cpus="${SLURM_CPUS_PER_TASK:-0}"
 [[ "$allocation_cpus" =~ ^[1-9][0-9]*$ ]] ||
   die "invalid SLURM_CPUS_PER_TASK=$allocation_cpus"
-(( allocation_cpus >= REQUIRED_ALLOCATION_CPUS )) ||
+(( allocation_cpus == REQUIRED_ALLOCATION_CPUS )) ||
   die "the bridge allocation needs $REQUIRED_ALLOCATION_CPUS logical CPUs"
 
 job_id="${SLURM_JOB_ID:-}"
@@ -121,9 +121,9 @@ trap handle_pretimeout USR1
 
 cd "$project_root" || die "cannot enter project root"
 set +e
-/usr/bin/time -v -o "$run_dir/metrics/resource.time" \
-  srun --exact --exclusive --nodes=1 --ntasks=1 \
+srun --exact --exclusive --nodes=1 --ntasks=1 \
   --cpus-per-task="$SOLVER_STEP_CPUS" --cpu-bind=cores \
+  /usr/bin/time -v -o "$run_dir/metrics/resource.time" \
   env PROJECT_B_PRETIMEOUT_REQUEST_FILE="$pretimeout_request" \
   PROJECT_B_OPTIMIZER_CHECKPOINT_DIRECTORY="$checkpoint_directory" \
   PROJECT_B_STATE_OUTPUT_DIRECTORY="$state_directory" \
