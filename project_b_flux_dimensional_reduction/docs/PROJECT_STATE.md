@@ -1,6 +1,6 @@
 # Project B current state
 
-Last updated: 2026-09-06 (America/Los_Angeles)
+Last updated: 2026-09-07 (America/Los_Angeles)
 
 This is the rolling state summary for a fresh Codex task. It records where the
 project is now, not the full history. Git holds exact implementation history;
@@ -16,8 +16,8 @@ blocker is convergence of the fixed-`theta/pi=0.15` growth from chi 512 to chi
 
 The immediate execution plan is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
-repair accounting, audit the chi1024 evidence, and run a bounded matched
-chi512 MPSKit solver diagnostic. The longer-term campaign remains
+reconcile and review the completed matched chi512 MPSKit solver diagnostic
+and the chi1024 evidence audit. The longer-term campaign remains
 [`YC8_1_CHI1024_BRIDGE.md`](YC8_1_CHI1024_BRIDGE.md). The allocation-wide plan
 is [`PHASES_0_TO_4.md`](PHASES_0_TO_4.md). See
 [`plans/README.md`](plans/README.md) for workstream status.
@@ -29,13 +29,12 @@ selected by `configs/mpskit_solver_pilot_active_control.ref`. The initial
 control and its full chi512 cross-library validation are preserved. This
 revision fixes operational preflight failures without changing the scientific
 recipe, except for its new audit report path. The revised copied worker passes.
-Remaining steps require the owner's manual Perlmutter reconciliation, scratch
-audit, successful live plan and pilot execution.
+Pilot job `58005544` is now complete. Remaining steps are manual post-run live
+reconciliation and review of the diagnostic results before selecting a successor.
 
 The first remote attempt failed context validation because the transferred
 tree lacks `.git`, and reconciliation because the accounting date range was
-too wide. Ctrl-C interrupted later hashing/compilation; no successful scratch
-audit, live plan or pilot submission has been established. The new `preflight`
+too wide. Ctrl-C interrupted later hashing/compilation. The revised `preflight`
 action stops at the first failure, uses 28-day accounting windows and audits
 the candidate plus checkpoints 52 and 60 with visible progress.
 
@@ -51,9 +50,12 @@ reported a clean worktree tracking the published branch. Its first preflight
 stopped before any live checks or submission because the control was missing
 from ignored output. The control now lives in tracked `configs/controls/`,
 and the active reference selects it there. Its 7,255 bytes and SHA-256 are
-unchanged; the original output copy remains immutable. The next step is
-`git pull --ff-only` in `~/QSL-project-b`, then the guarded sequence from its
-Project B directory. Git supplies all newly prepared pilot inputs. Existing
+unchanged; the original output copy remains immutable. The owner subsequently
+ran the pilot from the new worktree. Post-run reconciliation was attempted
+from the old `~/QSL` checkout on `main`, whose stale accounting code still
+makes an unbounded date query. Run Project B commands from
+`~/QSL-project-b/project_b_flux_dimensional_reduction`; both source directories
+share canonical output, but execute different code. Git supplies all newly prepared pilot inputs. Existing
 parent/bridge tensors remain accessible through the output link; preflight
 generates live accounting and scratch-audit evidence on Perlmutter.
 
@@ -80,7 +82,36 @@ to be executed manually by the owner.
   `configs/phase1_yc8_1_multimetric_continuity.toml`. These are campaign-scoped
   numerical rules, not physical phase-boundary criteria.
 
-## Latest authoritative run evidence synced locally
+## Latest pilot evidence
+
+The owner reports job `58005544` COMPLETED, exit `0:0`, elapsed 26224 seconds
+(7:17:04), 10 allocated logical CPUs and 16G requested memory. All six solver
+and analysis steps completed. Peak solver RSS is approximately 9.54 GiB.
+The allocation implies 0.284548611111 node-hours under the existing charge
+model; live post-run reconciliation is still pending.
+
+Local run records are present under
+`output/mpskit_solver_pilot_jobs/20260907T023735Z_969b69b1c40d/`.
+The control snapshot matches the active SHA. All three analysis HDF5 hashes
+match their summaries, and stage histories match the TSV journals. The local
+scratch-audit report verifies its required hashes and pinned audit code;
+this records the past audit, not current scratch availability.
+
+| Stage | Final iteration | Native error | Native gate | Continuity |
+|---|---:|---:|---|---|
+| baseline VUMPS, 0.15 | 18 | 4.2935069069e-5 | fail | pass |
+| difficult VUMPS, 0.2 | 58 | 4.6000949334e-3 | fail | fail |
+| difficult GradientGrassmann, 0.2 | 49 | 2.8848721924e-5 | fail | pass |
+
+All stages record `graceful_stop`; the worker records no pretimeout request.
+Their elapsed times are consistent with the stage time budgets. All three
+cross-library energy checks pass, but none is eligible for promotion.
+Difficult-point VUMPS has overlap 0.9734593 and maximum cut-entropy jump
+0.8102766; GradientGrassmann has overlap 0.99997046 and jump 0.00896131.
+The latter preserves declared continuity but remains unconverged. No parent
+change or additional submission is selected from these results alone.
+
+## Previously synchronized chi1024 bridge evidence
 
 The owner reported the latest run complete, reconciled, and synchronized. The
 copied Perlmutter evidence for job `57801654` records:
@@ -177,15 +208,12 @@ preserved.
 
 ## Current priorities
 
-1. Complete the owner's manual Perlmutter reconciliation and hash-verified
-   scratch audit using the follow-up plan's single `preflight` command after
-   pulling the source and tracked launch control. Local implementation includes
-   memory-rounded accounting, Julia RSS, step accounting, physics tests and a
-   reproducible scalar audit. No remote commands are run by the agent.
-2. Run the guarded matched chi512 MPSKit pilot after a successful live plan:
-   VUMPS at 0.15, then VUMPS and GradientGrassmann at 0.2, independently from
-   the accepted parent. Its 12-hour Shared-QOS reservation is 0.46875 node-hours.
-   All outputs remain diagnostic until reviewed.
+1. Reconcile completed pilot `58005544` from the clean `~/QSL-project-b`
+   worktree using the bounded-date accounting code. The failed command in
+   the original `~/QSL` checkout does not indicate a pilot execution failure.
+2. Review the three completed pilot analyses and histories together with
+   the chi1024 scratch audit. All native gates failed; the difficult VUMPS
+   stage also failed continuity. Do not rerun the submitted control.
 3. Compare native convergence, common-representation continuity, runtime and
    RSS before choosing a scientific successor. The chi1024 entropy warning and
    weak late residual trend remain unresolved; no theta advance or parent
@@ -224,8 +252,8 @@ was unavailable.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
 - Whether later Perlmutter accounting exists beyond the synchronized files.
-- Whether the owner has pulled the tracked v2 control and completed preflight.
-  The owner has confirmed the clean source worktree and output link.
+- The final live accounting total after reconciling pilot `58005544` from the
+  clean source worktree. The owner ran the stale reconciliation code in `~/QSL`.
 - Whether any selected scratch state has been promoted to durable storage
   since the last sync.
 

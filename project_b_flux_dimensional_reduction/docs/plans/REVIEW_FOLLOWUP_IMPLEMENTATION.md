@@ -14,9 +14,10 @@ execution is always manual by the owner; Codex implements and tests locally.
 - [x] Owner supplies live terminal status, queue snapshot, and step-level accounting.
 - [x] Owner creates the clean Git source worktree and canonical output link.
 - [x] Package the exact sealed v2 control with its source in Git.
-- [ ] Owner pulls the tracked v2 control into the source worktree.
-- [ ] Owner completes common live reconciliation and hash-verified scratch audit.
-- [ ] Owner runs successful live plan then submits the pilot; reconcile and analyze.
+- [x] Owner pulls the tracked v2 control into the source worktree.
+- [x] Required scratch-audit report exists and matches the pinned audit inputs.
+- [x] Pilot job 58005544 completes all three solver and analysis stages.
+- [ ] Owner completes post-pilot live reconciliation from the clean worktree.
 - [ ] Select scientific successor using pilot and continuity evidence.
 
 Keep the accepted theta/pi=0.15 parent, existing campaign thresholds, and
@@ -93,6 +94,23 @@ source it pins; an edit to a pinned input requires a new control and reference.
 
 ## Perlmutter command sequence
 
+Job `58005544` has completed. Use the clean worktree for its post-run commands:
+
+```bash
+cd ~/QSL-project-b &&
+git pull --ff-only &&
+cd project_b_flux_dimensional_reduction &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh reconcile &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh analyze
+```
+
+The September 7 reconciliation error was issued from the original `~/QSL`
+checkout on `main`. Its stale accounting code lacks bounded date windows.
+The two source directories share output; switching source directory fixes
+which accounting implementation executes. Do not resubmit the completed pilot.
+
+### Original launch sequence (completed; retained for reference)
+
 Push tested source and launch inputs to `codex/project-b-review-followup`,
 then pull in the owner's existing clean sparse worktree. The accepted parent
 and MPSKit bridge remain in canonical output through the existing link.
@@ -152,6 +170,15 @@ the scientific successor still needs review; it is not evidence of a spinodal.
   remaining Phase 1 allowance.
 
 ## Validation record
+
+September 7: the owner reports 7:17:04 elapsed and all six Slurm steps exited
+`0:0`. Local verification matches the active control, the three analysis HDF5
+hashes, their control/result references and diagnostic flags, and every stage
+history row against its TSV journal. The required scratch-audit provenance
+also validates. All three stages stopped gracefully with failed native gates;
+only difficult-point VUMPS failed continuity. Detailed endpoints are in
+`../PROJECT_STATE.md`. The 32 accounting assertions pass locally, including
+bounded-window coverage; post-run live reconciliation remains pending.
 
 Git delivery now has a regression that exports only Git objects, pushes to a
 temporary local repository, and pulls into a clean sparse checkout without
