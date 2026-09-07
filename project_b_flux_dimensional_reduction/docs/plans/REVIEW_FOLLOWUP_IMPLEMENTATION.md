@@ -13,7 +13,8 @@ execution is always manual by the owner; Codex implements and tests locally.
 - [x] Local pilot smoke tests and common-representation analysis.
 - [x] Owner supplies live terminal status, queue snapshot, and step-level accounting.
 - [x] Owner creates the clean Git source worktree and canonical output link.
-- [ ] Owner checksum-syncs the ignored v2 control to the original output path.
+- [x] Package the exact sealed v2 control with its source in Git.
+- [ ] Owner pulls the tracked v2 control into the source worktree.
 - [ ] Owner completes common live reconciliation and hash-verified scratch audit.
 - [ ] Owner runs successful live plan then submits the pilot; reconcile and analyze.
 - [ ] Select scientific successor using pilot and continuity evidence.
@@ -42,18 +43,17 @@ They do not establish a solver failure, completed scratch audit or successful
 plan. The revised preflight stops on its first failed stage, uses contiguous
 28-day accounting windows, and prints hashing/compilation progress.
 
-The owner prefers Git for future source synchronization. The
-[Git adoption guide](../PERLMUTTER_GIT_SYNC.md) preserves the existing remote
-working files; Globus remains the transport for ignored artifacts. Source
-export validation remains available while Git is being established.
+The owner uses Git push/pull for source and locally prepared launch inputs.
+The [Git guide](../PERLMUTTER_GIT_SYNC.md) preserves the existing remote working
+files and delivers compact sealed controls with the source that they pin.
 
 The owner has completed the clean sparse source worktree and output link;
 Git reports it clean and tracking the published branch. The first preflight
 there stopped at the missing sealed v2 control, before reconciliation, scratch
-auditing or submission. Transfer the existing control from Windows to
-`~/QSL/project_b_flux_dimensional_reduction/output/review_followup/` via
-Globus, preserving its filename. The existing checkout then sees it through
-the output link; no new control preparation or source change is needed.
+auditing or submission. The control is now tracked under `configs/controls/`
+and selected there by the active reference. Pulling the branch delivers the
+exact sealed bytes; no separate control or local accounting transfer is needed.
+Live preflight generates the accounting corrections from Perlmutter evidence.
 
 ## Prepared experiment
 
@@ -80,42 +80,42 @@ existing canonical tensors permits direct isometry and center-relation
 checks without relaxing that legacy importer's tolerances.
 
 The active reference `configs/mpskit_solver_pilot_active_control.ref` points to
-`output/review_followup/solver_pilot_control_v2.toml`, SHA-256
+`configs/controls/solver_pilot_control_v2.toml`, SHA-256
 `969b69b1c40d3a70e07c58fe9b12d123564781c5f40b9a4058b74f4382278818`.
 This revision pins the operational fixes. It preserves the three scientific
 stages, thresholds and resource limits; the recipe changes only the new audit
 report path. The initial control `solver_pilot_control.toml` with SHA-256
 `6069c11474072d57d05b51efea9c4ff41f74eff3a5eaa15ad5dd91ed0c5447e1`
 and its numerical validation record `local_validation.toml` remain immutable.
-Transfer the active control with the exact source it pins; a later source edit
-requires a new control and reference update.
+The tracked v2 control is byte-identical to its original immutable copy in
+`output/review_followup/`. Commit the control and its reference with the exact
+source it pins; an edit to a pinned input requires a new control and reference.
 
 ## Perlmutter command sequence
 
-Publish and fetch the changed source through Git once the existing remote
-export is connected and its differences are reviewed. During Git setup, a
-completed source checksum sync is also supported. While no Project B job
-writes the destination, checksum-sync the ignored
-`output/review_followup/solver_pilot_control_v2.toml` and `output/accounting/`.
-The existing accepted parent and MPSKit bridge remain the input files; no new
-full-state copy is needed. Verify publication of
-`codex/project-b-review-followup` before the first fetch.
-The owner completed the initial `main` adoption. Because the existing export
-has differences across several projects, use the clean sparse source worktree
-and canonical output link in [the Git guide](../PERLMUTTER_GIT_SYNC.md).
-Its 14 local preservation assertions pass. The source worktree is the new
-execution directory; the original output path remains the Globus destination.
+Push tested source and launch inputs to `codex/project-b-review-followup`,
+then pull in the owner's existing clean sparse worktree. The accepted parent
+and MPSKit bridge remain in canonical output through the existing link.
+Preflight creates live accounting and scratch-audit records there. The current
+pilot requires no additional locally prepared file transfer beyond Git.
+The [Git guide](../PERLMUTTER_GIT_SYNC.md) documents the completed worktree setup
+and its preservation checks.
 
 Run manually on Perlmutter:
 
 ```bash
-cd ~/QSL-project-b/project_b_flux_dimensional_reduction
-bash slurm/run_mpskit_solver_pilot_cpu.sh preflight
+cd ~/QSL-project-b &&
+git pull --ff-only &&
+cd project_b_flux_dimensional_reduction &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh preflight &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh submit &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh status
 ```
 
 This child Bash process runs context/source checks, live reconciliation,
 the selected scratch audit and the full live plan in order. It stops at the
-first error without closing the interactive SSH shell and never submits.
+first error without closing the interactive SSH shell. The `&&` chain submits
+only after `PREFLIGHT PASSED`; submission repeats the live guards.
 The scratch audit hashes the returned candidate and checkpoints 52 and 60,
 reads scalar metadata without optimizing, and writes
 `output/review_followup/checkpoint_audit_57801654_v2.toml`. The full 30-checkpoint
@@ -123,14 +123,6 @@ history remains an optional `--all` audit to a separate new report. Existing
 valid reports are reused; controls and reports are never overwritten.
 Hashing reports file names and sizes. First-use solver compilation can take
 several minutes even though the executable checks use tiny test states.
-
-After `PREFLIGHT PASSED`, submit the one authorized pilot; submission repeats
-the full guards against current source and accounting:
-
-```bash
-bash slurm/run_mpskit_solver_pilot_cpu.sh submit
-bash slurm/run_mpskit_solver_pilot_cpu.sh status
-```
 
 After the job becomes terminal:
 
@@ -160,6 +152,16 @@ the scientific successor still needs review; it is not evidence of a spinodal.
   remaining Phase 1 allowance.
 
 ## Validation record
+
+Git delivery now has a regression that exports only Git objects, pushes to a
+temporary local repository, and pulls into a clean sparse checkout without
+`output/`. The pulled active control hash and all 36 pinned source inputs
+match. The launcher resolves that control with mocked remote operations;
+full validation still rejects missing tensor data. Full local validation also
+passes all 38 source/data inputs against the original mirror. The sealed
+control bytes, runtime source and scientific recipe are unchanged by this
+packaging fix. `test/test_solver_pilot_git_delivery.sh` reproduces the delivery
+check; its transcript is `output/review_followup/pilot_git_delivery.log`.
 
 The operational revision passes 51 focused Julia assertions for allocation
 accounting, date-window coverage/deduplication, native/streaming hash parity,

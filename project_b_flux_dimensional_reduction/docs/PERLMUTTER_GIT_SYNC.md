@@ -1,14 +1,15 @@
-# Git source sync with Perlmutter
+# Git push/pull with Perlmutter
 
-Use the existing repository `https://github.com/kwang0/QSL.git` for source,
-configuration templates and documentation. The repository root is `~/QSL`,
-one level above Project B. The owner runs all Perlmutter commands manually.
+Use `https://github.com/kwang0/QSL.git` for source, documentation and locally
+prepared launch inputs. Commit compact sealed controls under `configs/controls/`
+with their active references and pinned source so a single push/pull delivers
+the prepared run. The owner runs all Perlmutter commands manually.
 
-Git does not include Project B's ignored `output/`, full HDF5 states, caches
-or scratch packages. Continue using checksum-verified Globus transfers for
-the required compact controls, accounting and selected durable states. Keep
-destination deletion disabled and exclude `.git`, `.julia` and `$PSCRATCH`.
-Once Git is established, exclude tracked source from routine data transfers.
+The original repository is `~/QSL`; Project B runs from the clean sparse
+worktree `~/QSL-project-b`. Its ignored `output` link accesses existing data in
+the original directory. The current pilot needs no additional local-to-Perlmutter
+transfer beyond Git: the parent and bridge are existing data, and preflight
+generates fresh accounting and scratch-audit records on Perlmutter.
 
 ## Git history is attached; preserve the existing export
 
@@ -61,41 +62,50 @@ files, a separate project's edits and a linked data directory. All 14
 preservation and ignore-rule assertions passed. The transcript is
 `output/review_audit/sparse_worktree_preservation_test_final.log`.
 
-## Data sync and execution
+## Pull and execute the pilot
 
-Checksum-sync the new ignored
-`output/review_followup/solver_pilot_control_v2.toml` and any needed
-`output/accounting/` evidence from Windows to the original Perlmutter path
-under `~/QSL/project_b_flux_dimensional_reduction/output/`. The new checkout
-sees them through its link. Use the original data path as the Globus endpoint;
-the source worktree does not need a second data transfer.
+The owner has completed the worktree setup above. The first preflight exposed
+an ignored control missing on Perlmutter. That control now lives at tracked
+`configs/controls/solver_pilot_control_v2.toml`, with the same SHA-256
+`969b69b1c40d3a70e07c58fe9b12d123564781c5f40b9a4058b74f4382278818`.
+The active reference points there, so pulling the branch fixes its delivery.
 
-After that sync, run:
+Run manually on Perlmutter:
 
 ```bash
-cd ~/QSL-project-b/project_b_flux_dimensional_reduction &&
-bash slurm/run_mpskit_solver_pilot_cpu.sh preflight
+cd ~/QSL-project-b &&
+git pull --ff-only &&
+cd project_b_flux_dimensional_reduction &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh preflight &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh submit &&
+bash slurm/run_mpskit_solver_pilot_cpu.sh status
 ```
 
-After `PREFLIGHT PASSED`, the owner may run the guarded `submit` and `status`
-commands in the active plan. A missing control requires the artifact sync;
-Git alone cannot supply this ignored file.
+The chain stops on any failure and submits only after `PREFLIGHT PASSED`.
 
-## Routine source updates
+## Routine updates
 
-On Windows, commit the reviewed source changes on the intended branch and
-push that branch. On Perlmutter, use `~/QSL-project-b`, verify that its worktree
+On Windows, prepare and validate source changes and any new compact launch
+inputs, commit them with their active references, and push the intended branch.
+Controls are immutable; a pinned source change requires a new control filename.
+On Perlmutter, use `~/QSL-project-b`, verify that its worktree
 is clean and on the corresponding branch, then use `git pull --ff-only`. If either check
 fails, review the difference; do not discard remote edits. Compare `git
 rev-parse HEAD` on both computers when an exact version matters.
 
-Then checksum-sync any new ignored control and compact accounting artifacts.
-The pilot active reference pins the exact control SHA-256, and the control
-pins the source, environments, parent and bridge. A Git commit match alone
-does not establish that the ignored inputs are present or valid.
+The active reference pins the control SHA-256, and the control pins the source,
+environments, parent and bridge. Preflight verifies the pulled files and the
+existing scientific data, then creates live accounting and scratch evidence.
+No separate transfer of locally generated accounting records is required.
 
 The active runbook is [the review follow-up plan](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md).
 Its `preflight` action verifies context, reconciles accounting, audits the
 required scratch files and executes the guarded live plan. Only the owner
 submits the pilot after that action succeeds. Source and state hashes remain
-the identity checks after a Git update or a data sync.
+the identity checks after a Git update.
+
+If later work needs selected new scientific payloads or run results on the
+other computer, checksum-sync those files separately with Globus. Use the
+original canonical output directory, keep destination deletion disabled, and
+exclude tracked source, `.git`, `.julia` and `$PSCRATCH`. This is a data transfer
+only when needed; prepared compact launch inputs belong in Git.

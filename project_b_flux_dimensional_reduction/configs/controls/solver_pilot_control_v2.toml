@@ -1,0 +1,179 @@
+artifact_kind = "project_b_mpskit_solver_pilot_control"
+created_utc = "2026-09-07T01:38:49.592"
+parent_energy_density_at_0p15 = -0.507194159065897
+parent_energy_density_at_0p2 = -0.5071387131693128
+parent_path = "output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+schema_version = 1
+
+[[inputs]]
+path = "Manifest.toml"
+sha256 = "d9a98e006e35bd2a32c1fd1121c93a0cc72c0dca46fc4cbf06c33db0bdf8c048"
+[[inputs]]
+path = "Project.toml"
+sha256 = "e53d89fa6a9af5219d29020f9e85ebab54b0d7038bda88ff0201534424900e0d"
+[[inputs]]
+path = "configs/mpskit_solver_pilot.toml"
+sha256 = "6c98e5e6e955fcded8c922ccca1767827084fcf9b22292bca6847b1658e4d6b0"
+[[inputs]]
+path = "configs/project_b_accounting.toml"
+sha256 = "97ada2b25eb5743ee9fc860fd8e2714519a6f294f1dc82d9e8bd8ffb0189ee15"
+[[inputs]]
+path = "idmrg/Manifest.toml"
+sha256 = "b0015137a96ef8ee3a8ab2bf9ff03ced5f7efc5cb9dbcf4e3047f50fe5c56881"
+[[inputs]]
+path = "idmrg/Project.toml"
+sha256 = "6f9b17043356144bbaa16aa4736b1cb68bea247dd8edb0bd21055e265495f1c3"
+[[inputs]]
+path = "idmrg/scripts/preflight_solver_pilot.jl"
+sha256 = "ff1cdc7323aabe89284844e589ffe9b7d9bd5dcc509bccbbe322892d3591885e"
+[[inputs]]
+path = "idmrg/scripts/run_solver_pilot.jl"
+sha256 = "d93f4e95f78994f07701718514557c3e35424950da0fe35370150f04eaafed1d"
+[[inputs]]
+path = "idmrg/src/ProjectBIDMRG.jl"
+sha256 = "ace9e52a6db852f812163588675103994a712345d977efdba5b2598614c7b235"
+[[inputs]]
+path = "idmrg/src/SolverPilot.jl"
+sha256 = "ed173ff1879875e784c56b424752bfc18c37ee19c51977ca3abc755dade32410"
+[[inputs]]
+path = "output/phase1_idmrg/yc8_1/theta_p0p20000000_from_38312fc996fe/accepted_parent_to_mpskit_bridge.h5"
+sha256 = "df1e402f0922937da0e266427a2bae7ce7de0fc844884ae3f747f5410fcd7d01"
+[[inputs]]
+path = "output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+[[inputs]]
+path = "scripts/analyze_mpskit_solver_pilot.jl"
+sha256 = "f0427bd181688cb5bc78658460037e75bc93df9eaf200cb3d38fb69f742e2ff0"
+[[inputs]]
+path = "scripts/audit_project_context.jl"
+sha256 = "ed8470ffb1f4c53898bafb850734d99bc974e21bbd84b50b17ca43ac83f72d97"
+[[inputs]]
+path = "scripts/audit_yc8_bridge_checkpoints.jl"
+sha256 = "d172d36d46afb078ba2e8c925ba7c313831f39bc8128c133b2f4a33c90c99729"
+[[inputs]]
+path = "scripts/lib/FileIntegrity.jl"
+sha256 = "635b367ddd0da3eb2fe2cb7114f06ec4ee86bc728b36d2c0a2eda90dc8a16695"
+[[inputs]]
+path = "scripts/lib/ProjectBAccounting.jl"
+sha256 = "6539be91cc1e58a3280c27caf9f99a4cb324b8e1b39b2c949afac4a75bb94846"
+[[inputs]]
+path = "scripts/lib/ReviewEvidence.jl"
+sha256 = "95c60baf7b815e14620bcb55954925e9c8826594bc49a924e20b4f7ae86b7eeb"
+[[inputs]]
+path = "scripts/lib/SolverPilotControl.jl"
+sha256 = "ee8d27c1f5bfb1866ae9365df4689db8dbcf5ac2e6fff7ef114137dbf959593f"
+[[inputs]]
+path = "scripts/prepare_mpskit_solver_pilot.jl"
+sha256 = "81f79ec8db507e975cf68cf8b19a030b839f342f99ad8b56a9f16136cd793d85"
+[[inputs]]
+path = "scripts/project_b_accounting.jl"
+sha256 = "ef1976a6301bd13a8e4b224fa96c4ba8d3f173de70f61b0f45ca4912abefda03"
+[[inputs]]
+path = "scripts/validate_mpskit_solver_pilot.jl"
+sha256 = "4e348c3f37d729bd46ae636b178bc7b205114739efddfc2885eab18e158ed951"
+[[inputs]]
+path = "slurm/lib/project_b_resources.sh"
+sha256 = "a6cd9115bb56b1681f234975f46d2ac1d19be549bdb50c1d69e686de6f2eec6b"
+[[inputs]]
+path = "slurm/run_mpskit_solver_pilot_cpu.sh"
+sha256 = "3cecdb80f7087236f458290b673383a3be982dd5295658b51bb7af8dbb3b8570"
+[[inputs]]
+path = "slurm/run_mpskit_solver_pilot_job.sh"
+sha256 = "8cee6f4b04c8d4991150f5155dfdc27de0a1b5db7d6eed060d00bd4183162526"
+[[inputs]]
+path = "src/Automation.jl"
+sha256 = "c64d7664c5f52616711d05f4b6a7117db34dedbc3c36549ab2a002cc4f302cbe"
+[[inputs]]
+path = "src/Config.jl"
+sha256 = "926e2167f9cebd2963e2b29f226e2829d0f024138c9cbe60cbcc7d15eef4859a"
+[[inputs]]
+path = "src/Continuity.jl"
+sha256 = "dbb5694cfe60b71431758e8cdc4587f8d1a4415a71c1e7ff48858a8a6ba64f3c"
+[[inputs]]
+path = "src/Diagnostics.jl"
+sha256 = "fad54bc9721d812372e317373f410978415eb93098fde335596f302020dc8fd3"
+[[inputs]]
+path = "src/Geometry.jl"
+sha256 = "51fba6c2468186c1568ed34365daf3abb46326524ff2395ecdf5703509296cef"
+[[inputs]]
+path = "src/IDMRGBridge.jl"
+sha256 = "950252ef13632aa89afd2d0981491bcd3ec9ffb238b8d8dfef3d942a79e31044"
+[[inputs]]
+path = "src/Observables.jl"
+sha256 = "d36f0013c7e47a5a12fcbeb174c443819972fcac5589f447dbc70f2a0982468a"
+[[inputs]]
+path = "src/Optimization.jl"
+sha256 = "650579bb39873eb71d2eeb885d18b0304a9c895159576af58a7a8579af3260d6"
+[[inputs]]
+path = "src/Scaling.jl"
+sha256 = "c17ac047700b28f5703f07136c5d1ccf2dd06bff2086b578a5402a958112ad51"
+[[inputs]]
+path = "src/Scan.jl"
+sha256 = "a8621a66de71ae075efcc3e14712b0aa3ebc5e6f7871150447be38ad14935243"
+[[inputs]]
+path = "src/Storage.jl"
+sha256 = "296c8690950317c46787fadff4eaaa91220049f9b1a18e8d02b74111dd962a8f"
+[[inputs]]
+path = "src/TransferSpectra.jl"
+sha256 = "f2ea7428f52125f01e3078f76974b13c8667604a48defd3b6825e3da1022344e"
+[[inputs]]
+path = "src/TriangularJ1J2ProjectB.jl"
+sha256 = "922da5fa61e5bb66ee02c79ef3d5a9fea9347464c2c494990753762b78890bc7"
+
+[recipe]
+artifact_kind = "project_b_mpskit_solver_pilot_recipe"
+automatic_advance = false
+automatic_promotion = false
+bridge_path = "output/phase1_idmrg/yc8_1/theta_p0p20000000_from_38312fc996fe/accepted_parent_to_mpskit_bridge.h5"
+canonical_relation_tolerance = 1.0e-8
+checkpoint_audit_path = "output/review_followup/checkpoint_audit_57801654_v2.toml"
+checkpoint_every = 10
+chi = 512
+energy_span_tolerance = 1.0e-8
+energy_window = 4
+grassmann_gradient_tolerance = 1.0e-5
+maximum_iterations = 60
+minimum_iterations = 4
+model_energy_tolerance = 1.0e-6
+parent_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+schema_version = 1
+vumps_galerkin_tolerance = 1.0e-5
+
+    [recipe.continuity]
+    correlation_length_units = "complete MPS transfer cells"
+    maximum_cut_entropy_jump = 0.1
+    maximum_energy_term_rms_jump = 0.02
+    maximum_log_correlation_length_jump = 0.05
+    maximum_magnetization_rms_jump = 0.001
+    maximum_mean_schmidt_total_variation = 0.05
+    minimum_overlap_per_site = 0.99
+    require_correlation_length_diagnostics = true
+    require_u1_sector_diagnostics = true
+
+    [recipe.resources]
+    allocation_cpus = 10
+    blas_threads = 1
+    forecast_node_hours = 0.46875
+    julia_threads = 2
+    maximum_node_hours = 0.5
+    memory = "16G"
+    pretimeout_seconds = 1800
+    qos = "shared"
+    step_cpus = 4
+    time_limit = "12:00:00"
+
+    [[recipe.stages]]
+    algorithm = "VUMPS"
+    maximum_seconds = 3600
+    name = "baseline_vumps"
+    theta_over_pi = 0.15
+    [[recipe.stages]]
+    algorithm = "VUMPS"
+    maximum_seconds = 10800
+    name = "difficult_vumps"
+    theta_over_pi = 0.2
+    [[recipe.stages]]
+    algorithm = "GradientGrassmann"
+    maximum_seconds = 10800
+    name = "difficult_gradient"
+    theta_over_pi = 0.2

@@ -64,4 +64,18 @@ if bash "$launcher" preflight >"$fixture/log" 2>&1; then
 fi
 [[ ! -s "$TEST_CALLS" ]]
 grep -q 'active pilot control hash mismatch' "$fixture/log"
+
+# Exercise the real active reference with none of the local output mirror.
+mapfile -t active < <(sed 's/\r$//' "$source_root/configs/mpskit_solver_pilot_active_control.ref")
+[[ ${#active[@]} == 2 && "${active[0]}" == configs/controls/*.toml ]]
+mkdir -p "$fixture/project/configs/controls"
+cp "$source_root/${active[0]}" "$fixture/project/${active[0]}"
+cp "$source_root/configs/mpskit_solver_pilot_active_control.ref" "$fixture/project/configs/"
+export TEST_HASH="${active[1]}"
+[[ ! -e "$fixture/project/output/review_followup" ]]
+: >"$TEST_CALLS"
+bash "$launcher" preflight >"$fixture/log" 2>&1
+grep -q 'PREFLIGHT PASSED' "$fixture/log"
+! grep -q 'submission attempted' "$TEST_CALLS"
+echo 'Real active control resolves from tracked configs without the ignored output mirror.'
 echo 'Pilot launcher: five failure stages stop, copied worker runs, active hashes enforce integrity, no preflight submits.'

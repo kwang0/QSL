@@ -127,19 +127,24 @@ worktree change unless the owner explicitly asks to discard it.
 - Scratch is purge-eligible and not backed up. Before removing a scratch
   package, deliberately promote any reviewed state needed for continuation or
   publication and verify its hash and compact manifest.
-- Prefer Git for versioned source, configuration templates and documentation
-  between Windows and Perlmutter. Preserve the existing remote directory when
+- Use Git push/pull for local-to-Perlmutter source, documentation and prepared
+  launch inputs. Store compact sealed controls under `configs/controls/` and
+  track any other compact manifests needed to launch, together with their
+  references. Verify delivery from a Git checkout without local ignored output
+  before handing off a run. Preserve the existing remote directory when
   adopting Git; do not use a hard reset or a forced checkout to align it.
 - A separate source worktree may link to the canonical ignored `output`
   directory. Such worktrees share the same evidence, submission lock and
   project budget; they are not independent campaigns. Keep the repository
   holding their common Git metadata and the canonical output directory intact.
-- Use Globus for ignored controls, compact results and selected durable data.
-  The normal cycle is Perlmutter to Windows first, wait for checksum sync,
-  edit while no project job writes the tree, then sync needed artifacts back
-  before a live plan. Keep destination mirroring/deletion off; exclude `.git`,
-  other dot directories, `.julia`, and `$PSCRATCH`. A source export may use
-  checksum sync during Git setup. Do not substitute `rsync` unless requested.
+- Use checksum-verified Globus transfers when run results or selected durable
+  scientific data are needed on the other computer. Keep destination
+  mirroring/deletion off; exclude tracked source, `.git`, other dot directories,
+  `.julia`, and `$PSCRATCH`. A source export may use checksum sync during Git
+  setup. Do not substitute `rsync` unless requested. A prepared launch control
+  must arrive through Git; routine local-to-Perlmutter updates must not depend
+  on a separate control transfer. Live reconciliation generates accounting
+  evidence on Perlmutter before the guarded plan.
 - A job already submitted under an older storage policy is not canceled just
   to migrate its checkpoint path. Apply the policy to its successor.
 

@@ -18,6 +18,9 @@ and provide concise, tested commands for the owner's Perlmutter shell; do not
 initiate SSH commands, remote jobs, or remote transfers on their behalf.
 Ask for the smallest remote output needed and continue independent local work.
 
-Prefer Git for versioned source synchronization between Windows and Perlmutter.
-Use Globus for ignored run artifacts and selected data; never synchronize `.git`
-through Globus. Preserve existing files when connecting a source export to Git.
+Use Git push/pull for local-to-Perlmutter source and prepared launch inputs,
+including compact sealed controls and required manifests. Put new compact
+launch inputs in tracked paths so a pull delivers them with their source.
+Use Globus when selected scientific data or run results need a separate transfer;
+never synchronize `.git` through Globus. Preserve existing files when connecting
+a source export to Git.

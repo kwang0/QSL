@@ -19,9 +19,11 @@ checksum sync to Windows for analysis and development
 ```
 
 - Git is the exact code and documentation history.
-- Git is also the preferred source transport between Windows and Perlmutter;
-  Globus transports ignored run artifacts and selected data. A deliberate
-  Git-free export can pass an explicit sealed-source audit, which establishes
+- Git push/pull transports source and compact prepared launch inputs between
+  Windows and Perlmutter. Sealed controls live under `configs/controls/` and
+  arrive in the same update as their active references and pinned source.
+  Globus transports selected scientific data and run results when needed.
+  A deliberate Git-free export can pass an explicit sealed-source audit, which establishes
   file identity without establishing commit history. Runtime data hashes
   remain mandatory in the full plan.
 - Perlmutter is the live scheduler, accounting, run-artifact, and scratch
@@ -59,9 +61,11 @@ bulk-renormalized as part of this policy change.
 
 ## Control plane
 
-1. A tracked or generated TOML control declares geometry, representation,
+1. A TOML control declares geometry, representation,
    optimizer, thresholds, schedule, immutable parent path and hash, output
-   directory, and provenance.
+   directory, and provenance. Compact controls prepared for a new launch are
+   sealed under tracked `configs/controls/`; existing output snapshots remain
+   immutable run evidence.
 2. A small `configs/*_active_control.ref`, when used, contains exactly a
    project-relative control path and its SHA-256. It is a pointer, not a copy
    of the control.
@@ -144,7 +148,7 @@ accepted lineage.
 
 | Class | Examples | Location | Routine sync |
 |---|---|---|---|
-| tracked source | code, TOML templates, docs, manifests | Git checkout | Git |
+| source and prepared launch inputs | code, TOML templates, sealed controls, required manifests, docs | Git checkout; sealed controls in `configs/controls/` | Git push/pull |
 | compact run evidence | config snapshot/hash, job ledger, `sacct`, logs, scalar histories, state/checkpoint manifests | project `output/` | Globus checksum sync |
 | durable scientific state | deliberately selected accepted/rejected bridge required for analysis or provenance | project `output/` | Globus checksum sync |
 | transient heavy state | periodic optimizer checkpoints, serialized solver state, redundant full tensors | `$PSCRATCH` | excluded |
@@ -159,7 +163,8 @@ run it.
 - `src/`: root Julia package, geometry, optimization, continuity, storage,
   scanning, spectroscopy, and iDMRG bridge logic.
 - `idmrg/`: isolated MPSKit package and tests.
-- `configs/`: immutable or template controls and active references.
+- `configs/`: templates and active references; `controls/` holds immutable
+  compact launch inputs delivered through Git.
 - `scripts/`: preparation, validation, analysis, plotting, and the read-only
   cross-system context audit.
 - `slurm/`: guarded Perlmutter launchers and worker scripts.
@@ -174,17 +179,21 @@ run it.
 
 1. On Perlmutter, finish or quiesce project-tree writers and reconcile terminal
    jobs.
-2. Checksum-sync the non-dot project tree from Perlmutter to Windows with
-   mirroring/deletion disabled. Do not include `$PSCRATCH` or `.julia`.
+2. When analysis needs new run evidence, checksum-sync the selected output
+   from Perlmutter to Windows with mirroring/deletion disabled. Exclude tracked
+   source, `.git`, `$PSCRATCH` and `.julia`.
 3. On Windows, run `scripts/audit_project_context.jl`, inspect Git state, and
    perform analysis or development with PowerShell-compatible commands.
 4. Persist current conclusions in `PROJECT_STATE.md`, the relevant plan, and a
    decision record only where their semantic roles require it.
-5. Commit and transfer tracked changes through Git. For an existing source
-   export, follow [the Git adoption guide](PERLMUTTER_GIT_SYNC.md) without
-   replacing its working files. Checksum-sync ignored artifacts separately.
-6. Before remote execution, sync Windows to Perlmutter while no job writes the
-   destination, then run the live guarded plan.
+5. Commit tested source, compact prepared launch controls and their references
+   together, then push. Verify that a clean Git checkout contains the launch
+   inputs. For an existing source export, follow
+   [the Git guide](PERLMUTTER_GIT_SYNC.md) without replacing its working files.
+6. The owner pulls with `git pull --ff-only` in the Perlmutter source worktree,
+   then runs the guarded preflight. It verifies existing tensor inputs and
+   generates live accounting and scratch evidence. Separately transfer selected
+   scientific data only when a run actually requires a new payload.
 
 The generic bootstrap message in `NEW_TASK_PROMPT.md` works on either device
 because it routes through repository-relative sources and begins with a

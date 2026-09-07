@@ -23,7 +23,7 @@ is [`PHASES_0_TO_4.md`](PHASES_0_TO_4.md). See
 [`plans/README.md`](plans/README.md) for workstream status.
 
 Local implementation and validation are complete. The sealed pilot control is
-`output/review_followup/solver_pilot_control_v2.toml`, SHA-256
+`configs/controls/solver_pilot_control_v2.toml`, SHA-256
 `969b69b1c40d3a70e07c58fe9b12d123564781c5f40b9a4058b74f4382278818`,
 selected by `configs/mpskit_solver_pilot_active_control.ref`. The initial
 control and its full chi512 cross-library validation are preserved. This
@@ -39,7 +39,8 @@ audit, live plan or pilot submission has been established. The new `preflight`
 action stops at the first failure, uses 28-day accounting windows and audits
 the candidate plus checkpoints 52 and 60 with visible progress.
 
-The owner prefers Git for source sync. The follow-up source branch is
+The owner uses Git push/pull for locally prepared source and launch inputs,
+including compact sealed controls. The follow-up branch is
 `codex/project-b-review-followup`; inspect Git for its publication and commit
 status. The owner has now initialized Git in `~/QSL`, fetched both upstream
 branches and attached `main` without overwriting working files. The export
@@ -47,17 +48,20 @@ shows missing, modified and untracked files across several projects; these
 differences are preserved. The owner completed the clean sparse worktree at
 `~/QSL-project-b`, including the link to the original Project B output, and
 reported a clean worktree tracking the published branch. Its first preflight
-stopped before any live checks or submission because the ignored
-`output/review_followup/solver_pilot_control_v2.toml` is missing through that
-link. The next step is a checksum-verified Globus transfer of this existing
-local control to the same relative location in the original `~/QSL` output,
-then retrying the guarded sequence from the new source worktree. The local
-7,255-byte control still matches the pinned SHA-256 above.
+stopped before any live checks or submission because the control was missing
+from ignored output. The control now lives in tracked `configs/controls/`,
+and the active reference selects it there. Its 7,255 bytes and SHA-256 are
+unchanged; the original output copy remains immutable. The next step is
+`git pull --ff-only` in `~/QSL-project-b`, then the guarded sequence from its
+Project B directory. Git supplies all newly prepared pilot inputs. Existing
+parent/bridge tensors remain accessible through the output link; preflight
+generates live accounting and scratch-audit evidence on Perlmutter.
 
-Standing owner authorization: publish tested Project B source, tests and
-documentation to `https://github.com/kwang0/QSL.git` on
+Standing owner authorization: publish tested Project B source, tests,
+documentation and compact prepared launch inputs to `https://github.com/kwang0/QSL.git` on
 `codex/project-b-review-followup`, including future updates to that branch.
-Ignored run data remain excluded. Perlmutter commands and transfers continue
+Heavy scientific payloads and generated run evidence remain excluded.
+Perlmutter commands and transfers continue
 to be executed manually by the owner.
 
 ## Non-negotiable scientific state
@@ -175,7 +179,7 @@ preserved.
 
 1. Complete the owner's manual Perlmutter reconciliation and hash-verified
    scratch audit using the follow-up plan's single `preflight` command after
-   source/ignored-artifact synchronization. Local implementation includes
+   pulling the source and tracked launch control. Local implementation includes
    memory-rounded accounting, Julia RSS, step accounting, physics tests and a
    reproducible scalar audit. No remote commands are run by the agent.
 2. Run the guarded matched chi512 MPSKit pilot after a successful live plan:
@@ -220,9 +224,8 @@ was unavailable.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
 - Whether later Perlmutter accounting exists beyond the synchronized files.
-- Whether the sealed v2 control has been transferred to the original output
-  directory and is visible through the new worktree's link. The owner has
-  confirmed the clean source worktree and completed link-creation command.
+- Whether the owner has pulled the tracked v2 control and completed preflight.
+  The owner has confirmed the clean source worktree and output link.
 - Whether any selected scratch state has been promoted to durable storage
   since the last sync.
 
