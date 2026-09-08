@@ -146,6 +146,17 @@ Tensor checkpoints and candidate payloads stay in scratch; compact histories
 and analyses stay in the project. No pilot result automatically changes the
 accepted lineage.
 
+The bounded relaxation driver adds a separately labeled diagnostic path. It
+can propagate fixed-budget VUMPS endpoints before native convergence only
+within its sealed finite schedule. Every outer iteration has a scratch
+canonical payload and compact hash record; numerical minima are analysis
+samples, not substituted seeds. A final hold continues the same solver
+instance. Root-environment analysis compares both the original accepted
+parent and the previous diagnostic state and records charge-resolved transfer
+spectra. It never changes accepted-lineage records. Its compact jobs live
+under `output/mpskit_solver_pilot_jobs/relaxation/`, within the existing common
+accounting root and lock.
+
 | Class | Examples | Location | Routine sync |
 |---|---|---|---|
 | source and prepared launch inputs | code, TOML templates, sealed controls, required manifests, docs | Git checkout; sealed controls in `configs/controls/` | Git push/pull |

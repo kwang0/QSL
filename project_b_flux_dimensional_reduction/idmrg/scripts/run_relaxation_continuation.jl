@@ -1,0 +1,5 @@
+include(joinpath(@__DIR__,"../src/RelaxationContinuation.jl"))
+length(ARGS)==4 || error("usage: run_relaxation_continuation.jl CONTROL ARM SCRATCH COMPACT")
+deadline=parse(Float64,get(ENV,"PROJECT_B_RELAXATION_DEADLINE","0"))
+deadline>time() || error("missing or expired allocation deadline")
+RelaxationContinuation.run_arm(ARGS...;deadline,stop_file=get(ENV,"PROJECT_B_PRETIMEOUT_REQUEST_FILE",""))

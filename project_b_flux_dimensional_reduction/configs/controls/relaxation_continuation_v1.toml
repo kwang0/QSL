@@ -1,0 +1,187 @@
+artifact_kind = "project_b_relaxation_continuation_control"
+created_utc = "2026-09-08T19:03:57.852"
+parent_energy_density_at_0p15 = -0.507194159065897
+parent_path = "output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+schema_version = 1
+
+[[inputs]]
+path = "Manifest.toml"
+sha256 = "d9a98e006e35bd2a32c1fd1121c93a0cc72c0dca46fc4cbf06c33db0bdf8c048"
+[[inputs]]
+path = "Project.toml"
+sha256 = "e53d89fa6a9af5219d29020f9e85ebab54b0d7038bda88ff0201534424900e0d"
+[[inputs]]
+path = "configs/project_b_accounting.toml"
+sha256 = "97ada2b25eb5743ee9fc860fd8e2714519a6f294f1dc82d9e8bd8ffb0189ee15"
+[[inputs]]
+path = "configs/relaxation_continuation.toml"
+sha256 = "15dc967ae4bd882ec9c4a3821e1201f73d100720da75bd5fc92bad4b8e6a8143"
+[[inputs]]
+path = "idmrg/Manifest.toml"
+sha256 = "b0015137a96ef8ee3a8ab2bf9ff03ced5f7efc5cb9dbcf4e3047f50fe5c56881"
+[[inputs]]
+path = "idmrg/Project.toml"
+sha256 = "6f9b17043356144bbaa16aa4736b1cb68bea247dd8edb0bd21055e265495f1c3"
+[[inputs]]
+path = "idmrg/scripts/run_relaxation_continuation.jl"
+sha256 = "5c6cf9fd33478dc3944c51bd820aa9d7406e591cbe3224d6aede4cb888c437f4"
+[[inputs]]
+path = "idmrg/src/ProjectBIDMRG.jl"
+sha256 = "ace9e52a6db852f812163588675103994a712345d977efdba5b2598614c7b235"
+[[inputs]]
+path = "idmrg/src/RelaxationContinuation.jl"
+sha256 = "abc9971716188e982499778c1a8569f622d4e222a148cb17682e842441d735ee"
+[[inputs]]
+path = "idmrg/src/SolverPilot.jl"
+sha256 = "ed173ff1879875e784c56b424752bfc18c37ee19c51977ca3abc755dade32410"
+[[inputs]]
+path = "idmrg/test/relaxation_continuation.jl"
+sha256 = "1b42362513f78c67843de68125e63566b2249910d1777966770c6b4de544fb60"
+[[inputs]]
+path = "output/phase1_idmrg/yc8_1/theta_p0p20000000_from_38312fc996fe/accepted_parent_to_mpskit_bridge.h5"
+sha256 = "df1e402f0922937da0e266427a2bae7ce7de0fc844884ae3f747f5410fcd7d01"
+[[inputs]]
+path = "output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+[[inputs]]
+path = "scripts/analyze_relaxation_continuation.jl"
+sha256 = "22e77b636fa6f1fc0e348fb9723c7955bf90db1439bb9427e93ce0758d1da8ed"
+[[inputs]]
+path = "scripts/lib/FileIntegrity.jl"
+sha256 = "635b367ddd0da3eb2fe2cb7114f06ec4ee86bc728b36d2c0a2eda90dc8a16695"
+[[inputs]]
+path = "scripts/lib/ProjectBAccounting.jl"
+sha256 = "6539be91cc1e58a3280c27caf9f99a4cb324b8e1b39b2c949afac4a75bb94846"
+[[inputs]]
+path = "scripts/lib/RelaxationAnalysis.jl"
+sha256 = "de4deb6611eb9e9018f070cc816bdcbde0eee37885b16856721b5a943ff25d5f"
+[[inputs]]
+path = "scripts/lib/RelaxationControl.jl"
+sha256 = "58bd7cc7d6612332d6f213da214919c11cdbb90488b0bebe39f21f4fa0a3ceb6"
+[[inputs]]
+path = "scripts/lib/ReviewEvidence.jl"
+sha256 = "95c60baf7b815e14620bcb55954925e9c8826594bc49a924e20b4f7ae86b7eeb"
+[[inputs]]
+path = "scripts/lib/SolverPilotControl.jl"
+sha256 = "ee8d27c1f5bfb1866ae9365df4689db8dbcf5ac2e6fff7ef114137dbf959593f"
+[[inputs]]
+path = "scripts/prepare_relaxation_continuation.jl"
+sha256 = "068626d72ea34f0307716d713a90de71e81dd923f168031c531fb5d6a7b2e292"
+[[inputs]]
+path = "scripts/project_b_accounting.jl"
+sha256 = "ef1976a6301bd13a8e4b224fa96c4ba8d3f173de70f61b0f45ca4912abefda03"
+[[inputs]]
+path = "scripts/summarize_relaxation_continuation.jl"
+sha256 = "ba58b73f0467430c5b653620b227e1d7f849f9339725e6f7175b012f859cf26e"
+[[inputs]]
+path = "scripts/validate_relaxation_continuation.jl"
+sha256 = "0eb2a10caf87ce44b178b74a7701acdb6f811caff571ff85c16198c9ad9526aa"
+[[inputs]]
+path = "slurm/lib/project_b_resources.sh"
+sha256 = "a6cd9115bb56b1681f234975f46d2ac1d19be549bdb50c1d69e686de6f2eec6b"
+[[inputs]]
+path = "slurm/run_relaxation_continuation_cpu.sh"
+sha256 = "71725609d39dc03eb77006f80329b670c3744a3a203c5849ed0c13c87119d2e2"
+[[inputs]]
+path = "slurm/run_relaxation_continuation_job.sh"
+sha256 = "2b6e8741e40fbd601b6d643d00ae90cdf0c863f75c28e04dae87a2a769413230"
+[[inputs]]
+path = "src/Automation.jl"
+sha256 = "c64d7664c5f52616711d05f4b6a7117db34dedbc3c36549ab2a002cc4f302cbe"
+[[inputs]]
+path = "src/Config.jl"
+sha256 = "926e2167f9cebd2963e2b29f226e2829d0f024138c9cbe60cbcc7d15eef4859a"
+[[inputs]]
+path = "src/Continuity.jl"
+sha256 = "dbb5694cfe60b71431758e8cdc4587f8d1a4415a71c1e7ff48858a8a6ba64f3c"
+[[inputs]]
+path = "src/Diagnostics.jl"
+sha256 = "fad54bc9721d812372e317373f410978415eb93098fde335596f302020dc8fd3"
+[[inputs]]
+path = "src/Geometry.jl"
+sha256 = "51fba6c2468186c1568ed34365daf3abb46326524ff2395ecdf5703509296cef"
+[[inputs]]
+path = "src/IDMRGBridge.jl"
+sha256 = "950252ef13632aa89afd2d0981491bcd3ec9ffb238b8d8dfef3d942a79e31044"
+[[inputs]]
+path = "src/Observables.jl"
+sha256 = "d36f0013c7e47a5a12fcbeb174c443819972fcac5589f447dbc70f2a0982468a"
+[[inputs]]
+path = "src/Optimization.jl"
+sha256 = "650579bb39873eb71d2eeb885d18b0304a9c895159576af58a7a8579af3260d6"
+[[inputs]]
+path = "src/Scaling.jl"
+sha256 = "c17ac047700b28f5703f07136c5d1ccf2dd06bff2086b578a5402a958112ad51"
+[[inputs]]
+path = "src/Scan.jl"
+sha256 = "a8621a66de71ae075efcc3e14712b0aa3ebc5e6f7871150447be38ad14935243"
+[[inputs]]
+path = "src/Storage.jl"
+sha256 = "296c8690950317c46787fadff4eaaa91220049f9b1a18e8d02b74111dd962a8f"
+[[inputs]]
+path = "src/TransferSpectra.jl"
+sha256 = "f2ea7428f52125f01e3078f76974b13c8667604a48defd3b6825e3da1022344e"
+[[inputs]]
+path = "src/TriangularJ1J2ProjectB.jl"
+sha256 = "922da5fa61e5bb66ee02c79ef3d5a9fea9347464c2c494990753762b78890bc7"
+[[inputs]]
+path = "test/relaxation_analysis.jl"
+sha256 = "61522fb2e20e8c79ce5ed1749e382e1802264f195fd169e22fbab278d67a17d4"
+
+[recipe]
+advance_on_turnaround = false
+algorithm = "VUMPS"
+artifact_kind = "project_b_relaxation_continuation_recipe"
+automatic_promotion = false
+baseline_iterations = 32
+bridge_path = "output/phase1_idmrg/yc8_1/theta_p0p20000000_from_38312fc996fe/accepted_parent_to_mpskit_bridge.h5"
+canonical_relation_tolerance = 1.0e-8
+checkpoint_every = 1
+chi = 512
+diagnostic_advance_without_native_convergence = true
+end_theta_over_pi = 0.2
+energy_span_tolerance = 1.0e-8
+energy_window = 4
+hold_iterations = 16
+iteration_budgets = [8, 16, 32]
+minimum_iterations = 4
+model_energy_tolerance = 1.0e-6
+parent_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+random_seed = 101
+schema_version = 1
+start_theta_over_pi = 0.15
+steps_over_pi = [0.025, 0.0125]
+turnaround_patience = 3
+turnaround_relative_rise = 0.05
+vumps_galerkin_tolerance = 1.0e-5
+
+    [recipe.continuity]
+    maximum_cut_entropy_jump = 0.1
+    maximum_energy_term_rms_jump = 0.02
+    maximum_log_correlation_length_jump = 0.05
+    maximum_magnetization_rms_jump = 0.001
+    maximum_mean_schmidt_total_variation = 0.05
+    minimum_overlap_per_site = 0.99
+    require_correlation_length_diagnostics = true
+    require_u1_sector_diagnostics = true
+
+    [recipe.resources]
+    allocation_cpus = 10
+    blas_threads = 1
+    forecast_node_hours = 1.40625
+    julia_threads = 2
+    maximum_node_hours = 1.5
+    memory = "16G"
+    pretimeout_seconds = 1800
+    qos = "shared"
+    solver_seconds = 122400
+    step_cpus = 4
+    time_limit = "36:00:00"
+
+    [recipe.spectrum]
+    krylov_dimension = 40
+    neigs = 6
+    physical_sz = [0, 1]
+    random_seed = 101
+    tolerance = 1.0e-9
+    units = "complete period-2 MPS transfer cells"

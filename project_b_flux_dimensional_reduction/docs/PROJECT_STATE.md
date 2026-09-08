@@ -18,22 +18,39 @@ work. The existing primary-forward lineage is accepted only through 0.15 at
 chi512; its fixed-flux chi1024 growth failed and no chi1024 theta continuation
 has begun.
 
-The completed diagnostic sequence is
+The owner authorized a bounded limited-relaxation experiment on September 8:
+[`plans/RELAXATION_CONTINUATION.md`](plans/RELAXATION_CONTINUATION.md).
+It compares VUMPS iteration budgets 8/16/32, flux steps 0.025/0.0125 from the
+accepted 0.15 parent through 0.20, a fixed-flux baseline and endpoint holds.
+These explicitly diagnostic paths may advance without passing the historical
+native gate. They cannot promote or replace the accepted lineage. See
+[`decisions/005-bounded-relaxation-continuation.md`](decisions/005-bounded-relaxation-continuation.md).
+The prepared `configs/controls/relaxation_continuation_v1.toml` has SHA-256
+`3e790f71089c87645fced05f1e7a0e7c3a49d78d5a6f5b73db19cfd0d7262fef`
+and is delivered through `configs/relaxation_continuation_active_control.ref`;
+use only its new launcher.
+The maximum reservation is 1.40625 node-hours (36 hours, 10 allocated logical
+CPUs, 16G), within the last reconciled Phase 1 balance. Actual execution and a
+fresh live guard remain for the owner on Perlmutter.
+
+The completed earlier diagnostic sequence is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
 the matched chi512 MPSKit pilot and chi1024 audit are reconciled, synchronized
 and reviewed. The bounded fixed-flux solver calibration proposed in
 [`decisions/003-solver-pilot-outcome.md`](decisions/003-solver-pilot-outcome.md)
-remains a possible local diagnostic. The broader recommended path now centers
+remains a possible local diagnostic after the newly authorized comparison.
+The broader recommended path centers
 on general-chi sparse I/O, tested bond growth and zero-flux preparation,
 followed by a validated trajectory and the missing gap calculation; see
 [`decisions/004-yc8-1-figure-reproduction-feasibility.md`](decisions/004-yc8-1-figure-reproduction-feasibility.md).
-This assessment is not a prepared experiment or a budget/lineage change.
+That high-chi assessment is not itself a prepared experiment or a
+budget/lineage change.
 The existing bridge campaign remains
 [`YC8_1_CHI1024_BRIDGE.md`](YC8_1_CHI1024_BRIDGE.md). The allocation-wide plan
 is [`PHASES_0_TO_4.md`](PHASES_0_TO_4.md). See
 [`plans/README.md`](plans/README.md) for workstream status.
 
-Local implementation and validation are complete. The sealed pilot control is
+The earlier pilot's implementation and validation are complete. Its sealed control is
 `configs/controls/solver_pilot_control_v2.toml`, SHA-256
 `969b69b1c40d3a70e07c58fe9b12d123564781c5f40b9a4058b74f4382278818`,
 selected by `configs/mpskit_solver_pilot_active_control.ref`. The initial
@@ -43,8 +60,16 @@ recipe, except for its new audit report path. The revised copied worker passes.
 Pilot job `58005544` is complete and reconciled. All three native gates
 failed; GradientGrassmann at 0.20 preserved continuity, while VUMPS there
 failed it. No candidate is eligible for promotion. The baseline's late error
-flattening and gradient run's final upturn motivate calibration before an
-additional flux step or chi growth.
+flattening and gradient run's final upturn motivated the earlier calibration
+recommendation. Production advance remains unvalidated; the newly authorized
+limited-relaxation paths are explicitly diagnostics.
+
+Local chi512 validation of the new reader/spectrum path passes. The unchanged
+payload agrees in energy between MPSKit and ITensor to `2.22e-15`; importing
+and recanonicalizing the historical AL bridge changes the original parent's
+energy by `7.94e-8`, inside the existing `1e-6` tolerance. All requested six
+transfer modes converge in both spin sectors. This validates measurement and
+preparation consistency, not a new optimized state or a scientific endpoint.
 
 The owner uses Git push/pull for locally prepared source and launch inputs,
 including compact sealed controls. The follow-up branch is
@@ -229,25 +254,33 @@ submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Design a tested general-chi growth and sparse checkpoint route, with a
+1. Execute and review the bounded relaxation/step-size comparison using
+   `slurm/run_relaxation_continuation_cpu.sh`. Inspect spectra across iteration
+   budgets, flux grids and holds, including minima and turnaround samples;
+   do not interpret early-stop states as converged scientific endpoints.
+   All resulting tensors stay diagnostic. Existing native/continuity gates
+   remain unchanged for the primary lineage.
+2. Design a tested general-chi growth and sparse checkpoint route, with a
    separately labeled theta=0 preparation study and comparable chi512/1024/2048
    resource measurements. The present MPSKit integration contains fixed-512
    and fixed-parent-basis assumptions. The ITensor route has expansion code
    but has not demonstrated a successful accepted chi1024 trajectory.
-2. Establish a converged family and an affordable full 0-to-pi continuation
+3. Establish a converged family and an affordable full 0-to-pi continuation
    before selected higher-chi production points. Nominal chi alone is not an
    established explanation for the endpoint: the paper reports YC8-1 at pi even
    at m=1024, without specifying the preparation history of that table entry.
    Preserve all existing lineage records and declared gates.
-3. Implement and validate the separate Fig. 2 embedded-window excited-state
+4. Implement and validate the separate Fig. 2 embedded-window excited-state
    calculation; validate and benchmark Fig. 3 spectra on accepted states.
    Treat the two measurements as distinct products. Defer central-charge fits
    and expansion to other geometries until the main reproduction is credible.
-4. Prepare a concrete production budget from those measurements. The current
+5. Prepare a concrete production budget from those measurements. The current
    Phase 1 balance is 1.953943142361 node-hours. Arithmetic headroom below the
    full 150-hour project ceiling is 130.859510142361, but phase allocations
    are not automatically reassigned. No current benchmark establishes an
-   affordable chi6144/12288 run. Any new sealed control remains to be prepared.
+   affordable chi6144/12288 run. The new limited-relaxation reservation uses
+   at most 1.40625 of the remaining Phase 1 allowance; no charge is incurred
+   merely by preparing the control locally.
 
 The .15 calibration and .1625 midpoint in decision 003 remain bounded
 diagnostic options. Neither automatically changes the production solver,
@@ -287,9 +320,10 @@ was unavailable.
 - Whether any selected scratch state has been promoted to durable storage
   since the last sync.
 
-The principal numerical unknown is why the fixed-flux MPSKit baseline
-flattens above its gate and whether a calibrated branch-preserving method
-converges at the smaller flux step. The synced pilot does not identify an
+The principal numerical unknown is whether a useful interval of local relaxation
+precedes a slower optimizer escape, and whether its spectra are stable under
+iteration-budget and flux-step refinement. The fixed-flux MPSKit baseline's
+flattening remains unexplained. The synced pilot does not identify an
 inner-solver error, physical spinodal or topological sector.
 
 The owner also supplied step-level sacct for 57801654: the Julia step used
