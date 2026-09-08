@@ -8,7 +8,7 @@ historical handoffs.
 
 | Workstream | State | Plan |
 |---|---|---|
-| Review follow-up: accounting, evidence audit, matched solver pilot | pilot 58005544 complete; reconcile from clean worktree and review failed native gates | [REVIEW_FOLLOWUP_IMPLEMENTATION.md](REVIEW_FOLLOWUP_IMPLEMENTATION.md) |
+| Fixed-flux solver calibration | proposed after pilot review; no sealed successor yet | [Decision 003](../decisions/003-solver-pilot-outcome.md) |
 | YC8-1 primary-forward chi-1024 bridge and full theta sweep | blocked at fixed-flux chi growth; no theta advance | [`../YC8_1_CHI1024_BRIDGE.md`](../YC8_1_CHI1024_BRIDGE.md) |
 | Phase 1 allocation and phase ordering | active | [`../PHASES_0_TO_4.md`](../PHASES_0_TO_4.md) |
 
@@ -25,6 +25,9 @@ older plan prose when a dated status differs.
 
 ## Completed decisions or historical plans
 
+- [REVIEW_FOLLOWUP_IMPLEMENTATION.md](REVIEW_FOLLOWUP_IMPLEMENTATION.md):
+  accounting repairs, evidence audit, pilot 58005544, live reconciliation and
+  synchronized review complete; all native gates failed, no promotion.
 - [`../PHASE1_IDMRG_BENCHMARK.md`](../PHASE1_IDMRG_BENCHMARK.md): completed
   thread/resource benchmark and Shared-QOS selection.
 - [`../PHASE1_FINAL_VUMPS_CONTROL.md`](../PHASE1_FINAL_VUMPS_CONTROL.md): final

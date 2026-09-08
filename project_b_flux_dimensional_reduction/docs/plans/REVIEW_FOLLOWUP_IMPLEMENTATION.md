@@ -17,8 +17,13 @@ execution is always manual by the owner; Codex implements and tests locally.
 - [x] Owner pulls the tracked v2 control into the source worktree.
 - [x] Required scratch-audit report exists and matches the pinned audit inputs.
 - [x] Pilot job 58005544 completes all three solver and analysis stages.
-- [ ] Owner completes post-pilot live reconciliation from the clean worktree.
-- [ ] Select scientific successor using pilot and continuity evidence.
+- [x] Owner completes post-pilot live reconciliation from the clean worktree.
+- [x] Owner checksum-syncs the completed evidence; local review validates it.
+- [x] Select the next diagnostic recommendation using pilot and continuity evidence.
+
+The authorized sequence is complete. [Decision 003](../decisions/003-solver-pilot-outcome.md)
+recommends fixed-flux solver calibration before a smaller flux step. That
+successor is proposed, not prepared or submitted; no candidate was promoted.
 
 Keep the accepted theta/pi=0.15 parent, existing campaign thresholds, and
 one-job policy. Pilot states are diagnostics until all declared gates are
@@ -92,9 +97,11 @@ The tracked v2 control is byte-identical to its original immutable copy in
 `output/review_followup/`. Commit the control and its reference with the exact
 source it pins; an edit to a pinned input requires a new control and reference.
 
-## Perlmutter command sequence
+## Perlmutter command sequence (completed; reference only)
 
-Job `58005544` has completed. Use the clean worktree for its post-run commands:
+Job `58005544` has completed, and its post-run reconciliation/analysis and
+checksum sync are verified. These were the post-run commands from the clean
+worktree; no repeat is needed for this review:
 
 ```bash
 cd ~/QSL-project-b &&
@@ -157,6 +164,15 @@ the scientific successor still needs review; it is not evidence of a spinodal.
 
 ## Successor decision
 
+The completed review recommends calibrating at fixed `theta/pi=0.15`, chi512,
+including a GradientGrassmann baseline and diagnostics of the VUMPS baseline's
+late behavior. All native gates failed; GradientGrassmann alone preserved
+continuity at 0.20, but its final gradient rose 63.18% above its iteration-44
+minimum. The chi1024 audit measures cut-entropy jumps above 1.0 versus its
+0.35 bound. A cap extension or immediate full sweep is not supported. See
+[decision 003](../decisions/003-solver-pilot-outcome.md) for the evidence and
+conditional smaller-step recommendation. The original decision rules remain:
+
 - If the baseline reproduces the parent and a difficult-point method passes
   every declared check, review it as evidence of recoverability. Preparing a
   continuation still requires explicit owner direction for a new parent.
@@ -171,14 +187,27 @@ the scientific successor still needs review; it is not evidence of a spinodal.
 
 ## Validation record
 
-September 7: the owner reports 7:17:04 elapsed and all six Slurm steps exited
+September 7, completed synchronized review: live reconciliation at
+`2026-09-07T22:56:19.045` and its evidence hash validate. Actual-CPU accounting
+charges the pilot 0.284548611111 node-hours and leaves 1.953943142361 of the
+Phase 1 allowance. `scripts/review_solver_pilot.py` successfully replays all
+38 sealed input checks, three analyses and full histories, recomputed native
+and scalar continuity gates, and an independent accounting sum. The Julia
+accounting audit/guard, context audit and all 32 accounting regression
+assertions pass. The final PNG was visually
+checked; machine-readable provenance and values are in
+`output/review_followup/pilot_58005544_review_20260907/`. No sealed solver code
+changed and no new remote execution was needed for the local review.
+
+Earlier September 7 check: the owner reports 7:17:04 elapsed and all six Slurm steps exited
 `0:0`. Local verification matches the active control, the three analysis HDF5
 hashes, their control/result references and diagnostic flags, and every stage
 history row against its TSV journal. The required scratch-audit provenance
 also validates. All three stages stopped gracefully with failed native gates;
 only difficult-point VUMPS failed continuity. Detailed endpoints are in
 `../PROJECT_STATE.md`. The 32 accounting assertions pass locally, including
-bounded-window coverage; post-run live reconciliation remains pending.
+bounded-window coverage; post-run live reconciliation was still pending at
+that earlier check and is now verified above.
 
 Git delivery now has a regression that exports only Git objects, pushes to a
 temporary local repository, and pulls into a clean sparse checkout without

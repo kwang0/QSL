@@ -14,10 +14,13 @@ quickly as the numerical and allocation guards allow. The immediate scientific
 blocker is convergence of the fixed-`theta/pi=0.15` growth from chi 512 to chi
 1024. No chi-1024 theta continuation has begun.
 
-The immediate execution plan is
+The completed diagnostic sequence is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
-reconcile and review the completed matched chi512 MPSKit solver diagnostic
-and the chi1024 evidence audit. The longer-term campaign remains
+the matched chi512 MPSKit pilot and chi1024 audit are reconciled, synchronized
+and reviewed. The next recommendation is a bounded fixed-flux solver
+calibration at `theta/pi=0.15`, described in
+[`decisions/003-solver-pilot-outcome.md`](decisions/003-solver-pilot-outcome.md).
+It is proposed, not prepared or submitted. The longer-term campaign remains
 [`YC8_1_CHI1024_BRIDGE.md`](YC8_1_CHI1024_BRIDGE.md). The allocation-wide plan
 is [`PHASES_0_TO_4.md`](PHASES_0_TO_4.md). See
 [`plans/README.md`](plans/README.md) for workstream status.
@@ -29,35 +32,27 @@ selected by `configs/mpskit_solver_pilot_active_control.ref`. The initial
 control and its full chi512 cross-library validation are preserved. This
 revision fixes operational preflight failures without changing the scientific
 recipe, except for its new audit report path. The revised copied worker passes.
-Pilot job `58005544` is now complete. Remaining steps are manual post-run live
-reconciliation and review of the diagnostic results before selecting a successor.
-
-The first remote attempt failed context validation because the transferred
-tree lacks `.git`, and reconciliation because the accounting date range was
-too wide. Ctrl-C interrupted later hashing/compilation. The revised `preflight`
-action stops at the first failure, uses 28-day accounting windows and audits
-the candidate plus checkpoints 52 and 60 with visible progress.
+Pilot job `58005544` is complete and reconciled. All three native gates
+failed; GradientGrassmann at 0.20 preserved continuity, while VUMPS there
+failed it. No candidate is eligible for promotion. The baseline's late error
+flattening and gradient run's final upturn motivate calibration before an
+additional flux step or chi growth.
 
 The owner uses Git push/pull for locally prepared source and launch inputs,
 including compact sealed controls. The follow-up branch is
 `codex/project-b-review-followup`; inspect Git for its publication and commit
-status. The owner has now initialized Git in `~/QSL`, fetched both upstream
-branches and attached `main` without overwriting working files. The export
-shows missing, modified and untracked files across several projects; these
-differences are preserved. The owner completed the clean sparse worktree at
-`~/QSL-project-b`, including the link to the original Project B output, and
-reported a clean worktree tracking the published branch. Its first preflight
-stopped before any live checks or submission because the control was missing
-from ignored output. The control now lives in tracked `configs/controls/`,
-and the active reference selects it there. Its 7,255 bytes and SHA-256 are
-unchanged; the original output copy remains immutable. The owner subsequently
-ran the pilot from the new worktree. Post-run reconciliation was attempted
-from the old `~/QSL` checkout on `main`, whose stale accounting code still
-makes an unbounded date query. Run Project B commands from
+status. The clean sparse worktree `~/QSL-project-b` tracks that branch; its
+Project B output links to the canonical
+`~/QSL/project_b_flux_dimensional_reduction/output`. The original `~/QSL`
+checkout on `main` preserves unrelated modified, missing and untracked files.
+Run Project B commands from
 `~/QSL-project-b/project_b_flux_dimensional_reduction`; both source directories
-share canonical output, but execute different code. Git supplies all newly prepared pilot inputs. Existing
-parent/bridge tensors remain accessible through the output link; preflight
-generates live accounting and scratch-audit evidence on Perlmutter.
+share output but execute different code. The stale checkout caused the earlier
+unbounded accounting-date query; reconciliation from the clean worktree has
+now succeeded. Git supplies the exact 7,255-byte sealed control under
+`configs/controls/`, with no separate control transfer. Existing parent/bridge
+tensors remain accessible through the output link; preflight generates live
+accounting and scratch-audit evidence on Perlmutter.
 
 Standing owner authorization: publish tested Project B source, tests,
 documentation and compact prepared launch inputs to `https://github.com/kwang0/QSL.git` on
@@ -84,16 +79,20 @@ to be executed manually by the owner.
 
 ## Latest pilot evidence
 
-The owner reports job `58005544` COMPLETED, exit `0:0`, elapsed 26224 seconds
+The owner-confirmed completed checksum sync records job `58005544` COMPLETED,
+exit `0:0`, elapsed 26224 seconds
 (7:17:04), 10 allocated logical CPUs and 16G requested memory. All six solver
 and analysis steps completed. Peak solver RSS is approximately 9.54 GiB.
-The allocation implies 0.284548611111 node-hours under the existing charge
-model; live post-run reconciliation is still pending.
+Live reconciliation at `2026-09-07T22:56:19.045` confirms its charge of
+0.284548611111 node-hours. Its evidence SHA-256 is
+`bd41ae3fe55d5a1cd50a2da55122f3022fe9d5cc04030c8d895c452c022ac5b5`.
 
 Local run records are present under
 `output/mpskit_solver_pilot_jobs/20260907T023735Z_969b69b1c40d/`.
-The control snapshot matches the active SHA. All three analysis HDF5 hashes
-match their summaries, and stage histories match the TSV journals. The local
+The control snapshot and all 38 source/data inputs match their pinned hashes.
+All three analysis HDF5 hashes match their summaries, and complete stage
+histories match the TSV journals. Recomputed native gates, continuity scalar
+jumps and actual-CPU accounting agree with the recorded results. The local
 scratch-audit report verifies its required hashes and pinned audit code;
 this records the past audit, not current scratch availability.
 
@@ -108,8 +107,17 @@ Their elapsed times are consistent with the stage time budgets. All three
 cross-library energy checks pass, but none is eligible for promotion.
 Difficult-point VUMPS has overlap 0.9734593 and maximum cut-entropy jump
 0.8102766; GradientGrassmann has overlap 0.99997046 and jump 0.00896131.
-The latter preserves declared continuity but remains unconverged. No parent
-change or additional submission is selected from these results alone.
+The latter reached gradient norm `1.7678837134e-5` at iteration 44 before
+ending 63.18% above that minimum. Baseline VUMPS flattens near `4.2e-5` in
+the observed window. Their energy-window tests pass, but native errors do not.
+No reliable time-to-convergence estimate follows from these late histories.
+The accepted parent's ITensor residual is a distinct quantity; these new
+MPSKit gate failures do not retroactively invalidate that accepted state.
+
+The full review and tracked figure are in
+[`decisions/003-solver-pilot-outcome.md`](decisions/003-solver-pilot-outcome.md).
+Reproducible JSON, CSV, accounting and PNG/SVG outputs are under
+`output/review_followup/pilot_58005544_review_20260907/`.
 
 ## Previously synchronized chi1024 bridge evidence
 
@@ -131,9 +139,19 @@ copied Perlmutter evidence for job `57801654` records:
 - final periodic checkpoint SHA-256
   `fa4d7f01dbb7e10deb1c37bab659c07a9dba60fe63ba3e3db34c705c102b3e9b`.
 
-The run therefore says only that the 60-iteration chi-growth attempt did not
-meet its declared residual target while still improving. It is not a physical
-endpoint or branch rejection, and it accepted no new lineage state.
+The 60-iteration attempt failed its declared residual target. The stored
+whole-run contracting classification conceals a weak late trend and a final
+error above the iteration-52 minimum. It is not a physical endpoint or an
+official branch rejection, and it accepted no new lineage state.
+
+The synchronized owner-run scratch audit
+`output/review_followup/checkpoint_audit_57801654_v2.toml` verifies the candidate
+and checkpoints 52/60. It directly measures maximum cut-entropy jumps of
+`1.0086554063` and `1.0089133947`, exceeding the fixed-flux bound `0.35`.
+This strengthens the earlier mean-entropy warning without changing the
+original outcome or declaring a physical basin change. The selected late
+checkpoints do not locate the onset of the change. Present scratch availability
+still requires a remote check before any restart.
 
 Compact evidence:
 
@@ -179,45 +197,42 @@ state record, not a replacement for hash validation.
 
 ## Accounting state and completed guard repair
 
-The locally synced `sacct.tsv` files show that Slurm allocated 18 logical CPUs
-to each 32-GiB YC8 bridge job, although their launcher ledgers record 16. The
-two original `charged_node_hours.txt` files therefore undercount those jobs. Using the
-actual `NCPUS=18` values gives:
+Live post-pilot reconciliation is now synchronized and validated. The accounting
+audit deduplicates 29 Project B allocations, applies the append-only corrections
+for the two older 18-CPU YC8 bridge jobs and includes pilot `58005544`:
 
 | Job | Status | Charge used here (node-hours) |
 |---:|---|---:|
-| baseline through `57629467` | prior tracked total | `13.740251736728` |
-| `57690953` | completed YC6 strict continuation | `1.104309896000` |
-| `57768008` | canceled YC6 relaxed continuation | `0.333548177000` |
-| `57793343` | completed pre-timeout YC8 chi growth | `0.144082031250` |
-| `57801654` | completed 60-iteration YC8 chi growth | `2.439316406250` |
-| **Phase 1 total** | | **`17.761508247228`** |
+| Phase 1 through `57801654` | corrected actual-CPU total | `17.761508246528` |
+| `58005544` | completed matched MPSKit pilot | `0.284548611111` |
+| **Phase 1 total** | | **`18.046056857639`** |
 
 The corresponding Project B total including Phase 0 is
-`18.855941247228` node-hours. The Phase 1 ceiling leaves approximately
-`2.238491752772` node-hours before any later remote correction. A nominal
+`19.140489857639` node-hours (Phase 0 remains an estimate). The Phase 1
+ceiling leaves **`1.953943142361` node-hours** at this reconciliation. A nominal
 48-hour 16-CPU forecast of 3.0 node-hours is not conservative when Slurm grants
 18 CPUs; the full-limit charge would be 3.375 node-hours.
 
 The shared accounting guard now derives charges across all Phase 1 run roots
 from allocated CPUs, with append-only corrections for both YC8 charge files.
-Its unrounded local total is 17.761508246528 node-hours, leaving
-2.238491753472. A live Perlmutter plan must reconcile later jobs or changed
-accounting before submission. Original exports, controls and charge files are
-preserved.
+The independent sum and existing local accounting guard agree. A live
+Perlmutter plan must reconcile later jobs or changed accounting before
+submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Reconcile completed pilot `58005544` from the clean `~/QSL-project-b`
-   worktree using the bounded-date accounting code. The failed command in
-   the original `~/QSL` checkout does not indicate a pilot execution failure.
-2. Review the three completed pilot analyses and histories together with
-   the chi1024 scratch audit. All native gates failed; the difficult VUMPS
-   stage also failed continuity. Do not rerun the submitted control.
-3. Compare native convergence, common-representation continuity, runtime and
-   RSS before choosing a scientific successor. The chi1024 entropy warning and
-   weak late residual trend remain unresolved; no theta advance or parent
-   change follows automatically.
+1. Prepare a bounded fixed-`theta/pi=0.15`, chi512 solver calibration if the
+   owner continues implementation. Include the missing GradientGrassmann
+   baseline and diagnose VUMPS's late behavior with inner-solve/conditioning
+   records, preserving the accepted parent and outer gates. No successor
+   control is prepared yet; do not rerun the completed pilot control.
+2. Only after calibration passes, test the smaller `theta/pi=0.1625` step
+   with the validated method and full continuity checks. The existing iDMRG
+   control is a separate experiment, not a solver-substitution mechanism.
+3. Revisit chi1024 growth only with evidence for both convergence and
+   continuity and a reservation that fits the remaining Phase 1 budget.
+   No production solver migration, theta advance or parent change follows
+   automatically from these diagnostic results.
 4. Once an accepted `theta/pi=0.45` endpoint exists, run the planned reverse
    consistency check before generating the remainder of the full sweep.
 
@@ -244,7 +259,7 @@ was unavailable.
   lower-energy basin. Spinodal and topological-sector interpretations remain
   hypotheses.
 
-## Known unknowns to establish remotely
+## Remaining unknowns
 
 - Recheck the queue immediately before submission. The owner's September 6
   live snapshot contained no Project B job; queued `lmf1-*` jobs belong to
@@ -252,17 +267,20 @@ was unavailable.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
 - Whether later Perlmutter accounting exists beyond the synchronized files.
-- The final live accounting total after reconciling pilot `58005544` from the
-  clean source worktree. The owner ran the stale reconciliation code in `~/QSL`.
 - Whether any selected scratch state has been promoted to durable storage
   since the last sync.
+
+The principal numerical unknown is why the fixed-flux MPSKit baseline
+flattens above its gate and whether a calibrated branch-preserving method
+converges at the smaller flux step. The synced pilot does not identify an
+inner-solver error, physical spinodal or topological sector.
 
 The owner also supplied step-level sacct for 57801654: the Julia step used
 8 logical CPUs for 124833 seconds and reported MaxRSS=2776996K (about
 2.65 GiB), while the allocation held 18 CPUs. The launcher status now
 suppresses the expected missing-job warning from squeue after completion and
 shows step accounting. The owner always executes Perlmutter work manually;
-the command handoff is in the active follow-up plan.
+the completed command sequence remains in the follow-up plan for reference.
 
 These are live-state questions. Use the relevant launcher `status`/`plan` and
 small hash or file-presence checks on Perlmutter; do not infer them from chat or

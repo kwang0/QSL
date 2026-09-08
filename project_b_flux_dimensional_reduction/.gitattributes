@@ -1,6 +1,7 @@
 # Keep files executed or parsed on Perlmutter byte-stable across Windows clones.
 *.sh text eol=lf
 *.jl text eol=lf
+*.py text eol=lf
 *.toml text eol=lf
 *.ref text eol=lf
 *.md text eol=lf
