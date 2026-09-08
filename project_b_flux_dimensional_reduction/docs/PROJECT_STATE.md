@@ -1,6 +1,6 @@
 # Project B current state
 
-Last updated: 2026-09-07 (America/Los_Angeles)
+Last updated: 2026-09-08 (America/Los_Angeles)
 
 This is the rolling state summary for a fresh Codex task. It records where the
 project is now, not the full history. Git holds exact implementation history;
@@ -9,18 +9,26 @@ remains authoritative for live jobs and scratch data.
 
 ## Current objective
 
-Reach a trustworthy full `theta/pi` sweep of the YC8-1 primary-forward state as
-quickly as the numerical and allocation guards allow. The immediate scientific
-blocker is convergence of the fixed-`theta/pi=0.15` growth from chi 512 to chi
-1024. No chi-1024 theta continuation has begun.
+Reproduce Hu et al. Figure 2 excitation gaps and Figure 3 momentum-resolved
+correlation spectra, with YC8-1 continued through `theta/pi=1`. The owner
+reaffirmed this objective on September 8. The former protocol's Fig. 3/Fig. 4
+scope omitted the separate Fig. 2 excited-state measurement, which is not
+implemented. Entropy and central-charge measurements remain supporting/later
+work. The existing primary-forward lineage is accepted only through 0.15 at
+chi512; its fixed-flux chi1024 growth failed and no chi1024 theta continuation
+has begun.
 
 The completed diagnostic sequence is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
 the matched chi512 MPSKit pilot and chi1024 audit are reconciled, synchronized
-and reviewed. The next recommendation is a bounded fixed-flux solver
-calibration at `theta/pi=0.15`, described in
-[`decisions/003-solver-pilot-outcome.md`](decisions/003-solver-pilot-outcome.md).
-It is proposed, not prepared or submitted. The longer-term campaign remains
+and reviewed. The bounded fixed-flux solver calibration proposed in
+[`decisions/003-solver-pilot-outcome.md`](decisions/003-solver-pilot-outcome.md)
+remains a possible local diagnostic. The broader recommended path now centers
+on general-chi sparse I/O, tested bond growth and zero-flux preparation,
+followed by a validated trajectory and the missing gap calculation; see
+[`decisions/004-yc8-1-figure-reproduction-feasibility.md`](decisions/004-yc8-1-figure-reproduction-feasibility.md).
+This assessment is not a prepared experiment or a budget/lineage change.
+The existing bridge campaign remains
 [`YC8_1_CHI1024_BRIDGE.md`](YC8_1_CHI1024_BRIDGE.md). The allocation-wide plan
 is [`PHASES_0_TO_4.md`](PHASES_0_TO_4.md). See
 [`plans/README.md`](plans/README.md) for workstream status.
@@ -221,20 +229,29 @@ submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Prepare a bounded fixed-`theta/pi=0.15`, chi512 solver calibration if the
-   owner continues implementation. Include the missing GradientGrassmann
-   baseline and diagnose VUMPS's late behavior with inner-solve/conditioning
-   records, preserving the accepted parent and outer gates. No successor
-   control is prepared yet; do not rerun the completed pilot control.
-2. Only after calibration passes, test the smaller `theta/pi=0.1625` step
-   with the validated method and full continuity checks. The existing iDMRG
-   control is a separate experiment, not a solver-substitution mechanism.
-3. Revisit chi1024 growth only with evidence for both convergence and
-   continuity and a reservation that fits the remaining Phase 1 budget.
-   No production solver migration, theta advance or parent change follows
-   automatically from these diagnostic results.
-4. Once an accepted `theta/pi=0.45` endpoint exists, run the planned reverse
-   consistency check before generating the remainder of the full sweep.
+1. Design a tested general-chi growth and sparse checkpoint route, with a
+   separately labeled theta=0 preparation study and comparable chi512/1024/2048
+   resource measurements. The present MPSKit integration contains fixed-512
+   and fixed-parent-basis assumptions. The ITensor route has expansion code
+   but has not demonstrated a successful accepted chi1024 trajectory.
+2. Establish a converged family and an affordable full 0-to-pi continuation
+   before selected higher-chi production points. Nominal chi alone is not an
+   established explanation for the endpoint: the paper reports YC8-1 at pi even
+   at m=1024, without specifying the preparation history of that table entry.
+   Preserve all existing lineage records and declared gates.
+3. Implement and validate the separate Fig. 2 embedded-window excited-state
+   calculation; validate and benchmark Fig. 3 spectra on accepted states.
+   Treat the two measurements as distinct products. Defer central-charge fits
+   and expansion to other geometries until the main reproduction is credible.
+4. Prepare a concrete production budget from those measurements. The current
+   Phase 1 balance is 1.953943142361 node-hours. Arithmetic headroom below the
+   full 150-hour project ceiling is 130.859510142361, but phase allocations
+   are not automatically reassigned. No current benchmark establishes an
+   affordable chi6144/12288 run. Any new sealed control remains to be prepared.
+
+The .15 calibration and .1625 midpoint in decision 003 remain bounded
+diagnostic options. Neither automatically changes the production solver,
+accepted parent or phase budget. Do not rerun the completed pilot control.
 
 ## September 6 review findings
 
