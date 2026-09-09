@@ -155,9 +155,21 @@ worktree change unless the owner explicitly asks to discard it.
   environment. Do not merge them.
 - Preserve immutable control snapshots, state hashes, rejected classifications,
   original versus exploratory convergence profiles, and accounting evidence.
-- Validate changes in proportion to risk. At minimum, inspect the final diff
-  and run the relevant Julia or launcher tests. Report every check that could
-  not be run locally.
+- The owner prefers the minimum meaningful testing, including minimal local
+  test development and Perlmutter launch overhead. Inspect the final diff and
+  select only checks needed for the changed behavior. Documentation-only
+  changes need no numerical tests. Do not add tests that merely mirror the
+  implementation or rerun passing suites without a relevant change, failure,
+  or unresolved concern.
+- Run expensive numerical regression tests locally when the affected solver,
+  analysis, or dependency environment changes. For future launcher revisions,
+  use only a brief copied-worker smoke check on Perlmutter, adding numerical
+  checks only for a concrete host-specific concern. Do not repeat the numerical
+  suite in both `preflight` and `submit` for unchanged source and environment.
+  Keep control/input integrity, environment compatibility, live accounting,
+  queue, lock, and budget guards at submission. Preserve existing sealed runs;
+  apply launcher changes through a separately sealed successor. Report any
+  necessary validation that could not be completed locally.
 
 ## Durable documentation roles
 

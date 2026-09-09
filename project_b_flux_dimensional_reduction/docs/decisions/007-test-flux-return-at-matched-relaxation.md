@@ -1,6 +1,6 @@
 # 007 - Test return paths at matched relaxation density
 
-Status: owner-authorized, implemented and locally validated on 2026-09-09; manual live preflight pending
+Status: owner-authorized, implemented and validated locally and by live Perlmutter preflight on 2026-09-09; submission unconfirmed
 
 Job 58082150 preserved close spectra after short relaxation but changed state
 under further updates, including at fixed flux. Equal-total-update comparisons

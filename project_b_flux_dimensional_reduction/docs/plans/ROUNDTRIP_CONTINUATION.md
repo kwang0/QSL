@@ -180,6 +180,9 @@ Do not transfer `.git` or the full scratch package.
 - The context audit validates all five control references; relative links in
   the updated documentation resolve, and the final Git diff passes review.
 
-Live queue, runtime, current input presence and scientific outcome remain for
-the owner's Perlmutter execution. No remote command or transfer is initiated
-by Codex.
+Owner-supplied September 9 output confirms the live preflight passed, including
+input hashes, budget and copied-worker tests. The following `submit` repeated
+the tests; the excerpt ends before a job ID. Submission, runtime and scientific
+outcome remain unconfirmed. Future launcher revisions follow the minimal-testing
+preference in `AGENTS.md`; this sealed control's runtime is unchanged. No remote
+command or transfer is initiated by Codex.

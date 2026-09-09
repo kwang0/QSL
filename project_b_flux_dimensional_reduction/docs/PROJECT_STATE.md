@@ -56,8 +56,11 @@ selected by `configs/roundtrip_continuation_active_control.ref`.
 The 14-hour, ten-logical-CPU, 16G reservation is 0.546875 node-hours, within
 the last reconciled Phase 1 balance. Expected wall time is roughly 6-10 hours.
 Existing accepted parent/bridge inputs suffice; no previous scratch payload
-or separate launch-input transfer is required. The owner must run live
-preflight and submission on Perlmutter. No new job has been submitted locally.
+or separate launch-input transfer is required. Owner-supplied September 9
+Perlmutter output confirms the live preflight passed with matching controls
+and sufficient budget. The subsequent `submit` repeated the numerical tests;
+the excerpt ends before a job ID, so submission status is unconfirmed. Future
+launcher revisions must follow the minimal-testing preference in `AGENTS.md`.
 
 The completed earlier diagnostic sequence is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
