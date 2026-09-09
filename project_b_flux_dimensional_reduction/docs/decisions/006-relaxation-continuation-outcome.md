@@ -1,6 +1,6 @@
 # 006 - Short relaxation preserves a reproducible transient near 0.20
 
-Status: completed experiment reviewed; successor proposed, not prepared
+Status: completed experiment reviewed; successor now implemented in [decision 007](007-test-flux-return-at-matched-relaxation.md)
 Date: 2026-09-09
 
 The bounded comparison supports the owner's proposed mechanism: substantial

@@ -37,16 +37,34 @@ changes. Equal-total-update comparisons show accumulated relaxation is a
 major factor. No native gate passes and no state is promoted. See
 [`decisions/006-relaxation-continuation-outcome.md`](decisions/006-relaxation-continuation-outcome.md).
 Actual charge is 0.983995225694 node-hours; the synchronized Phase 1 balance
-is now 0.969947916667. Do not rerun the completed control. A short onward-and-
-return comparison with smaller, coupled iteration/flux budgets is proposed;
-it has not been prepared or sealed.
+is now 0.969947916667. Do not rerun the completed control.
+
+The owner authorized the short forward-and-return comparison on September 9.
+It is implemented and locally validated in
+[`plans/ROUNDTRIP_CONTINUATION.md`](plans/ROUNDTRIP_CONTINUATION.md), with the
+rationale in [decision 007](decisions/007-test-flux-return-at-matched-relaxation.md).
+Four independent accepted-parent starts follow theta/pi=0.15 to 0.25 to 0.15.
+Coarse/fine steps 0.025/0.0125 use paired budgets 2/1 and 4/2, keeping updates
+per unit flux fixed within each pair. There are 96 updates and 100 planned
+analyses including the imported origins. Return comparisons use the same
+arm's outward state at the same flux. All states remain diagnostic.
+
+Use `slurm/run_roundtrip_continuation_cpu.sh` and the tracked control
+`configs/controls/roundtrip_continuation_v1.toml`, SHA-256
+`40088fc17091a0962b35de44b1f588124b8a302dbed2f8ce06769af7be64e8b7`,
+selected by `configs/roundtrip_continuation_active_control.ref`.
+The 14-hour, ten-logical-CPU, 16G reservation is 0.546875 node-hours, within
+the last reconciled Phase 1 balance. Expected wall time is roughly 6-10 hours.
+Existing accepted parent/bridge inputs suffice; no previous scratch payload
+or separate launch-input transfer is required. The owner must run live
+preflight and submission on Perlmutter. No new job has been submitted locally.
 
 The completed earlier diagnostic sequence is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
 the matched chi512 MPSKit pilot and chi1024 audit are reconciled, synchronized
 and reviewed. The bounded fixed-flux solver calibration proposed in
 [`decisions/003-solver-pilot-outcome.md`](decisions/003-solver-pilot-outcome.md)
-remains a possible diagnostic alongside the proposed onward-and-return test.
+remains a possible diagnostic alongside the prepared forward-and-return test.
 The broader recommended path centers
 on general-chi sparse I/O, tested bond growth and zero-flux preparation,
 followed by a validated trajectory and the missing gap calculation; see
@@ -156,8 +174,9 @@ under `output/review_followup/relaxation_58082150_review_20260909_v2/`.
 Known measurement limitation: v1 applies the charged-sector theta shift to
 both Sz=0 and Sz=1 momentum labels. Interpret only Sz=1 mapped momenta from
 this run; neutral raw eigenvalues and inverse lengths remain usable. A
-charge-aware mapping requires a separate tested change and new sealed
-control; do not modify this completed run's pinned runtime in place.
+charge-aware mapping is implemented and tested in the new forward-and-return
+analysis path. Its new control preserves the completed run's pinned runtime
+and recorded labels.
 
 ## Earlier pilot evidence
 
@@ -304,14 +323,13 @@ submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Design the bounded successor from decision 006: smaller iteration budgets,
-   coupled flux-step/update-density comparisons and an onward-and-return
-   diagnostic. Compare spectra and growing magnetization as well as energy;
-   calibrate the unchanged-flux 0.15 upturn. The successful short interval
-   does not validate an eight-update path all the way to pi. Fix or scope the
-   neutral momentum labels in a new control. Preserve selected scratch
-   diagnostics deliberately if needed, with owner-run hash verification;
-   none replaces the accepted parent. The completed trial is not resubmitted.
+1. Execute the prepared forward-and-return diagnostic using its guarded
+   launcher, then reconcile and sync its compact output for review. Compare
+   both update densities, coarse/fine grids and same-flux forward/return
+   spectra, magnetization and local energy ordering. Near-frozen states can
+   appear reversible, so a return alone is insufficient. Current hypotheses
+   do not establish an eight-update path to pi. The accepted parent remains
+   unchanged. The 0.15 solver-upturn calibration remains a separate option.
 2. Design a tested general-chi growth and sparse checkpoint route, with a
    separately labeled theta=0 preparation study and comparable chi512/1024/2048
    resource measurements. The present MPSKit integration contains fixed-512

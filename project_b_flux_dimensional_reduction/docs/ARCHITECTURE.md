@@ -157,6 +157,17 @@ spectra. It never changes accepted-lineage records. Its compact jobs live
 under `output/mpskit_solver_pilot_jobs/relaxation/`, within the existing common
 accounting root and lock.
 
+The forward-and-return successor reuses the fixed-update kernel through
+`idmrg/roundtrip/Continuation.jl`, with a separate sealed control and helpers
+under `scripts/roundtrip/`. Those subdirectories preserve completed controls'
+top-level source enumeration and exact hashes. It carries each arm's actual
+outward endpoint into the return leg, records a same-flux forward reference,
+and analyzes every iterate plus its imported origin. Reference hashes and
+scalar observables travel with each analysis for retrospective auditing.
+New momentum labels scale the uniform-gauge shift by the physical transfer
+charge; old recorded labels remain immutable. Compact jobs live under the
+existing accounting root in `mpskit_solver_pilot_jobs/roundtrip/`.
+
 | Class | Examples | Location | Routine sync |
 |---|---|---|---|
 | source and prepared launch inputs | code, TOML templates, sealed controls, required manifests, docs | Git checkout; sealed controls in `configs/controls/` | Git push/pull |

@@ -8,7 +8,7 @@ historical handoffs.
 
 | Workstream | State | Plan |
 |---|---|---|
-| Short onward-and-return comparison | proposed after the completed bounded trial; smaller coupled update/flux budgets, no sealed successor | [Decision 006](../decisions/006-relaxation-continuation-outcome.md) |
+| Short forward-and-return comparison | owner-authorized, implemented and locally validated; awaiting manual Perlmutter preflight | [ROUNDTRIP_CONTINUATION.md](ROUNDTRIP_CONTINUATION.md) |
 | YC8-1 Figures 2 and 3 reproduction | requirements and feasibility reviewed; growth/preparation and embedded-window gap solver proposed | [Decision 004](../decisions/004-yc8-1-figure-reproduction-feasibility.md) |
 | Fixed-flux solver calibration | proposed; baseline upturn confirmed by bounded trial | [Decision 006](../decisions/006-relaxation-continuation-outcome.md) |
 | YC8-1 primary-forward chi-1024 bridge and full theta sweep | blocked at fixed-flux chi growth; no theta advance | [`../YC8_1_CHI1024_BRIDGE.md`](../YC8_1_CHI1024_BRIDGE.md) |

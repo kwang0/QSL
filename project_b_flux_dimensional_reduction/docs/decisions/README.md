@@ -11,7 +11,8 @@ existing links and immutable controls do not break.
 | Calibrate at fixed flux before extending the solver campaign | pilot review complete; successor proposed, not prepared | [`003-solver-pilot-outcome.md`](003-solver-pilot-outcome.md) |
 | Recenter YC8-1 work on Figures 2 and 3 | requirements assessment complete; revised execution proposed | [`004-yc8-1-figure-reproduction-feasibility.md`](004-yc8-1-figure-reproduction-feasibility.md) |
 | Test limited relaxation before interpreting branch loss | completed; result in decision 006 | [`005-bounded-relaxation-continuation.md`](005-bounded-relaxation-continuation.md) |
-| Preserve the short-relaxation result as a transient, then test reversibility | job 58082150 reviewed; smaller coupled budget/step comparison proposed | [`006-relaxation-continuation-outcome.md`](006-relaxation-continuation-outcome.md) |
+| Preserve the short-relaxation result as a transient, then test reversibility | job 58082150 reviewed; successor implemented in decision 007 | [`006-relaxation-continuation-outcome.md`](006-relaxation-continuation-outcome.md) |
+| Compare return paths at fixed updates per unit flux | owner-authorized, implemented and locally validated | [`007-test-flux-return-at-matched-relaxation.md`](007-test-flux-return-at-matched-relaxation.md) |
 | Preserve labeled branches instead of building a minimum-energy envelope | accepted | [`../REPRODUCTION_PROTOCOL.md`](../REPRODUCTION_PROTOCOL.md) |
 | Promote the SHA-pinned parallel-VUMPS chi-512 `theta/pi=0.15` state | accepted | [`../PHASE1_PARALLEL_VUMPS_PROMOTION.md`](../PHASE1_PARALLEL_VUMPS_PROMOTION.md) |
 | Use MPSKit one-site iDMRG in an isolated Julia environment | accepted | [`../PHASE1_IDMRG_LIBRARY_DECISION.md`](../PHASE1_IDMRG_LIBRARY_DECISION.md) |

@@ -1,0 +1,245 @@
+artifact_kind = "project_b_roundtrip_control"
+created_utc = "2026-09-09T22:34:43.011"
+parent_energy_density_at_0p15 = -0.507194159065897
+parent_path = "output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+schema_version = 1
+
+[[inputs]]
+path = "Manifest.toml"
+sha256 = "d9a98e006e35bd2a32c1fd1121c93a0cc72c0dca46fc4cbf06c33db0bdf8c048"
+[[inputs]]
+path = "Project.toml"
+sha256 = "e53d89fa6a9af5219d29020f9e85ebab54b0d7038bda88ff0201534424900e0d"
+[[inputs]]
+path = "configs/project_b_accounting.toml"
+sha256 = "97ada2b25eb5743ee9fc860fd8e2714519a6f294f1dc82d9e8bd8ffb0189ee15"
+[[inputs]]
+path = "configs/relaxation_continuation.toml"
+sha256 = "15dc967ae4bd882ec9c4a3821e1201f73d100720da75bd5fc92bad4b8e6a8143"
+[[inputs]]
+path = "configs/roundtrip_continuation.toml"
+sha256 = "48fe43a5e1f052ed6349c2d1a506cfc17cc9940306ef1f27d40a546c3eb8ba9f"
+[[inputs]]
+path = "idmrg/Manifest.toml"
+sha256 = "b0015137a96ef8ee3a8ab2bf9ff03ced5f7efc5cb9dbcf4e3047f50fe5c56881"
+[[inputs]]
+path = "idmrg/Project.toml"
+sha256 = "6f9b17043356144bbaa16aa4736b1cb68bea247dd8edb0bd21055e265495f1c3"
+[[inputs]]
+path = "idmrg/roundtrip/Continuation.jl"
+sha256 = "9c492b3a7c054abe1a6bf9890f6e5d2b2179546240c39d7edf4e8e4239e92ac1"
+[[inputs]]
+path = "idmrg/scripts/run_relaxation_continuation.jl"
+sha256 = "5c6cf9fd33478dc3944c51bd820aa9d7406e591cbe3224d6aede4cb888c437f4"
+[[inputs]]
+path = "idmrg/scripts/run_roundtrip_continuation.jl"
+sha256 = "491e544c10c148146b3d1f5b4f8efe6872619dd871f146abe4a428a8808c6a9d"
+[[inputs]]
+path = "idmrg/src/ProjectBIDMRG.jl"
+sha256 = "ace9e52a6db852f812163588675103994a712345d977efdba5b2598614c7b235"
+[[inputs]]
+path = "idmrg/src/RelaxationContinuation.jl"
+sha256 = "abc9971716188e982499778c1a8569f622d4e222a148cb17682e842441d735ee"
+[[inputs]]
+path = "idmrg/src/SolverPilot.jl"
+sha256 = "ed173ff1879875e784c56b424752bfc18c37ee19c51977ca3abc755dade32410"
+[[inputs]]
+path = "idmrg/test/relaxation_continuation.jl"
+sha256 = "1b42362513f78c67843de68125e63566b2249910d1777966770c6b4de544fb60"
+[[inputs]]
+path = "idmrg/test/roundtrip_continuation.jl"
+sha256 = "c3e0287e736ece118effc52529d87af368ddb4b6cc28d55e58e996ac59e99a62"
+[[inputs]]
+path = "output/phase1_idmrg/yc8_1/theta_p0p20000000_from_38312fc996fe/accepted_parent_to_mpskit_bridge.h5"
+sha256 = "df1e402f0922937da0e266427a2bae7ce7de0fc844884ae3f747f5410fcd7d01"
+[[inputs]]
+path = "output/phase1_tests/yc8_1/parallel_update_p0p10000000_to_p0p15000000_chi512_f71fc084883e_b5ef48caaf7a/chi512/states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi512_theta_p0p15000000_accepted_aca60c183c9d.h5"
+sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+[[inputs]]
+path = "scripts/analyze_relaxation_continuation.jl"
+sha256 = "22e77b636fa6f1fc0e348fb9723c7955bf90db1439bb9427e93ce0758d1da8ed"
+[[inputs]]
+path = "scripts/analyze_roundtrip_continuation.jl"
+sha256 = "9db0de139c5eca97877439d2db7dff694bede26f06dbe54714e38afc2f57272f"
+[[inputs]]
+path = "scripts/audit_project_context.jl"
+sha256 = "ed8470ffb1f4c53898bafb850734d99bc974e21bbd84b50b17ca43ac83f72d97"
+[[inputs]]
+path = "scripts/lib/FileIntegrity.jl"
+sha256 = "635b367ddd0da3eb2fe2cb7114f06ec4ee86bc728b36d2c0a2eda90dc8a16695"
+[[inputs]]
+path = "scripts/lib/ProjectBAccounting.jl"
+sha256 = "6539be91cc1e58a3280c27caf9f99a4cb324b8e1b39b2c949afac4a75bb94846"
+[[inputs]]
+path = "scripts/lib/RelaxationAnalysis.jl"
+sha256 = "de4deb6611eb9e9018f070cc816bdcbde0eee37885b16856721b5a943ff25d5f"
+[[inputs]]
+path = "scripts/lib/RelaxationControl.jl"
+sha256 = "58bd7cc7d6612332d6f213da214919c11cdbb90488b0bebe39f21f4fa0a3ceb6"
+[[inputs]]
+path = "scripts/lib/ReviewEvidence.jl"
+sha256 = "95c60baf7b815e14620bcb55954925e9c8826594bc49a924e20b4f7ae86b7eeb"
+[[inputs]]
+path = "scripts/lib/SolverPilotControl.jl"
+sha256 = "ee8d27c1f5bfb1866ae9365df4689db8dbcf5ac2e6fff7ef114137dbf959593f"
+[[inputs]]
+path = "scripts/prepare_relaxation_continuation.jl"
+sha256 = "068626d72ea34f0307716d713a90de71e81dd923f168031c531fb5d6a7b2e292"
+[[inputs]]
+path = "scripts/prepare_roundtrip_continuation.jl"
+sha256 = "c79da23ce0a1a5310075b9bb14b0eb9a0c52ebc0513380d733b77c4d08502358"
+[[inputs]]
+path = "scripts/project_b_accounting.jl"
+sha256 = "ef1976a6301bd13a8e4b224fa96c4ba8d3f173de70f61b0f45ca4912abefda03"
+[[inputs]]
+path = "scripts/roundtrip/Analysis.jl"
+sha256 = "3f7b9d65b4b9402f9e4e56977d87891adb766e30ceac84639f1120db278d8da1"
+[[inputs]]
+path = "scripts/roundtrip/Control.jl"
+sha256 = "c4c17c25897f01867f9f68fb2bff3878784956e58e4e4f7633b1059ad07622ae"
+[[inputs]]
+path = "scripts/roundtrip/Momentum.jl"
+sha256 = "ddf0f0d9ffc79c148de32e4a2036b6077cf5e019d4fd47bd0f5bcf1be8a344e2"
+[[inputs]]
+path = "scripts/summarize_relaxation_continuation.jl"
+sha256 = "ba58b73f0467430c5b653620b227e1d7f849f9339725e6f7175b012f859cf26e"
+[[inputs]]
+path = "scripts/summarize_roundtrip_continuation.jl"
+sha256 = "68b205b1e2e5700f38e71181829d142e4f3ea5fd76832665fca0b960592a6007"
+[[inputs]]
+path = "scripts/validate_relaxation_continuation.jl"
+sha256 = "0eb2a10caf87ce44b178b74a7701acdb6f811caff571ff85c16198c9ad9526aa"
+[[inputs]]
+path = "scripts/validate_roundtrip_continuation.jl"
+sha256 = "712e5c9aa1a3b9eff2bf1ff038e185e08a1d29fd8f45d09ca2f3d4a44e8ebf0c"
+[[inputs]]
+path = "slurm/lib/project_b_resources.sh"
+sha256 = "a6cd9115bb56b1681f234975f46d2ac1d19be549bdb50c1d69e686de6f2eec6b"
+[[inputs]]
+path = "slurm/run_relaxation_continuation_cpu.sh"
+sha256 = "71725609d39dc03eb77006f80329b670c3744a3a203c5849ed0c13c87119d2e2"
+[[inputs]]
+path = "slurm/run_relaxation_continuation_job.sh"
+sha256 = "2b6e8741e40fbd601b6d643d00ae90cdf0c863f75c28e04dae87a2a769413230"
+[[inputs]]
+path = "slurm/run_roundtrip_continuation_cpu.sh"
+sha256 = "c72d447f6c7edf200087da69450ce856c942fb4f860aafe1d5052b0b98e03129"
+[[inputs]]
+path = "slurm/run_roundtrip_continuation_job.sh"
+sha256 = "8117cb9e1adb2cb479f086e41e330b1179c4254cb3756e6070f8ba5c1310c2b3"
+[[inputs]]
+path = "src/Automation.jl"
+sha256 = "c64d7664c5f52616711d05f4b6a7117db34dedbc3c36549ab2a002cc4f302cbe"
+[[inputs]]
+path = "src/Config.jl"
+sha256 = "926e2167f9cebd2963e2b29f226e2829d0f024138c9cbe60cbcc7d15eef4859a"
+[[inputs]]
+path = "src/Continuity.jl"
+sha256 = "dbb5694cfe60b71431758e8cdc4587f8d1a4415a71c1e7ff48858a8a6ba64f3c"
+[[inputs]]
+path = "src/Diagnostics.jl"
+sha256 = "fad54bc9721d812372e317373f410978415eb93098fde335596f302020dc8fd3"
+[[inputs]]
+path = "src/Geometry.jl"
+sha256 = "51fba6c2468186c1568ed34365daf3abb46326524ff2395ecdf5703509296cef"
+[[inputs]]
+path = "src/IDMRGBridge.jl"
+sha256 = "950252ef13632aa89afd2d0981491bcd3ec9ffb238b8d8dfef3d942a79e31044"
+[[inputs]]
+path = "src/Observables.jl"
+sha256 = "d36f0013c7e47a5a12fcbeb174c443819972fcac5589f447dbc70f2a0982468a"
+[[inputs]]
+path = "src/Optimization.jl"
+sha256 = "650579bb39873eb71d2eeb885d18b0304a9c895159576af58a7a8579af3260d6"
+[[inputs]]
+path = "src/Scaling.jl"
+sha256 = "c17ac047700b28f5703f07136c5d1ccf2dd06bff2086b578a5402a958112ad51"
+[[inputs]]
+path = "src/Scan.jl"
+sha256 = "a8621a66de71ae075efcc3e14712b0aa3ebc5e6f7871150447be38ad14935243"
+[[inputs]]
+path = "src/Storage.jl"
+sha256 = "296c8690950317c46787fadff4eaaa91220049f9b1a18e8d02b74111dd962a8f"
+[[inputs]]
+path = "src/TransferSpectra.jl"
+sha256 = "f2ea7428f52125f01e3078f76974b13c8667604a48defd3b6825e3da1022344e"
+[[inputs]]
+path = "src/TriangularJ1J2ProjectB.jl"
+sha256 = "922da5fa61e5bb66ee02c79ef3d5a9fea9347464c2c494990753762b78890bc7"
+[[inputs]]
+path = "test/relaxation_analysis.jl"
+sha256 = "61522fb2e20e8c79ce5ed1749e382e1802264f195fd169e22fbab278d67a17d4"
+[[inputs]]
+path = "test/roundtrip_analysis.jl"
+sha256 = "a8c4a64e5e624dc9ad4c5d033f4fac0fd27d906967f0ce814e88dfd8847c6514"
+[[inputs]]
+path = "test/roundtrip_control.jl"
+sha256 = "05356d57740e8fd14f9f0c75b8375c17bc888c12c279eb39031344b234fa6b3f"
+[[inputs]]
+path = "test/roundtrip_pipeline_fixture.jl"
+sha256 = "9c4c7aeaff0f7da2276b1900a2b8fffbe7a44d0adff870ee74cbc2bcf8fc0914"
+[[inputs]]
+path = "test/roundtrip_summary.jl"
+sha256 = "2afb19acf0ed9c106d046d2b14daa03a7dba86efc33e8537833edce40c3b8490"
+[[inputs]]
+path = "test/test_roundtrip_git_delivery.sh"
+sha256 = "887c5076b5b5859985b5e2de479a05cb9698be6d3b516d8fdea961664e661ad4"
+[[inputs]]
+path = "test/test_roundtrip_launcher.sh"
+sha256 = "74e184b9fe68ef1c71b11ebb2a9b2d8bb510ff47945d361bb4ecf04fa7d75c3e"
+
+[recipe]
+algorithm = "VUMPS"
+analyze_every_iteration = true
+artifact_kind = "project_b_roundtrip_recipe"
+automatic_promotion = false
+bridge_path = "output/phase1_idmrg/yc8_1/theta_p0p20000000_from_38312fc996fe/accepted_parent_to_mpskit_bridge.h5"
+canonical_relation_tolerance = 1.0e-8
+checkpoint_every = 1
+chi = 512
+coarse_iteration_budgets = [2, 4]
+diagnostic_advance_without_native_convergence = true
+endpoint_holds = 0
+energy_span_tolerance = 1.0e-8
+energy_window = 4
+minimum_iterations = 4
+model_energy_tolerance = 1.0e-6
+parent_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+random_seed = 101
+schema_version = 1
+start_theta_over_pi = 0.15
+steps_over_pi = [0.025, 0.0125]
+turn_theta_over_pi = 0.25
+vumps_galerkin_tolerance = 1.0e-5
+
+    [recipe.continuity]
+    maximum_cut_entropy_jump = 0.1
+    maximum_energy_term_rms_jump = 0.02
+    maximum_log_correlation_length_jump = 0.05
+    maximum_magnetization_rms_jump = 0.001
+    maximum_mean_schmidt_total_variation = 0.05
+    minimum_overlap_per_site = 0.99
+    require_correlation_length_diagnostics = true
+    require_u1_sector_diagnostics = true
+
+    [recipe.resources]
+    allocation_cpus = 10
+    blas_threads = 1
+    forecast_node_hours = 0.546875
+    julia_threads = 2
+    maximum_node_hours = 0.55
+    memory = "16G"
+    pretimeout_seconds = 1800
+    qos = "shared"
+    solver_seconds = 43200
+    step_cpus = 4
+    time_limit = "14:00:00"
+
+    [recipe.spectrum]
+    krylov_dimension = 40
+    momentum_mapping = "YC8-1 charge-aware: 2k1=wrap(k+2*Sz*theta/8), k2=wrap(4*k)"
+    neigs = 6
+    physical_sz = [0, 1]
+    random_seed = 101
+    tolerance = 1.0e-9
+    units = "complete period-2 MPS transfer cells"
