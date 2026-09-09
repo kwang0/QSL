@@ -1,5 +1,11 @@
 # Bounded relaxation and flux-step comparison
 
+Status as of 2026-09-09: **executed, reconciled, synchronized and reviewed**.
+Job 58082150 completed all 464 updates and 50 selected analyses. See
+[decision 006](../decisions/006-relaxation-continuation-outcome.md) for the
+scientific result and proposed successor. The control and commands below
+describe the completed experiment; do not submit it again.
+
 Owner authorized on 2026-09-08: test whether limited relaxation preserves a
 useful continuation before a later optimizer escape. Execution is manual on
 Perlmutter. This diagnostic precedes the broader high-chi preparation work;
@@ -194,7 +200,18 @@ matched curves and holds locally before designing a successor.
   guard. The context audit passes with all four references matching, all 36
   documentation links resolve, and the final diff passes whitespace checks.
   Live authority is not inferred from these local checks.
-- Live queue, fresh accounting, current parent/bridge presence, actual trial
-  runtime and scientific outcome remain for the owner's Perlmutter execution.
+- Owner-run execution is complete: all seven arms, 19 points and six holds,
+  464 updates and 50 selected analyses. All 41 sealed inputs and independent
+  first-flux prefixes match; compact journals, selection, provenance, scalar
+  gates and spectrum identities pass the Python review. Five regression
+  tests pass and two altered hash-chain fixtures are rejected.
+- Short paths agree closely at 0.20; equal-total-update comparisons and holds
+  implicate accumulated relaxation. None of the sampled MPS passes its native
+  gate; all six requested transfer modes converge in both spin sectors.
+  The accepted lineage remains at 0.15. See decision 006 for qualifications,
+  including the scope of v1 neutral momentum labels.
+- Reconciled runtime 25:11:25, actual charge 0.983995225694 node-hours;
+  Phase 1 remaining 0.969947916667. Current live queue and scratch availability
+  still require owner-run checks before a successor.
 
 No remote command, optimization run or transfer is initiated by Codex.

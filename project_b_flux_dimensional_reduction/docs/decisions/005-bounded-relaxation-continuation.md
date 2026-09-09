@@ -1,6 +1,6 @@
 # 005 - Test finite relaxation before interpreting branch loss
 
-Status: prepared and locally validated; awaiting owner-run live preflight and execution
+Status: executed and reviewed; results and successor proposal in [decision 006](006-relaxation-continuation-outcome.md)
 Date: 2026-09-08
 
 The owner proposed that a few updates after each flux increment may relax the

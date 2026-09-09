@@ -8,9 +8,9 @@ historical handoffs.
 
 | Workstream | State | Plan |
 |---|---|---|
-| Bounded relaxation and flux-step comparison | authorized, prepared for owner-run live preflight | [RELAXATION_CONTINUATION.md](RELAXATION_CONTINUATION.md) |
+| Short onward-and-return comparison | proposed after the completed bounded trial; smaller coupled update/flux budgets, no sealed successor | [Decision 006](../decisions/006-relaxation-continuation-outcome.md) |
 | YC8-1 Figures 2 and 3 reproduction | requirements and feasibility reviewed; growth/preparation and embedded-window gap solver proposed | [Decision 004](../decisions/004-yc8-1-figure-reproduction-feasibility.md) |
-| Fixed-flux solver calibration | proposed; bounded relaxation comparison now has priority | [Decision 003](../decisions/003-solver-pilot-outcome.md) |
+| Fixed-flux solver calibration | proposed; baseline upturn confirmed by bounded trial | [Decision 006](../decisions/006-relaxation-continuation-outcome.md) |
 | YC8-1 primary-forward chi-1024 bridge and full theta sweep | blocked at fixed-flux chi growth; no theta advance | [`../YC8_1_CHI1024_BRIDGE.md`](../YC8_1_CHI1024_BRIDGE.md) |
 | Phase 1 allocation and phase ordering | active | [`../PHASES_0_TO_4.md`](../PHASES_0_TO_4.md) |
 
@@ -26,6 +26,10 @@ older plan prose when a dated status differs.
 | YC8-1 iDMRG midpoint recovery | prepared but not current main path | [`../PHASE1_IDMRG_SWEEP_RECOVERY.md`](../PHASE1_IDMRG_SWEEP_RECOVERY.md) |
 
 ## Completed decisions or historical plans
+
+- [RELAXATION_CONTINUATION.md](RELAXATION_CONTINUATION.md): job 58082150,
+  all 464 updates and 50 analyses complete, reconciled and reviewed. Short
+  spectra agree; prolonged relaxation changes states; no native pass or promotion.
 
 - [REVIEW_FOLLOWUP_IMPLEMENTATION.md](REVIEW_FOLLOWUP_IMPLEMENTATION.md):
   accounting repairs, evidence audit, pilot 58005544, live reconciliation and

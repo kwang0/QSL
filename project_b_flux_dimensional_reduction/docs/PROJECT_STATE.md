@@ -1,6 +1,6 @@
 # Project B current state
 
-Last updated: 2026-09-08 (America/Los_Angeles)
+Last updated: 2026-09-09 (America/Los_Angeles)
 
 This is the rolling state summary for a fresh Codex task. It records where the
 project is now, not the full history. Git holds exact implementation history;
@@ -18,27 +18,35 @@ work. The existing primary-forward lineage is accepted only through 0.15 at
 chi512; its fixed-flux chi1024 growth failed and no chi1024 theta continuation
 has begun.
 
-The owner authorized a bounded limited-relaxation experiment on September 8:
+The bounded limited-relaxation experiment authorized on September 8 is now
+complete, reconciled, synchronized and reviewed:
 [`plans/RELAXATION_CONTINUATION.md`](plans/RELAXATION_CONTINUATION.md).
 It compares VUMPS iteration budgets 8/16/32, flux steps 0.025/0.0125 from the
 accepted 0.15 parent through 0.20, a fixed-flux baseline and endpoint holds.
 These explicitly diagnostic paths may advance without passing the historical
 native gate. They cannot promote or replace the accepted lineage. See
 [`decisions/005-bounded-relaxation-continuation.md`](decisions/005-bounded-relaxation-continuation.md).
-The prepared `configs/controls/relaxation_continuation_v1.toml` has SHA-256
+The completed run's `configs/controls/relaxation_continuation_v1.toml` has SHA-256
 `3e790f71089c87645fced05f1e7a0e7c3a49d78d5a6f5b73db19cfd0d7262fef`
-and is delivered through `configs/relaxation_continuation_active_control.ref`;
-use only its new launcher.
-The maximum reservation is 1.40625 node-hours (36 hours, 10 allocated logical
-CPUs, 16G), within the last reconciled Phase 1 balance. Actual execution and a
-fresh live guard remain for the owner on Perlmutter.
+and is referenced by `configs/relaxation_continuation_active_control.ref`.
+Job **58082150** completed all 464 updates and 50 selected-state analyses.
+Short paths preserve continuity through 0.20, with six charged inverse
+correlation lengths agreeing within 0.271% across 8/coarse, 8/fine and
+16/coarse endpoints. Longer paths and two fixed-flux holds undergo substantial
+changes. Equal-total-update comparisons show accumulated relaxation is a
+major factor. No native gate passes and no state is promoted. See
+[`decisions/006-relaxation-continuation-outcome.md`](decisions/006-relaxation-continuation-outcome.md).
+Actual charge is 0.983995225694 node-hours; the synchronized Phase 1 balance
+is now 0.969947916667. Do not rerun the completed control. A short onward-and-
+return comparison with smaller, coupled iteration/flux budgets is proposed;
+it has not been prepared or sealed.
 
 The completed earlier diagnostic sequence is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
 the matched chi512 MPSKit pilot and chi1024 audit are reconciled, synchronized
 and reviewed. The bounded fixed-flux solver calibration proposed in
 [`decisions/003-solver-pilot-outcome.md`](decisions/003-solver-pilot-outcome.md)
-remains a possible local diagnostic after the newly authorized comparison.
+remains a possible diagnostic alongside the proposed onward-and-return test.
 The broader recommended path centers
 on general-chi sparse I/O, tested bond growth and zero-flux preparation,
 followed by a validated trajectory and the missing gap calculation; see
@@ -61,8 +69,8 @@ Pilot job `58005544` is complete and reconciled. All three native gates
 failed; GradientGrassmann at 0.20 preserved continuity, while VUMPS there
 failed it. No candidate is eligible for promotion. The baseline's late error
 flattening and gradient run's final upturn motivated the earlier calibration
-recommendation. Production advance remains unvalidated; the newly authorized
-limited-relaxation paths are explicitly diagnostics.
+recommendation. Production advance remains unvalidated; the bounded
+limited-relaxation paths are explicitly diagnostics, now reviewed in decision 006.
 
 Local chi512 validation of the new reader/spectrum path passes. The unchanged
 payload agrees in energy between MPSKit and ITensor to `2.22e-15`; importing
@@ -110,7 +118,48 @@ to be executed manually by the owner.
   `configs/phase1_yc8_1_multimetric_continuity.toml`. These are campaign-scoped
   numerical rules, not physical phase-boundary criteria.
 
-## Latest pilot evidence
+## Latest bounded-relaxation evidence
+
+The owner-confirmed completed sync contains job **58082150** under
+`output/mpskit_solver_pilot_jobs/relaxation/20260908T200715Z_3e790f71089c/`.
+All seven arms, 19 points, 464 updates, six holds and 50 selected analyses are
+complete. All 41 sealed source/data inputs match. Iteration journals,
+checkpoint/seed chains, analysis provenance, scalar continuity differences,
+native gates and spectrum identities pass independent replay. Six requested
+transfer modes converge in both Sz sectors for every selected state. Maximum
+cross-library energy difference is 1.677e-13; canonical errors pass. Full
+scratch payloads were checked during remote analysis, not rehashed locally.
+
+At 0.20, 8/coarse, 8/fine and 16/coarse preserve parent continuity, with
+maximum entropy changes 0.009395, 0.009736 and 0.009712. Their charged spectra
+agree closely. The equal-work 8/fine and 16/coarse pair uses 32 updates and
+agrees within 0.0801% in all six charged inverse lengths. Both change strongly
+after a further 16 updates at fixed flux. The 8/coarse hold remains continuous
+after 32 total updates. Paths with 64 or more updates at 0.20 have energy near
+-0.5102, reversed local-energy alternation and entropy changes near 0.85.
+This supports a useful transient before substantial further relaxation; it
+does not establish a physical spinodal or a converged metastable branch.
+
+The 0.15 baseline also turns upward: error minimum 4.1815e-5 at update 16,
+then 1.6862e-4 at 32, while sampled continuity still passes. No selected MPS
+passes the native gate. The smallest late errors can belong to states far
+from the original parent, so a residual minimum alone cannot select lineage.
+
+Runtime was 90685 seconds (25:11:25), with ten allocated logical CPUs, 16G,
+peak solver RSS 10.315 GiB and all fourteen steps successful. Live
+reconciliation at `2026-09-09T21:40:03.654` is backed by evidence SHA-256
+`6f5c0f239fce858b0c79d8fe1bfa500793afe714906a6adf9b627b714a4e1cc1`.
+The charge is 0.983995225694 node-hours. Detailed tables, limitations, figures
+and reproduction commands are in decision 006; generated review outputs are
+under `output/review_followup/relaxation_58082150_review_20260909_v2/`.
+
+Known measurement limitation: v1 applies the charged-sector theta shift to
+both Sz=0 and Sz=1 momentum labels. Interpret only Sz=1 mapped momenta from
+this run; neutral raw eigenvalues and inverse lengths remain usable. A
+charge-aware mapping requires a separate tested change and new sealed
+control; do not modify this completed run's pinned runtime in place.
+
+## Earlier pilot evidence
 
 The owner-confirmed completed checksum sync records job `58005544` COMPLETED,
 exit `0:0`, elapsed 26224 seconds
@@ -230,19 +279,20 @@ state record, not a replacement for hash validation.
 
 ## Accounting state and completed guard repair
 
-Live post-pilot reconciliation is now synchronized and validated. The accounting
-audit deduplicates 29 Project B allocations, applies the append-only corrections
-for the two older 18-CPU YC8 bridge jobs and includes pilot `58005544`:
+Live post-relaxation reconciliation is synchronized and validated. The accounting
+audit deduplicates 30 Phase 1 allocations, applies the append-only corrections
+for the two older 18-CPU YC8 bridge jobs and includes both new diagnostic jobs:
 
 | Job | Status | Charge used here (node-hours) |
 |---:|---|---:|
 | Phase 1 through `57801654` | corrected actual-CPU total | `17.761508246528` |
 | `58005544` | completed matched MPSKit pilot | `0.284548611111` |
-| **Phase 1 total** | | **`18.046056857639`** |
+| `58082150` | completed bounded relaxation comparison | `0.983995225694` |
+| **Phase 1 total** | | **`19.030052083333`** |
 
 The corresponding Project B total including Phase 0 is
-`19.140489857639` node-hours (Phase 0 remains an estimate). The Phase 1
-ceiling leaves **`1.953943142361` node-hours** at this reconciliation. A nominal
+`20.124485083333` node-hours (Phase 0 remains an estimate). The Phase 1
+ceiling leaves **`0.969947916667` node-hours** at this reconciliation. A nominal
 48-hour 16-CPU forecast of 3.0 node-hours is not conservative when Slurm grants
 18 CPUs; the full-limit charge would be 3.375 node-hours.
 
@@ -254,12 +304,14 @@ submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Execute and review the bounded relaxation/step-size comparison using
-   `slurm/run_relaxation_continuation_cpu.sh`. Inspect spectra across iteration
-   budgets, flux grids and holds, including minima and turnaround samples;
-   do not interpret early-stop states as converged scientific endpoints.
-   All resulting tensors stay diagnostic. Existing native/continuity gates
-   remain unchanged for the primary lineage.
+1. Design the bounded successor from decision 006: smaller iteration budgets,
+   coupled flux-step/update-density comparisons and an onward-and-return
+   diagnostic. Compare spectra and growing magnetization as well as energy;
+   calibrate the unchanged-flux 0.15 upturn. The successful short interval
+   does not validate an eight-update path all the way to pi. Fix or scope the
+   neutral momentum labels in a new control. Preserve selected scratch
+   diagnostics deliberately if needed, with owner-run hash verification;
+   none replaces the accepted parent. The completed trial is not resubmitted.
 2. Design a tested general-chi growth and sparse checkpoint route, with a
    separately labeled theta=0 preparation study and comparable chi512/1024/2048
    resource measurements. The present MPSKit integration contains fixed-512
@@ -275,12 +327,11 @@ submission. Original exports, controls and charge files are preserved.
    Treat the two measurements as distinct products. Defer central-charge fits
    and expansion to other geometries until the main reproduction is credible.
 5. Prepare a concrete production budget from those measurements. The current
-   Phase 1 balance is 1.953943142361 node-hours. Arithmetic headroom below the
-   full 150-hour project ceiling is 130.859510142361, but phase allocations
+   Phase 1 balance is 0.969947916667 node-hours. Arithmetic headroom below the
+   full 150-hour project ceiling is 129.875514916667, but phase allocations
    are not automatically reassigned. No current benchmark establishes an
-   affordable chi6144/12288 run. The new limited-relaxation reservation uses
-   at most 1.40625 of the remaining Phase 1 allowance; no charge is incurred
-   merely by preparing the control locally.
+   affordable chi6144/12288 run. A successor needs a fresh live guard and a
+   reservation within the remaining allowance.
 
 The .15 calibration and .1625 midpoint in decision 003 remain bounded
 diagnostic options. Neither automatically changes the production solver,
@@ -311,20 +362,24 @@ was unavailable.
 
 ## Remaining unknowns
 
-- Recheck the queue immediately before submission. The owner's September 6
-  live snapshot contained no Project B job; queued `lmf1-*` jobs belong to
-  another project.
+- Recheck the queue immediately before any successor submission. The synced
+  reconciliation records both diagnostic jobs complete; it is not a live
+  queue snapshot. Queued `lmf1-*` jobs belong to another project.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
 - Whether later Perlmutter accounting exists beyond the synchronized files.
 - Whether any selected scratch state has been promoted to durable storage
   since the last sync.
+- Whether the job-58082150 scratch states needed for any new diagnostic still
+  exist and match their compact hashes.
 
-The principal numerical unknown is whether a useful interval of local relaxation
-precedes a slower optimizer escape, and whether its spectra are stable under
-iteration-budget and flux-step refinement. The fixed-flux MPSKit baseline's
-flattening remains unexplained. The synced pilot does not identify an
-inner-solver error, physical spinodal or topological sector.
+The bounded comparison demonstrates a short interval with close spectra,
+followed by large changes under further relaxation. The principal numerical
+unknown is whether that transient can support a reversible, quantitatively
+stable longer continuation, and whether the growing disturbance is physical
+within the variational space or an optimizer/preparation issue. The 0.15
+baseline's upturn remains unexplained. Neither completed diagnostic identifies
+an inner-solver error, physical spinodal or topological sector.
 
 The owner also supplied step-level sacct for 57801654: the Julia step used
 8 logical CPUs for 124833 seconds and reported MaxRSS=2776996K (about
