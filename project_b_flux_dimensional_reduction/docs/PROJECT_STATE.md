@@ -1,6 +1,6 @@
 # Project B current state
 
-Last updated: 2026-09-09 (America/Los_Angeles)
+Last updated: 2026-09-10 (America/Los_Angeles)
 
 This is the rolling state summary for a fresh Codex task. It records where the
 project is now, not the full history. Git holds exact implementation history;
@@ -36,38 +36,48 @@ correlation lengths agreeing within 0.271% across 8/coarse, 8/fine and
 changes. Equal-total-update comparisons show accumulated relaxation is a
 major factor. No native gate passes and no state is promoted. See
 [`decisions/006-relaxation-continuation-outcome.md`](decisions/006-relaxation-continuation-outcome.md).
-Actual charge is 0.983995225694 node-hours; the synchronized Phase 1 balance
-is now 0.969947916667. Do not rerun the completed control.
+Actual charge is 0.983995225694 node-hours; the Phase 1 balance after that job
+was 0.969947916667. Do not rerun the completed control.
 
-The owner authorized the short forward-and-return comparison on September 9.
-It is implemented and locally validated in
+The short forward-and-return comparison is complete, reconciled, synchronized
+and reviewed as job **58131989**:
 [`plans/ROUNDTRIP_CONTINUATION.md`](plans/ROUNDTRIP_CONTINUATION.md), with the
-rationale in [decision 007](decisions/007-test-flux-return-at-matched-relaxation.md).
+rationale in [decision 007](decisions/007-test-flux-return-at-matched-relaxation.md)
+and outcome in [decision 008](decisions/008-roundtrip-continuation-outcome.md).
 Four independent accepted-parent starts follow theta/pi=0.15 to 0.25 to 0.15.
 Coarse/fine steps 0.025/0.0125 use paired budgets 2/1 and 4/2, keeping updates
-per unit flux fixed within each pair. There are 96 updates and 100 planned
-analyses including the imported origins. Return comparisons use the same
-arm's outward state at the same flux. All states remain diagnostic.
+per unit flux fixed within each pair. All 96 updates and 100 analyses completed.
+Every continuity comparison passes, and matched coarse/fine charged inverse
+lengths agree within 0.2745%. Energy and entropy approximately return, but
+charged inverse lengths retain 0.855-1.121% offsets at the returned origin.
+Staggered magnetization grows at every update and reaches about 6e-4 in the
+32-update loops, versus 4e-5 in the 16-update loops. The earlier fixed-flux
+baseline also grows magnetization. This supports short limited-relaxation
+continuation with accumulated drift; it does not establish adiabaticity or a
+stationary metastable branch. All states remain diagnostic; no native gate passes.
 
-Use `slurm/run_roundtrip_continuation_cpu.sh` and the tracked control
+Completed runtime: `slurm/run_roundtrip_continuation_cpu.sh` and tracked control
 `configs/controls/roundtrip_continuation_v1.toml`, SHA-256
 `40088fc17091a0962b35de44b1f588124b8a302dbed2f8ce06769af7be64e8b7`,
 selected by `configs/roundtrip_continuation_active_control.ref`.
-The 14-hour, ten-logical-CPU, 16G reservation is 0.546875 node-hours, within
-the last reconciled Phase 1 balance. Expected wall time is roughly 6-10 hours.
-Existing accepted parent/bridge inputs suffice; no previous scratch payload
-or separate launch-input transfer is required. Owner-supplied September 9
-Perlmutter output confirms the live preflight passed with matching controls
-and sufficient budget. The subsequent `submit` repeated the numerical tests;
-the excerpt ends before a job ID, so submission status is unconfirmed. Future
-launcher revisions must follow the minimal-testing preference in `AGENTS.md`.
+Actual wall time was 5:07:03 with ten logical CPUs and 16G; charge was
+0.199902343750 node-hours, leaving Phase 1 **0.770045572917**. All 61 input
+pins, compact replay and independent scalar/spectrum/accounting checks pass.
+All six requested modes converge in both spin sectors for all 100 analyses.
+Compact run: `output/mpskit_solver_pilot_jobs/roundtrip/20260909T225809Z_40088fc17091/`.
+Review: `output/review_followup/roundtrip_58131989_review_20260910/`.
+Do not resubmit this control. Decision 008 proposes a lower-density 2/coarse
+and 1/fine loop to 0.35, independently starting from the accepted 0.15 parent;
+it is not prepared or sealed. Larger flux may amplify drift despite the same
+32-update loop budget already explored here. Future launcher revisions follow
+the minimal-testing preference in `AGENTS.md`.
 
 The completed earlier diagnostic sequence is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
 the matched chi512 MPSKit pilot and chi1024 audit are reconciled, synchronized
 and reviewed. The bounded fixed-flux solver calibration proposed in
 [`decisions/003-solver-pilot-outcome.md`](decisions/003-solver-pilot-outcome.md)
-remains a possible diagnostic alongside the prepared forward-and-return test.
+remains a possible diagnostic after the completed forward-and-return test.
 The broader recommended path centers
 on general-chi sparse I/O, tested bond growth and zero-flux preparation,
 followed by a validated trajectory and the missing gap calculation; see
@@ -301,20 +311,23 @@ state record, not a replacement for hash validation.
 
 ## Accounting state and completed guard repair
 
-Live post-relaxation reconciliation is synchronized and validated. The accounting
-audit deduplicates 30 Phase 1 allocations, applies the append-only corrections
-for the two older 18-CPU YC8 bridge jobs and includes both new diagnostic jobs:
+Live post-roundtrip reconciliation is synchronized and validated. The accounting
+audit deduplicates 31 Phase 1 allocations, applies the append-only corrections
+for the two older 18-CPU YC8 bridge jobs and includes all three diagnostic jobs:
 
 | Job | Status | Charge used here (node-hours) |
 |---:|---|---:|
 | Phase 1 through `57801654` | corrected actual-CPU total | `17.761508246528` |
 | `58005544` | completed matched MPSKit pilot | `0.284548611111` |
 | `58082150` | completed bounded relaxation comparison | `0.983995225694` |
-| **Phase 1 total** | | **`19.030052083333`** |
+| `58131989` | completed forward-and-return comparison | `0.199902343750` |
+| **Phase 1 total** | | **`19.229954427083`** |
 
 The corresponding Project B total including Phase 0 is
-`20.124485083333` node-hours (Phase 0 remains an estimate). The Phase 1
-ceiling leaves **`0.969947916667` node-hours** at this reconciliation. A nominal
+`20.324387427083` node-hours (Phase 0 remains an estimate). The Phase 1
+ceiling leaves **`0.770045572917` node-hours** at this reconciliation.
+Job 58131989 reconciliation at `2026-09-10T23:20:59.307` uses evidence SHA-256
+`eed1442c7ea22f74e0396b101dc6338d729f29986ff03be556739ecf6e5faa83`. A nominal
 48-hour 16-CPU forecast of 3.0 node-hours is not conservative when Slurm grants
 18 CPUs; the full-limit charge would be 3.375 node-hours.
 
@@ -326,13 +339,14 @@ submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Execute the prepared forward-and-return diagnostic using its guarded
-   launcher, then reconcile and sync its compact output for review. Compare
-   both update densities, coarse/fine grids and same-flux forward/return
-   spectra, magnetization and local energy ordering. Near-frozen states can
-   appear reversible, so a return alone is insufficient. Current hypotheses
-   do not establish an eight-update path to pi. The accepted parent remains
-   unchanged. The 0.15 solver-upturn calibration remains a separate option.
+1. Consider decision 008's next bounded range test: the matched lower-density
+   2/coarse and 1/fine pair from accepted 0.15 through 0.35 and back. This is a
+   proposal, not a prepared successor. Track spectral memory and staggered
+   magnetization, which grows even on the return and at unchanged flux.
+   Increasing updates merely to lower residuals worsens the magnetic drift.
+   If drift strengthens, prioritize symmetry/preparation and general-chi
+   diagnosis over repeated longer relaxation. The accepted parent is unchanged;
+   neither completed experiment establishes an adiabatic path to pi.
 2. Design a tested general-chi growth and sparse checkpoint route, with a
    separately labeled theta=0 preparation study and comparable chi512/1024/2048
    resource measurements. The present MPSKit integration contains fixed-512
@@ -348,8 +362,8 @@ submission. Original exports, controls and charge files are preserved.
    Treat the two measurements as distinct products. Defer central-charge fits
    and expansion to other geometries until the main reproduction is credible.
 5. Prepare a concrete production budget from those measurements. The current
-   Phase 1 balance is 0.969947916667 node-hours. Arithmetic headroom below the
-   full 150-hour project ceiling is 129.875514916667, but phase allocations
+   Phase 1 balance is 0.770045572917 node-hours. Arithmetic headroom below the
+   full 150-hour project ceiling is 129.675612572917, but phase allocations
    are not automatically reassigned. No current benchmark establishes an
    affordable chi6144/12288 run. A successor needs a fresh live guard and a
    reservation within the remaining allowance.
@@ -384,7 +398,7 @@ was unavailable.
 ## Remaining unknowns
 
 - Recheck the queue immediately before any successor submission. The synced
-  reconciliation records both diagnostic jobs complete; it is not a live
+  reconciliation records all three diagnostic jobs complete; it is not a live
   queue snapshot. Queued `lmf1-*` jobs belong to another project.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
@@ -395,12 +409,13 @@ was unavailable.
   exist and match their compact hashes.
 
 The bounded comparison demonstrates a short interval with close spectra,
-followed by large changes under further relaxation. The principal numerical
-unknown is whether that transient can support a reversible, quantitatively
-stable longer continuation, and whether the growing disturbance is physical
-within the variational space or an optimizer/preparation issue. The 0.15
-baseline's upturn remains unexplained. Neither completed diagnostic identifies
-an inner-solver error, physical spinodal or topological sector.
+followed by large changes under further relaxation. The completed return test
+extends diagnostic reach to 0.25 and shows near-return of local observables,
+with percent-level spectral memory and monotonically growing staggered
+magnetization. Whether a longer continuation remains useful, and whether that
+disturbance is physical, variational or algorithmic, remains unresolved. The
+0.15 baseline's upturn remains unexplained. These diagnostics identify neither
+a specific inner-solver error nor a physical spinodal or topological sector.
 
 The owner also supplied step-level sacct for 57801654: the Julia step used
 8 logical CPUs for 124833 seconds and reported MaxRSS=2776996K (about

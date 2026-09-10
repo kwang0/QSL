@@ -1,5 +1,12 @@
 # Short forward-and-return continuation
 
+Completed: job **58131989**, all 96 updates and 100 analyses; reconciled,
+synchronized and reviewed on September 10. See
+[decision 008](../decisions/008-roundtrip-continuation-outcome.md). Local
+observables approximately return, with percent-level spectral memory and
+growing staggered magnetization. All states remain diagnostic. Do not rerun
+this immutable control; the commands below document its original launch.
+
 Owner authorized on 2026-09-09 after reviewing job 58082150. Prepare and test
 locally, deliver source and sealed launch inputs through Git, and let the owner
 execute the guarded Perlmutter commands. This is a finite diagnostic, with
@@ -180,9 +187,9 @@ Do not transfer `.git` or the full scratch package.
 - The context audit validates all five control references; relative links in
   the updated documentation resolve, and the final Git diff passes review.
 
-Owner-supplied September 9 output confirms the live preflight passed, including
-input hashes, budget and copied-worker tests. The following `submit` repeated
-the tests; the excerpt ends before a job ID. Submission, runtime and scientific
-outcome remain unconfirmed. Future launcher revisions follow the minimal-testing
-preference in `AGENTS.md`; this sealed control's runtime is unchanged. No remote
-command or transfer is initiated by Codex.
+The completed owner-run job took 5:07:03 and cost 0.199902343750 node-hours.
+The September 10 sync includes all results and terminal accounting. All 61
+sealed inputs match; compact summary replay and independent scalar, reference,
+spectrum and actual-CPU accounting checks pass. No solver regression suite or
+optimization was rerun for the review. Future launcher revisions follow the
+minimal-testing preference in `AGENTS.md`; this sealed runtime is unchanged.

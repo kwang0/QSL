@@ -8,7 +8,7 @@ historical handoffs.
 
 | Workstream | State | Plan |
 |---|---|---|
-| Short forward-and-return comparison | owner-authorized, implemented and locally validated; awaiting manual Perlmutter preflight | [ROUNDTRIP_CONTINUATION.md](ROUNDTRIP_CONTINUATION.md) |
+| Lower-density continuation through 0.35 and return | proposed after job 58131989; not prepared or sealed | [Decision 008](../decisions/008-roundtrip-continuation-outcome.md) |
 | YC8-1 Figures 2 and 3 reproduction | requirements and feasibility reviewed; growth/preparation and embedded-window gap solver proposed | [Decision 004](../decisions/004-yc8-1-figure-reproduction-feasibility.md) |
 | Fixed-flux solver calibration | proposed; baseline upturn confirmed by bounded trial | [Decision 006](../decisions/006-relaxation-continuation-outcome.md) |
 | YC8-1 primary-forward chi-1024 bridge and full theta sweep | blocked at fixed-flux chi growth; no theta advance | [`../YC8_1_CHI1024_BRIDGE.md`](../YC8_1_CHI1024_BRIDGE.md) |
@@ -26,6 +26,10 @@ older plan prose when a dated status differs.
 | YC8-1 iDMRG midpoint recovery | prepared but not current main path | [`../PHASE1_IDMRG_SWEEP_RECOVERY.md`](../PHASE1_IDMRG_SWEEP_RECOVERY.md) |
 
 ## Completed decisions or historical plans
+
+- [ROUNDTRIP_CONTINUATION.md](ROUNDTRIP_CONTINUATION.md): job 58131989,
+  all 96 updates and 100 analyses complete, reconciled and reviewed. Local
+  observables nearly return; spectra retain memory and magnetization grows.
 
 - [RELAXATION_CONTINUATION.md](RELAXATION_CONTINUATION.md): job 58082150,
   all 464 updates and 50 analyses complete, reconciled and reviewed. Short
