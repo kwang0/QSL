@@ -168,6 +168,19 @@ New momentum labels scale the uniform-gauge shift by the physical transfer
 charge; old recorded labels remain immutable. Compact jobs live under the
 existing accounting root in `mpskit_solver_pilot_jobs/roundtrip/`.
 
+The full-flux successor adds `idmrg/fullflux/` and `scripts/fullflux/`, reusing
+the same fixed-update kernel, path driver, canonical reader and charge-aware
+spectra. Each arm starts independently from the accepted parent and saves all
+iterates, but only origins and flux endpoints are analyzed. Analyses retain
+both accepted-parent and previous-point references; numerical/continuity
+failures never promote a state. Partial points cannot seed successors.
+The worker attempts later independent arms after a failed step, records step
+exit codes, and reports explicit experiment completeness. Compact artifacts
+live in `mpskit_solver_pilot_jobs/fullflux/`. Its copied-worker preflight checks
+Julia compatibility, pinned manifests and entry points without loading tensor
+libraries or running numerical fixtures. Actual solver/reader execution retains
+the existing exact-environment, canonical and energy checks.
+
 | Class | Examples | Location | Routine sync |
 |---|---|---|---|
 | source and prepared launch inputs | code, TOML templates, sealed controls, required manifests, docs | Git checkout; sealed controls in `configs/controls/` | Git push/pull |

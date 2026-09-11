@@ -8,7 +8,7 @@ historical handoffs.
 
 | Workstream | State | Plan |
 |---|---|---|
-| Lower-density continuation through 0.35 and return | proposed after job 58131989; not prepared or sealed | [Decision 008](../decisions/008-roundtrip-continuation-outcome.md) |
+| Three limited-relaxation scans through pi | prepared: 0.1pi grid, 2/4/8 updates per point; manual launch pending | [FULLFLUX_CONTINUATION.md](FULLFLUX_CONTINUATION.md) |
 | YC8-1 Figures 2 and 3 reproduction | requirements and feasibility reviewed; growth/preparation and embedded-window gap solver proposed | [Decision 004](../decisions/004-yc8-1-figure-reproduction-feasibility.md) |
 | Fixed-flux solver calibration | proposed; baseline upturn confirmed by bounded trial | [Decision 006](../decisions/006-relaxation-continuation-outcome.md) |
 | YC8-1 primary-forward chi-1024 bridge and full theta sweep | blocked at fixed-flux chi growth; no theta advance | [`../YC8_1_CHI1024_BRIDGE.md`](../YC8_1_CHI1024_BRIDGE.md) |

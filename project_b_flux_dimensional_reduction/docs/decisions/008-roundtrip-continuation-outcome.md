@@ -1,7 +1,8 @@
 # 008 - Short flux returns preserve local observables with accumulated drift
 
 Status: job 58131989 reconciled, synchronized and reviewed on 2026-09-10;
-bounded extension proposed, not prepared or submitted. No state promotion.
+No state promotion. The proposed bounded extension below was superseded by
+the owner's full-flux request in [decision 009](009-full-flux-qualitative-scans.md).
 
 The limited-relaxation path reaches theta/pi=0.25 and returns to 0.15 at chi512
 with close energy, entropy and coarse/fine agreement. This strengthens the

@@ -18,6 +18,28 @@ work. The existing primary-forward lineage is accepted only through 0.15 at
 chi512; its fixed-flux chi1024 growth failed and no chi1024 theta continuation
 has begun.
 
+Current prepared experiment: [three full-flux limited-relaxation scans](plans/FULLFLUX_CONTINUATION.md),
+authorized September 10 and explained in [decision 009](decisions/009-full-flux-qualitative-scans.md).
+Exactly three independent chi512 VUMPS paths use 2, 4 or 8 updates per point,
+starting from the accepted 0.15 parent, taking the first half-step to 0.20,
+then 0.30,...,1.00. All 126 iterates are retained in scratch; origins and flux
+endpoints yield 30 analyses. Native/continuity failures remain diagnostic and
+do not stop the finite schedule or promote any state. This supplies Fig. 3
+correlation spectra; the Fig. 2 excitation-energy solver remains unimplemented.
+The tracked `configs/fullflux_continuation_active_control.ref` selects
+`configs/controls/fullflux_continuation_v1.toml`, SHA-256
+`091d78d65226a8564927cb8627e93326311b34d5620ce073d7ea1aecb70a72e4`.
+No full-flux job has been submitted locally; the owner pulls
+and executes `slurm/run_fullflux_continuation_cpu.sh preflight` then `submit`.
+
+The owner authorized **50 additional node-hours** and directed that the old
+balance must not cut this job short. Phase 1 now has a 70-hour ceiling; the
+project ceiling is 200 hours and the automatic-submission ceiling is 190,
+preserving the 10-hour reserve. The synchronized Phase 1 balance is now
+**50.770045572917**. The three scans share one 48-hour allocation, reserving
+at most **1.875 node-hours**, with no separate 16-hour cutoff. Scheduler and
+numerical failures remain possible. No numerical test suite runs at preflight.
+
 The bounded limited-relaxation experiment authorized on September 8 is now
 complete, reconciled, synchronized and reviewed:
 [`plans/RELAXATION_CONTINUATION.md`](plans/RELAXATION_CONTINUATION.md).
@@ -61,16 +83,16 @@ Completed runtime: `slurm/run_roundtrip_continuation_cpu.sh` and tracked control
 `40088fc17091a0962b35de44b1f588124b8a302dbed2f8ce06769af7be64e8b7`,
 selected by `configs/roundtrip_continuation_active_control.ref`.
 Actual wall time was 5:07:03 with ten logical CPUs and 16G; charge was
-0.199902343750 node-hours, leaving Phase 1 **0.770045572917**. All 61 input
-pins, compact replay and independent scalar/spectrum/accounting checks pass.
+0.199902343750 node-hours, leaving Phase 1 0.770045572917 before the budget
+extension. All 61 input pins, compact replay and independent scalar/spectrum/accounting
+checks passed at review, before the explicitly authorized accounting-policy change.
 All six requested modes converge in both spin sectors for all 100 analyses.
 Compact run: `output/mpskit_solver_pilot_jobs/roundtrip/20260909T225809Z_40088fc17091/`.
 Review: `output/review_followup/roundtrip_58131989_review_20260910/`.
-Do not resubmit this control. Decision 008 proposes a lower-density 2/coarse
-and 1/fine loop to 0.35, independently starting from the accepted 0.15 parent;
-it is not prepared or sealed. Larger flux may amplify drift despite the same
-32-update loop budget already explored here. Future launcher revisions follow
-the minimal-testing preference in `AGENTS.md`.
+Do not resubmit this control. Decision 008's unprepared lower-density loop
+to 0.35 is superseded by the owner's full-flux request in decision 009.
+Larger flux may amplify drift. Future launcher revisions follow the
+minimal-testing preference in `AGENTS.md`.
 
 The completed earlier diagnostic sequence is
 [`plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md`](plans/REVIEW_FOLLOWUP_IMPLEMENTATION.md):
@@ -132,6 +154,12 @@ documentation and compact prepared launch inputs to `https://github.com/kwang0/Q
 Heavy scientific payloads and generated run evidence remain excluded.
 Perlmutter commands and transfers continue
 to be executed manually by the owner.
+
+Historical controls retain their original policy hashes. The September 10
+budget authorization changes the common accounting policy, so validating an
+old control's inputs against this checkout reports that expected mismatch.
+Use the historical Git revision for exact old-control validation; do not edit
+the old sealed controls or rerun completed trials.
 
 ## Non-negotiable scientific state
 
@@ -324,8 +352,10 @@ for the two older 18-CPU YC8 bridge jobs and includes all three diagnostic jobs:
 | **Phase 1 total** | | **`19.229954427083`** |
 
 The corresponding Project B total including Phase 0 is
-`20.324387427083` node-hours (Phase 0 remains an estimate). The Phase 1
-ceiling leaves **`0.770045572917` node-hours** at this reconciliation.
+`20.324387427083` node-hours (Phase 0 remains an estimate). After the owner's
+50-hour extension, the Phase 1 ceiling is 70 and leaves
+**`50.770045572917` node-hours** against this reconciliation. The project
+ceiling is 200; automatic submission stops at 190, preserving its 10-hour reserve.
 Job 58131989 reconciliation at `2026-09-10T23:20:59.307` uses evidence SHA-256
 `eed1442c7ea22f74e0396b101dc6338d729f29986ff03be556739ecf6e5faa83`. A nominal
 48-hour 16-CPU forecast of 3.0 node-hours is not conservative when Slurm grants
@@ -339,14 +369,12 @@ submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Consider decision 008's next bounded range test: the matched lower-density
-   2/coarse and 1/fine pair from accepted 0.15 through 0.35 and back. This is a
-   proposal, not a prepared successor. Track spectral memory and staggered
-   magnetization, which grows even on the return and at unchanged flux.
-   Increasing updates merely to lower residuals worsens the magnetic drift.
-   If drift strengthens, prioritize symmetry/preparation and general-chi
-   diagnosis over repeated longer relaxation. The accepted parent is unchanged;
-   neither completed experiment establishes an adiabatic path to pi.
+1. Execute and review the prepared three-scan full-flux experiment in
+   [decision 009](decisions/009-full-flux-qualitative-scans.md). The owner pulls,
+   runs live preflight/submit, reconciles and syncs compact output. Compare all
+   three update budgets through pi, including momentum spectra, continuity and
+   staggered magnetization. The accepted parent is unchanged; neither reaching
+   pi nor a completed iteration schedule establishes adiabaticity or convergence.
 2. Design a tested general-chi growth and sparse checkpoint route, with a
    separately labeled theta=0 preparation study and comparable chi512/1024/2048
    resource measurements. The present MPSKit integration contains fixed-512
@@ -362,9 +390,9 @@ submission. Original exports, controls and charge files are preserved.
    Treat the two measurements as distinct products. Defer central-charge fits
    and expansion to other geometries until the main reproduction is credible.
 5. Prepare a concrete production budget from those measurements. The current
-   Phase 1 balance is 0.770045572917 node-hours. Arithmetic headroom below the
-   full 150-hour project ceiling is 129.675612572917, but phase allocations
-   are not automatically reassigned. No current benchmark establishes an
+   Phase 1 balance is 50.770045572917 node-hours after the owner-authorized
+   extension; the three-scan reservation is at most 1.875. No current benchmark
+   establishes an
    affordable chi6144/12288 run. A successor needs a fresh live guard and a
    reservation within the remaining allowance.
 
