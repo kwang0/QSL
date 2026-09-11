@@ -1,6 +1,7 @@
 # 009 - Compare three limited-relaxation scans through pi
 
-Status: accepted; implementation prepared for manual execution.
+Status: executed and reviewed as job 58179916; outcome in
+[decision 010](010-fullflux-continuation-outcome.md).
 Date: 2026-09-10.
 
 ## Context

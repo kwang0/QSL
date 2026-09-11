@@ -8,7 +8,7 @@ historical handoffs.
 
 | Workstream | State | Plan |
 |---|---|---|
-| Three limited-relaxation scans through pi | prepared: 0.1pi grid, 2/4/8 updates per point; manual launch pending | [FULLFLUX_CONTINUATION.md](FULLFLUX_CONTINUATION.md) |
+| Signed momentum calibration | proposed after full-flux review; preserve stored labels | [Decision 010](../decisions/010-fullflux-continuation-outcome.md) |
 | YC8-1 Figures 2 and 3 reproduction | requirements and feasibility reviewed; growth/preparation and embedded-window gap solver proposed | [Decision 004](../decisions/004-yc8-1-figure-reproduction-feasibility.md) |
 | Fixed-flux solver calibration | proposed; baseline upturn confirmed by bounded trial | [Decision 006](../decisions/006-relaxation-continuation-outcome.md) |
 | YC8-1 primary-forward chi-1024 bridge and full theta sweep | blocked at fixed-flux chi growth; no theta advance | [`../YC8_1_CHI1024_BRIDGE.md`](../YC8_1_CHI1024_BRIDGE.md) |
@@ -26,6 +26,11 @@ older plan prose when a dated status differs.
 | YC8-1 iDMRG midpoint recovery | prepared but not current main path | [`../PHASE1_IDMRG_SWEEP_RECOVERY.md`](../PHASE1_IDMRG_SWEEP_RECOVERY.md) |
 
 ## Completed decisions or historical plans
+
+- [FULLFLUX_CONTINUATION.md](FULLFLUX_CONTINUATION.md): job 58179916,
+  all 126 updates and 30 analyses through pi complete and reviewed. Magnetic
+  drift and update dependence prevent stable Fig. 3 reproduction; absolute
+  momentum labels require a signed convention calibration.
 
 - [ROUNDTRIP_CONTINUATION.md](ROUNDTRIP_CONTINUATION.md): job 58131989,
   all 96 updates and 100 analyses complete, reconciled and reviewed. Local

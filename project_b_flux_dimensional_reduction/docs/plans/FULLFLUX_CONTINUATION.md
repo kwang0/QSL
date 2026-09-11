@@ -1,8 +1,17 @@
 # Three limited-relaxation scans through pi
 
-Status: prepared for manual Perlmutter launch; no job submitted locally.
-Date: 2026-09-10.
+Status: job 58179916 complete, reconciled, synchronized and reviewed.
+Updated: 2026-09-11. Do not resubmit the completed control.
 Rationale: [decision 009](../decisions/009-full-flux-qualitative-scans.md).
+
+Outcome: [decision 010](../decisions/010-fullflux-continuation-outcome.md).
+All 126 updates and 30 analyses completed in 7:14:28, costing 0.282855902778
+node-hours and leaving Phase 1 50.487189670139. Every requested transfer mode
+converged, but no native gate passed. The 2-update path has partial softening;
+4/8 updates develop magnetic drift earlier and end at similar magnetized
+states. This does not establish stable qualitative Fig. 3 reproduction.
+Absolute M/K assignments need the signed momentum calibration described in
+the outcome. The schedule and commands below document the completed run.
 
 ## Scientific schedule
 
@@ -153,10 +162,11 @@ back to the existing local output tree with Globus, keeping mirroring/deletion
 off and excluding source, `.git` and scratch. The compact spectra suffice for
 review; do not transfer all 129 heavy origin/iterate payloads routinely.
 
-## Remaining work
+## Completed review and successor
 
-- Owner: pull, live preflight, submit, monitor and reconcile.
-- Owner: sync compact results and accounting.
-- Review all three spectra together, including momentum structure, dependence
-  on update budget, continuity and staggered magnetization. Reaching pi alone
-  does not establish qualitative agreement or an adiabatic branch.
+Execution, live reconciliation, owner-confirmed sync, compact replay and local
+comparison are complete. The review validates all 73 pinned inputs and all
+six Slurm steps without rerunning optimization or a numerical test suite.
+The next priority is a small signed momentum calibration, then improved
+preparation and general-chi growth, not another larger chi512 update budget.
+See decision 010 for the reproducible review command and plots.

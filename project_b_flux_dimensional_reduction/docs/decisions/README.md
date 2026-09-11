@@ -14,7 +14,8 @@ existing links and immutable controls do not break.
 | Preserve the short-relaxation result as a transient, then test reversibility | job 58082150 reviewed; successor implemented in decision 007 | [`006-relaxation-continuation-outcome.md`](006-relaxation-continuation-outcome.md) |
 | Compare return paths at fixed updates per unit flux | completed; outcome in decision 008 | [`007-test-flux-return-at-matched-relaxation.md`](007-test-flux-return-at-matched-relaxation.md) |
 | Preserve short return paths as diagnostics with accumulated drift | job 58131989 reviewed; proposed successor superseded by decision 009 | [`008-roundtrip-continuation-outcome.md`](008-roundtrip-continuation-outcome.md) |
-| Compare three limited-relaxation scans through pi | prepared; owner authorized 50 additional node-hours | [`009-full-flux-qualitative-scans.md`](009-full-flux-qualitative-scans.md) |
+| Compare three limited-relaxation scans through pi | completed; outcome in decision 010 | [`009-full-flux-qualitative-scans.md`](009-full-flux-qualitative-scans.md) |
+| Preserve full-flux paths as diagnostics with protocol-dependent magnetic drift | reviewed; signed momentum calibration is next | [`010-fullflux-continuation-outcome.md`](010-fullflux-continuation-outcome.md) |
 | Preserve labeled branches instead of building a minimum-energy envelope | accepted | [`../REPRODUCTION_PROTOCOL.md`](../REPRODUCTION_PROTOCOL.md) |
 | Promote the SHA-pinned parallel-VUMPS chi-512 `theta/pi=0.15` state | accepted | [`../PHASE1_PARALLEL_VUMPS_PROMOTION.md`](../PHASE1_PARALLEL_VUMPS_PROMOTION.md) |
 | Use MPSKit one-site iDMRG in an isolated Julia environment | accepted | [`../PHASE1_IDMRG_LIBRARY_DECISION.md`](../PHASE1_IDMRG_LIBRARY_DECISION.md) |

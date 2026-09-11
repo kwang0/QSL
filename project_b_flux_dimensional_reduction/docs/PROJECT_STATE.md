@@ -1,6 +1,6 @@
 # Project B current state
 
-Last updated: 2026-09-10 (America/Los_Angeles)
+Last updated: 2026-09-11 (America/Los_Angeles)
 
 This is the rolling state summary for a fresh Codex task. It records where the
 project is now, not the full history. Git holds exact implementation history;
@@ -18,8 +18,11 @@ work. The existing primary-forward lineage is accepted only through 0.15 at
 chi512; its fixed-flux chi1024 growth failed and no chi1024 theta continuation
 has begun.
 
-Current prepared experiment: [three full-flux limited-relaxation scans](plans/FULLFLUX_CONTINUATION.md),
-authorized September 10 and explained in [decision 009](decisions/009-full-flux-qualitative-scans.md).
+The [three full-flux limited-relaxation scans](plans/FULLFLUX_CONTINUATION.md)
+are complete, reconciled, synchronized and reviewed as **job 58179916**.
+Authorization is in [decision 009](decisions/009-full-flux-qualitative-scans.md);
+the outcome and Fig. 3 comparison are in
+[decision 010](decisions/010-fullflux-continuation-outcome.md).
 Exactly three independent chi512 VUMPS paths use 2, 4 or 8 updates per point,
 starting from the accepted 0.15 parent, taking the first half-step to 0.20,
 then 0.30,...,1.00. All 126 iterates are retained in scratch; origins and flux
@@ -29,16 +32,39 @@ correlation spectra; the Fig. 2 excitation-energy solver remains unimplemented.
 The tracked `configs/fullflux_continuation_active_control.ref` selects
 `configs/controls/fullflux_continuation_v1.toml`, SHA-256
 `091d78d65226a8564927cb8627e93326311b34d5620ce073d7ea1aecb70a72e4`.
-No full-flux job has been submitted locally; the owner pulls
-and executes `slurm/run_fullflux_continuation_cpu.sh preflight` then `submit`.
+All 126 updates and 30 analyses completed; all six requested transfer modes
+converged in both spin sectors. No native gate passed and no state is promoted.
+All 73 input pins and the compact/accounting replay pass. Do not resubmit this
+control. Compact run:
+`output/mpskit_solver_pilot_jobs/fullflux/20260911T003702Z_091d78d65226/`.
+Review: `output/review_followup/fullflux_58179916_review_20260911/`.
+
+The 2-update path softens to inverse xi=0.182688 at 0.90pi, then rebounds to
+0.209858 at pi. The 4/8-update minima occur at 0.60/0.40pi, ending at
+0.264877/0.263512. All three develop staggered magnetization near +/-0.03.
+The moment first exceeds 0.01 at sampled fluxes 0.90/0.70/0.50pi respectively
+(a descriptive marker, not a phase threshold). The 4/8 pi inverse lengths
+agree within 0.67% across the six modes, but those states are magnetized and
+unconverged. This supports a useful transient and similar late relaxation,
+not stable qualitative reproduction of Fig. 3 or a physical spinodal.
+
+New measurement caveat: the Hamiltonian's positive exchange phase multiplies
+S+_source S-_target, whereas the paper's Fig. S2 uses S-_source S+_target.
+The stored momentum mapping applies the paper's positive-theta Eq. (4).
+Calibrate the exchange-phase, transfer direction and charge orientation
+together before absolute M/K assignments. Using the opposite theta sign in
+that formula moves the pi leading modes from stored 2k1/pi near 0.5 to near 0,
+with k2/pi near 1. This is a convention-sensitivity observation, not yet a
+validated correction. Do not infer an absent M mode from the saved labels.
+Raw eigenvalues, inverse lengths and all scalar conclusions remain usable.
 
 The owner authorized **50 additional node-hours** and directed that the old
 balance must not cut this job short. Phase 1 now has a 70-hour ceiling; the
 project ceiling is 200 hours and the automatic-submission ceiling is 190,
-preserving the 10-hour reserve. The synchronized Phase 1 balance is now
-**50.770045572917**. The three scans share one 48-hour allocation, reserving
-at most **1.875 node-hours**, with no separate 16-hour cutoff. Scheduler and
-numerical failures remain possible. No numerical test suite runs at preflight.
+preserving the 10-hour reserve. The synchronized Phase 1 balance after job
+58179916 is **50.487189670139**. The three scans used one allocation for
+7:14:28, charged **0.282855902778 node-hours**, within its 1.875-hour reservation.
+There was no pretimeout or failed step. No numerical test suite runs at preflight.
 
 The bounded limited-relaxation experiment authorized on September 8 is now
 complete, reconciled, synchronized and reviewed:
@@ -339,9 +365,9 @@ state record, not a replacement for hash validation.
 
 ## Accounting state and completed guard repair
 
-Live post-roundtrip reconciliation is synchronized and validated. The accounting
-audit deduplicates 31 Phase 1 allocations, applies the append-only corrections
-for the two older 18-CPU YC8 bridge jobs and includes all three diagnostic jobs:
+Live post-fullflux reconciliation is synchronized and validated. The accounting
+audit deduplicates 32 Phase 1 allocations, applies the append-only corrections
+for the two older 18-CPU YC8 bridge jobs and includes all four diagnostic jobs:
 
 | Job | Status | Charge used here (node-hours) |
 |---:|---|---:|
@@ -349,15 +375,16 @@ for the two older 18-CPU YC8 bridge jobs and includes all three diagnostic jobs:
 | `58005544` | completed matched MPSKit pilot | `0.284548611111` |
 | `58082150` | completed bounded relaxation comparison | `0.983995225694` |
 | `58131989` | completed forward-and-return comparison | `0.199902343750` |
-| **Phase 1 total** | | **`19.229954427083`** |
+| `58179916` | completed full-flux comparison | `0.282855902778` |
+| **Phase 1 total** | | **`19.512810329861`** |
 
 The corresponding Project B total including Phase 0 is
-`20.324387427083` node-hours (Phase 0 remains an estimate). After the owner's
+`20.607243329861` node-hours (Phase 0 remains an estimate). After the owner's
 50-hour extension, the Phase 1 ceiling is 70 and leaves
-**`50.770045572917` node-hours** against this reconciliation. The project
+**`50.487189670139` node-hours** against this reconciliation. The project
 ceiling is 200; automatic submission stops at 190, preserving its 10-hour reserve.
-Job 58131989 reconciliation at `2026-09-10T23:20:59.307` uses evidence SHA-256
-`eed1442c7ea22f74e0396b101dc6338d729f29986ff03be556739ecf6e5faa83`. A nominal
+Job 58179916 reconciliation at `2026-09-11T18:54:28.682` uses evidence SHA-256
+`358e508cd27c30407b4df9ed61d4d733244d1d8e7b68a132ef6f19a71ccd4daa`. A nominal
 48-hour 16-CPU forecast of 3.0 node-hours is not conservative when Slurm grants
 18 CPUs; the full-limit charge would be 3.375 node-hours.
 
@@ -369,12 +396,11 @@ submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Execute and review the prepared three-scan full-flux experiment in
-   [decision 009](decisions/009-full-flux-qualitative-scans.md). The owner pulls,
-   runs live preflight/submit, reconciles and syncs compact output. Compare all
-   three update budgets through pi, including momentum spectra, continuity and
-   staggered magnetization. The accepted parent is unchanged; neither reaching
-   pi nor a completed iteration schedule establishes adiabaticity or convergence.
+1. Resolve the signed momentum convention identified in
+   [decision 010](decisions/010-fullflux-continuation-outcome.md) with a small
+   independent operator/transfer calibration. Preserve existing raw data and
+   recorded labels. The full-flux review is complete; additional chi512 update
+   budgets are not the next priority. The accepted parent is unchanged.
 2. Design a tested general-chi growth and sparse checkpoint route, with a
    separately labeled theta=0 preparation study and comparable chi512/1024/2048
    resource measurements. The present MPSKit integration contains fixed-512
@@ -390,9 +416,8 @@ submission. Original exports, controls and charge files are preserved.
    Treat the two measurements as distinct products. Defer central-charge fits
    and expansion to other geometries until the main reproduction is credible.
 5. Prepare a concrete production budget from those measurements. The current
-   Phase 1 balance is 50.770045572917 node-hours after the owner-authorized
-   extension; the three-scan reservation is at most 1.875. No current benchmark
-   establishes an
+   Phase 1 balance is 50.487189670139 node-hours after the full-flux trial.
+   No current benchmark establishes an
    affordable chi6144/12288 run. A successor needs a fresh live guard and a
    reservation within the remaining allowance.
 
@@ -426,7 +451,7 @@ was unavailable.
 ## Remaining unknowns
 
 - Recheck the queue immediately before any successor submission. The synced
-  reconciliation records all three diagnostic jobs complete; it is not a live
+  reconciliation records all four diagnostic jobs complete; it is not a live
   queue snapshot. Queued `lmf1-*` jobs belong to another project.
 - Whether the job-`57801654` scratch package and selected checkpoints still
   exist and match their recorded SHA-256 values.
@@ -440,8 +465,9 @@ The bounded comparison demonstrates a short interval with close spectra,
 followed by large changes under further relaxation. The completed return test
 extends diagnostic reach to 0.25 and shows near-return of local observables,
 with percent-level spectral memory and monotonically growing staggered
-magnetization. Whether a longer continuation remains useful, and whether that
-disturbance is physical, variational or algorithmic, remains unresolved. The
+magnetization. The full-flux trial reaches pi, but longer update budgets amplify
+magnetic drift and do not establish stable Fig. 3 reproduction. Whether that
+disturbance is physical, variational or algorithmic remains unresolved. The
 0.15 baseline's upturn remains unexplained. These diagnostics identify neither
 a specific inner-solver error nor a physical spinodal or topological sector.
 
