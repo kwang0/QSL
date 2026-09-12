@@ -148,6 +148,7 @@ def review(run, out, julia):
 
 
 def figures(report,out):
+    history = report.get("accepted_prehistory", [])
     plt.rcParams.update({"font.family":"DejaVu Sans","font.size":10,"axes.spines.top":False,
         "axes.spines.right":False,"axes.grid":True,"grid.alpha":.16})
     fig,axes=plt.subplots(2,2,figsize=(10.5,7.5),layout="constrained")
@@ -157,38 +158,61 @@ def figures(report,out):
            [max(abs(np.asarray(a["magnetization_z"]))) for a in data],
            [a["native_error"] for a in data],[a["energy_terms"][0]-a["energy_terms"][1] for a in data]]
         for ax,values in zip(axes.flat,y): ax.plot(x,values,"o-",color=color,ms=4,label=f"{arm[1:]} updates / point")
+    if history:
+        x = [a["theta_over_pi"] for a in history]
+        y = [[min(a["spectra"]["sz1"]["inverse_xi"]) for a in history],
+             [max(abs(np.asarray(a["magnetization_z"]))) for a in history],
+             [a["itensor_projected_residual"] for a in history],
+             [a["energy_terms"][0]-a["energy_terms"][1] for a in history]]
+        for i,(ax,values) in enumerate(zip(axes.flat,y)):
+            ax.plot(x,values,"D--",color=".35",ms=5,mfc="white",lw=1.3,zorder=4,
+                    label="ITensor projected residual" if i==2 else "Shared accepted preparation")
+            ax.axvspan(0,.15,color=".5",alpha=.07,zorder=0)
+            ax.axvline(.15,color=".55",lw=.8,ls=":")
     axes[0,1].set_yscale("log");axes[1,0].set_yscale("log")
     axes[1,0].axhline(1e-5,ls="--",color=".5",lw=1,label="Historical threshold")
     axes[1,1].axhline(0,ls="--",color=".5",lw=1)
     titles=["a  Softening reverses before the endpoint","b  More updates accelerate magnetic drift",
             "c  No endpoint reaches native convergence","d  Local-energy alternation changes sign"]
     labels=[r"Leading $S^z=1$ inverse $\xi$ / transfer cell",r"max $|\langle S^z\rangle|$", "VUMPS Galerkin error",r"Local energy difference $e_1-e_2$"]
+    if history:
+        titles[2] = "c  Solver errors use different definitions"
+        labels[2] = "Solver-native error (definitions differ)"
     for ax,title,label in zip(axes.flat,titles,labels):
-        ax.set_title(title,loc="left",fontsize=11);ax.set_ylabel(label);ax.set_xlabel(r"$\theta/\pi$");ax.set_xlim(.12,1.03)
+        ax.set_title(title,loc="left",fontsize=11);ax.set_ylabel(label);ax.set_xlabel(r"$\theta/\pi$");ax.set_xlim(-.03 if history else .12,1.03)
     axes[0,0].legend(fontsize=9);axes[1,0].legend(fontsize=8,loc="lower right")
     fig.suptitle(f"YC8-1 at chi512: full-flux finite-relaxation scans | job {report['job_id']}",fontsize=14)
+    if history:
+        fig.supxlabel("Gray diamonds: shared accepted ITensor preparation. Colored circles: MPSKit paths from 0.15pi.\nPanel c: colored curves are MPSKit Galerkin errors; gray residuals are not the same quantity.",fontsize=9)
     for ext in ("png","svg"):fig.savefig(out/f"fullflux_diagnostics.{ext}",dpi=180)
     plt.close(fig)
 
     fig,axes=plt.subplots(3,3,figsize=(12,10),layout="constrained",sharey=True)
     for row,arm in enumerate(ARMS):
-        data=[a for a in report["samples"] if a["arm"]==arm]
+        data=history+[a for a in report["samples"] if a["arm"]==arm]
         for a in data:
             s=a["spectra"]["sz1"]; t=a["theta_over_pi"]; y=s["inverse_xi"]
             x=[np.full(len(y),t),np.asarray(s["two_k1"])/np.pi,np.mod(np.asarray(s["k2"])/np.pi,2)]
             for ax,xx in zip(axes[row],x):
-                artist=ax.scatter(xx,y,c=np.full(len(y),t),cmap="viridis",vmin=.15,vmax=1,s=21,linewidths=.3,edgecolors=".15")
+                historical=a.get("role")=="shared_accepted_preparation"
+                artist=ax.scatter(xx,y,c=np.full(len(y),t),cmap="viridis",vmin=0 if history else .15,vmax=1,
+                                  marker="D" if historical else "o",s=34 if historical else 21,
+                                  linewidths=.8 if historical else .3,edgecolors=".15")
                 if t==1:ax.scatter(xx,y,marker="*",s=85,facecolors="none",edgecolors="#D55E00",linewidths=1)
         for x in [-2/3,0,2/3]:axes[row,1].axvline(x,color=".6",ls=":" if x else "--",lw=.8)
         for x in [2/3,1,4/3]:axes[row,2].axvline(x,color=".6",ls="--" if x==1 else ":",lw=.8)
         axes[row,0].set_ylabel(f"{arm[1:]} updates / point\n"+r"$1/\xi_{S^z=1}$ / transfer cell")
         for ax in axes[row]:ax.set_ylim(0,.6)
-        axes[row,0].set_xlim(.1,1.04);axes[row,1].set_xlim(-1.05,1.05);axes[row,2].set_xlim(-.05,2.05)
+        axes[row,0].set_xlim(-.03 if history else .1,1.04);axes[row,1].set_xlim(-1.05,1.05);axes[row,2].set_xlim(-.05,2.05)
+        if history:
+            axes[row,0].axvspan(0,.15,color=".5",alpha=.07,zorder=0)
+            axes[row,0].axvline(.15,color=".55",lw=.8,ls=":")
     for ax,title in zip(axes[0],["Flux dependence","Stored longitudinal momentum","Stored transverse momentum"]):ax.set_title(title)
     for ax,label in zip(axes[-1],[r"$\theta/\pi$",r"$2k_1/\pi$ (stored Eq. 4 labels)",r"$k_2/\pi$ (modulo 2)"]):ax.set_xlabel(label)
     fig.colorbar(artist,ax=axes.ravel().tolist(),label=r"Measured $\theta/\pi$",shrink=.6,pad=.015)
-    fig.suptitle("Fig. 3 comparison: six measured charged modes per point",fontsize=15)
-    fig.supxlabel("Outlined stars: theta = pi. Dashed guides: M; dotted guides: K projections.\nStored labels are shown without correction; exchange-phase sign must be reconciled before absolute momentum identification.\nOnly measured positive-flux points are shown. No connecting lines imply branch tracking.",fontsize=9)
+    fig.suptitle("Fig. 3 comparison: measured charged spectra from zero flux" if history else "Fig. 3 comparison: six measured charged modes per point",fontsize=15)
+    prefix = "Diamonds: shared preparation (5/4/4 modes at 0/0.1/0.15pi), repeated in each row. Circles: six modes per MPSKit point.\n" if history else ""
+    fig.supxlabel(prefix+"Outlined stars: theta = pi. Dashed guides: M; dotted guides: K projections.\nStored labels are shown without correction; exchange-phase sign must be reconciled before absolute momentum identification.\nOnly measured nonnegative-flux points are shown. No connecting lines imply branch tracking.",fontsize=9)
     for ext in ("png","svg"):fig.savefig(out/f"fullflux_spectra.{ext}",dpi=180)
     plt.close(fig)
 

@@ -98,7 +98,8 @@ Our 2-update result has partial resemblance: a softening charged mode and
 low inverse lengths near transverse momentum k2=pi. The strong dependence
 on update budget, earlier upturns and magnetic drift prevent claiming the
 paper's stable M/K structure. Only six modes are measured, and only positive
-flux 0.15..1 is sampled; missing higher modes or the other half of a cone
+flux 0.15..1 is sampled by the new scans (the updated plots also include the
+shared accepted preparation at 0 and 0.10); missing higher modes or the other half of a cone
 must not be interpreted as absent physical excitations.
 
 There is an additional convention problem. In `src/Observables.jl` and
@@ -167,4 +168,43 @@ Local PowerShell reproduction, using a new output directory:
   --run output/mpskit_solver_pilot_jobs/fullflux/20260911T003702Z_091d78d65226 `
   --out output/review_followup/fullflux_58179916_review_new `
   --julia 'C:/Users/Kevin/.julia/juliaup/julia-1.12.7+0.x64.w64.mingw32/bin/julia.exe'
+```
+
+### September 12: plots extended to zero flux
+
+At the owner's request, both figures above now include the saved common
+accepted ITensor preparation at theta/pi=0, 0.10 and 0.15. Diamonds identify
+these historical states; each colored MPSKit path still begins at its
+independently imported 0.15 origin. The three accepted state SHA-256 values are:
+
+- 0: `95255fbe3a590505902bd0061d7d9d9f14f8ecd7ca3e4eac1aacfc5c7fe72d0b`
+- 0.10: `f71fc084883ea98535e012801d47c2c0b3c0b5ce58e08c72592e46410a27b7cc`
+- 0.15: `38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803`
+
+The actual files, parent hashes and flux histories match this chain. Existing
+spectra under `output/phase1/yc8_1/primary_forward_chi512_legacy_0p1/seed_101/chi512/spectra/`
+contain 5/4/4 converged charged modes respectively. Their recorded source paths,
+basenames and physical metadata match these states; the historical spectrum
+schema has no creation-time source-state hash. This extension hashes both
+artifacts and checks the charge, normalization, period-2 units and stored
+momentum arithmetic. It preserves the unresolved sign caveat. No optimization,
+new transfer measurement or numerical test suite was run.
+
+The leading inverse lengths at 0 and 0.10 are 0.23730426 and 0.23720862,
+close to 0.23787880 at 0.15. These points do not alter the conclusions above.
+Panel c explicitly distinguishes historical ITensor projected residuals from
+MPSKit Galerkin errors: their vertical separation is not a convergence trend
+across the solver change. The spectrum panels repeat the shared preparation
+in each row and label the different mode counts.
+
+The original September 11 review and plots remain unchanged in their output
+directory. Extended PNG/SVG plots and `review_with_prehistory.json`, including
+the added data and source hashes, are in
+`output/review_followup/fullflux_58179916_from_zero_20260912/`.
+To reproduce from the existing audited review, using a new output directory:
+
+```powershell
+& 'C:/Python313/python.exe' -B scripts/extend_fullflux_plots_to_zero.py `
+  --review output/review_followup/fullflux_58179916_review_20260911/review.json `
+  --out output/review_followup/fullflux_58179916_from_zero_new
 ```
