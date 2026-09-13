@@ -1,6 +1,6 @@
 # Project B current state
 
-Last updated: 2026-09-11 (America/Los_Angeles)
+Last updated: 2026-09-13 (America/Los_Angeles)
 
 This is the rolling state summary for a fresh Codex task. It records where the
 project is now, not the full history. Git holds exact implementation history;
@@ -17,6 +17,21 @@ implemented. Entropy and central-charge measurements remain supporting/later
 work. The existing primary-forward lineage is accepted only through 0.15 at
 chi512; its fixed-flux chi1024 growth failed and no chi1024 theta continuation
 has begun.
+
+The owner authorized a small **chi1024 VUMPS threading comparison** before
+larger-bond-dimension preparation. The active implementation plan is
+[THREAD_BENCHMARK.md](plans/THREAD_BENCHMARK.md): Julia/BLAS threads 2/1,
+2/4 and 1/8, each with one warm-up and three measured updates from one shared
+canonical timing seed. It uses the rejected chi1024 0.15 candidate from job
+57801654 solely for timing, with live scratch/hash verification before
+submission. The reservation is six hours, 64 GiB and 0.796875 node-hours.
+The implementation and targeted local validation are complete. The tracked
+`configs/thread_benchmark_active_control.ref` selects
+`configs/controls/thread_benchmark_v1.toml`, SHA-256
+`2f32fdfecdbfa1339045041de59e296f256a4f3934efe2e5c539294c102558a5`.
+Git delivery without ignored output and the copied-worker plan pass. Await
+owner-run Perlmutter preflight/submission; no new remote job is established.
+The proposed converged theta=0 chi1024/2048 preparation remains separate work.
 
 The [three full-flux limited-relaxation scans](plans/FULLFLUX_CONTINUATION.md)
 are complete, reconciled, synchronized and reviewed as **job 58179916**.
@@ -396,26 +411,30 @@ submission. Original exports, controls and charge files are preserved.
 
 ## Current priorities
 
-1. Resolve the signed momentum convention identified in
+1. Run the prepared owner-authorized
+   [threading comparison](plans/THREAD_BENCHMARK.md), then use its timing and
+   memory evidence to configure the proposed zero-flux preparation. No new
+   accepted lineage or high-chi production trajectory is implied.
+2. Resolve the signed momentum convention identified in
    [decision 010](decisions/010-fullflux-continuation-outcome.md) with a small
    independent operator/transfer calibration. Preserve existing raw data and
    recorded labels. The full-flux review is complete; additional chi512 update
    budgets are not the next priority. The accepted parent is unchanged.
-2. Design a tested general-chi growth and sparse checkpoint route, with a
+3. Design a tested general-chi growth and sparse checkpoint route, with a
    separately labeled theta=0 preparation study and comparable chi512/1024/2048
    resource measurements. The present MPSKit integration contains fixed-512
    and fixed-parent-basis assumptions. The ITensor route has expansion code
    but has not demonstrated a successful accepted chi1024 trajectory.
-3. Establish a converged family and an affordable full 0-to-pi continuation
+4. Establish a converged family and an affordable full 0-to-pi continuation
    before selected higher-chi production points. Nominal chi alone is not an
    established explanation for the endpoint: the paper reports YC8-1 at pi even
    at m=1024, without specifying the preparation history of that table entry.
    Preserve all existing lineage records and declared gates.
-4. Implement and validate the separate Fig. 2 embedded-window excited-state
+5. Implement and validate the separate Fig. 2 embedded-window excited-state
    calculation; validate and benchmark Fig. 3 spectra on accepted states.
    Treat the two measurements as distinct products. Defer central-charge fits
    and expansion to other geometries until the main reproduction is credible.
-5. Prepare a concrete production budget from those measurements. The current
+6. Prepare a concrete production budget from those measurements. The current
    Phase 1 balance is 50.487189670139 node-hours after the full-flux trial.
    No current benchmark establishes an
    affordable chi6144/12288 run. A successor needs a fresh live guard and a

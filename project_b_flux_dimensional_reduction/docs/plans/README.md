@@ -8,6 +8,7 @@ historical handoffs.
 
 | Workstream | State | Plan |
 |---|---|---|
+| chi1024 VUMPS Julia/BLAS threading | sealed and locally validated; awaiting owner-run preflight/submission | [THREAD_BENCHMARK.md](THREAD_BENCHMARK.md) |
 | Signed momentum calibration | proposed after full-flux review; preserve stored labels | [Decision 010](../decisions/010-fullflux-continuation-outcome.md) |
 | YC8-1 Figures 2 and 3 reproduction | requirements and feasibility reviewed; growth/preparation and embedded-window gap solver proposed | [Decision 004](../decisions/004-yc8-1-figure-reproduction-feasibility.md) |
 | Fixed-flux solver calibration | proposed; baseline upturn confirmed by bounded trial | [Decision 006](../decisions/006-relaxation-continuation-outcome.md) |

@@ -1,0 +1,194 @@
+artifact_kind = "project_b_vumps_thread_benchmark_control"
+created_utc = "2026-09-13T19:27:56.286"
+schema_version = 1
+
+[[inputs]]
+path = "Manifest.toml"
+sha256 = "d9a98e006e35bd2a32c1fd1121c93a0cc72c0dca46fc4cbf06c33db0bdf8c048"
+[[inputs]]
+path = "Project.toml"
+sha256 = "e53d89fa6a9af5219d29020f9e85ebab54b0d7038bda88ff0201534424900e0d"
+[[inputs]]
+path = "configs/project_b_accounting.toml"
+sha256 = "0281bf7b356e8cfdd2f96db0825a304977acb4a78b9ca9cf06a4f67d2122dade"
+[[inputs]]
+path = "configs/seeds/thread_benchmark_chi1024.toml"
+sha256 = "eedee30d122ee3748b7195438d40567a55fe1d546d9e7a9dd38259f41a886cb2"
+[[inputs]]
+path = "configs/thread_benchmark.toml"
+sha256 = "4afc4b733fe8b570915b66360ae7f3ad909e02bdd5e2ec6decb11fe54218941e"
+[[inputs]]
+path = "idmrg/Manifest.toml"
+sha256 = "b0015137a96ef8ee3a8ab2bf9ff03ced5f7efc5cb9dbcf4e3047f50fe5c56881"
+[[inputs]]
+path = "idmrg/Project.toml"
+sha256 = "6f9b17043356144bbaa16aa4736b1cb68bea247dd8edb0bd21055e265495f1c3"
+[[inputs]]
+path = "idmrg/src/ProjectBIDMRG.jl"
+sha256 = "ace9e52a6db852f812163588675103994a712345d977efdba5b2598614c7b235"
+[[inputs]]
+path = "idmrg/src/RelaxationContinuation.jl"
+sha256 = "abc9971716188e982499778c1a8569f622d4e222a148cb17682e842441d735ee"
+[[inputs]]
+path = "idmrg/src/SolverPilot.jl"
+sha256 = "ed173ff1879875e784c56b424752bfc18c37ee19c51977ca3abc755dade32410"
+[[inputs]]
+path = "idmrg/thread_benchmark/Benchmark.jl"
+sha256 = "2c6f7b79b450dc5a13c5f4445c7b1230d4f10cbdb7d9a290fa71483e4503458d"
+[[inputs]]
+path = "idmrg/thread_benchmark/run.jl"
+sha256 = "921ae03fcbd93be50a3abbc80032c5c4ca6af0c11b6a64246c3832de32fb5fe3"
+[[inputs]]
+path = "scripts/audit_project_context.jl"
+sha256 = "ed8470ffb1f4c53898bafb850734d99bc974e21bbd84b50b17ca43ac83f72d97"
+[[inputs]]
+path = "scripts/lib/FileIntegrity.jl"
+sha256 = "635b367ddd0da3eb2fe2cb7114f06ec4ee86bc728b36d2c0a2eda90dc8a16695"
+[[inputs]]
+path = "scripts/lib/ProjectBAccounting.jl"
+sha256 = "6539be91cc1e58a3280c27caf9f99a4cb324b8e1b39b2c949afac4a75bb94846"
+[[inputs]]
+path = "scripts/lib/RelaxationAnalysis.jl"
+sha256 = "de4deb6611eb9e9018f070cc816bdcbde0eee37885b16856721b5a943ff25d5f"
+[[inputs]]
+path = "scripts/lib/RelaxationControl.jl"
+sha256 = "58bd7cc7d6612332d6f213da214919c11cdbb90488b0bebe39f21f4fa0a3ceb6"
+[[inputs]]
+path = "scripts/lib/ReviewEvidence.jl"
+sha256 = "95c60baf7b815e14620bcb55954925e9c8826594bc49a924e20b4f7ae86b7eeb"
+[[inputs]]
+path = "scripts/lib/SolverPilotControl.jl"
+sha256 = "ee8d27c1f5bfb1866ae9365df4689db8dbcf5ac2e6fff7ef114137dbf959593f"
+[[inputs]]
+path = "scripts/prepare_thread_benchmark.jl"
+sha256 = "bead8713bf6840701ced6cae80056ddf5cf8fa2892987263f3d18a29103cb758"
+[[inputs]]
+path = "scripts/project_b_accounting.jl"
+sha256 = "ef1976a6301bd13a8e4b224fa96c4ba8d3f173de70f61b0f45ca4912abefda03"
+[[inputs]]
+path = "scripts/summarize_thread_benchmark.jl"
+sha256 = "9e75773d20e80ce7bf5dd6348f0bcdcfdaf1abf0e0081d317f5e3c85449c4e34"
+[[inputs]]
+path = "scripts/thread_benchmark/Control.jl"
+sha256 = "5c7f890a62692fa99282d3ed703d1d0875134ee7b4fdd9aa3a956dc84ddceecc"
+[[inputs]]
+path = "scripts/thread_benchmark/Seed.jl"
+sha256 = "1caba9ed62ea806f695c616f4f50817bd8c62069cc6d826b0de7184ebe27ece8"
+[[inputs]]
+path = "scripts/thread_benchmark/Summary.jl"
+sha256 = "5b57094c9dc90792344b6d3bb0688ee68df8649ae647bc984aa7827b9ade7b4f"
+[[inputs]]
+path = "scripts/thread_benchmark/export_seed.jl"
+sha256 = "497b46a19295b1a8a875b6976ac93822de925891cdbccee491303c5a875c1a13"
+[[inputs]]
+path = "scripts/thread_benchmark/preflight.jl"
+sha256 = "da905d2743060fdc76608d8e2ff272d9b31eb88fe9abb9a8473df3f93f059ce6"
+[[inputs]]
+path = "scripts/validate_thread_benchmark.jl"
+sha256 = "4da2254442e17a21f6aba7dd6e544e8a8677d7f74f11f1c6ddc98aaf48883ba4"
+[[inputs]]
+path = "slurm/lib/project_b_resources.sh"
+sha256 = "a6cd9115bb56b1681f234975f46d2ac1d19be549bdb50c1d69e686de6f2eec6b"
+[[inputs]]
+path = "slurm/run_thread_benchmark_cpu.sh"
+sha256 = "d3f617c62bd45d7cd80650283039de2a341ca7e7e212809e9b5380fc3f0975ec"
+[[inputs]]
+path = "slurm/run_thread_benchmark_job.sh"
+sha256 = "10999064c495eb8cbd9e99c78451b727d8d3dce27af7455af02c4ae7d1382b72"
+[[inputs]]
+path = "src/Automation.jl"
+sha256 = "c64d7664c5f52616711d05f4b6a7117db34dedbc3c36549ab2a002cc4f302cbe"
+[[inputs]]
+path = "src/Config.jl"
+sha256 = "926e2167f9cebd2963e2b29f226e2829d0f024138c9cbe60cbcc7d15eef4859a"
+[[inputs]]
+path = "src/Continuity.jl"
+sha256 = "dbb5694cfe60b71431758e8cdc4587f8d1a4415a71c1e7ff48858a8a6ba64f3c"
+[[inputs]]
+path = "src/Diagnostics.jl"
+sha256 = "fad54bc9721d812372e317373f410978415eb93098fde335596f302020dc8fd3"
+[[inputs]]
+path = "src/Geometry.jl"
+sha256 = "51fba6c2468186c1568ed34365daf3abb46326524ff2395ecdf5703509296cef"
+[[inputs]]
+path = "src/IDMRGBridge.jl"
+sha256 = "950252ef13632aa89afd2d0981491bcd3ec9ffb238b8d8dfef3d942a79e31044"
+[[inputs]]
+path = "src/Observables.jl"
+sha256 = "d36f0013c7e47a5a12fcbeb174c443819972fcac5589f447dbc70f2a0982468a"
+[[inputs]]
+path = "src/Optimization.jl"
+sha256 = "650579bb39873eb71d2eeb885d18b0304a9c895159576af58a7a8579af3260d6"
+[[inputs]]
+path = "src/Scaling.jl"
+sha256 = "c17ac047700b28f5703f07136c5d1ccf2dd06bff2086b578a5402a958112ad51"
+[[inputs]]
+path = "src/Scan.jl"
+sha256 = "a8621a66de71ae075efcc3e14712b0aa3ebc5e6f7871150447be38ad14935243"
+[[inputs]]
+path = "src/Storage.jl"
+sha256 = "296c8690950317c46787fadff4eaaa91220049f9b1a18e8d02b74111dd962a8f"
+[[inputs]]
+path = "src/TransferSpectra.jl"
+sha256 = "f2ea7428f52125f01e3078f76974b13c8667604a48defd3b6825e3da1022344e"
+[[inputs]]
+path = "src/TriangularJ1J2ProjectB.jl"
+sha256 = "922da5fa61e5bb66ee02c79ef3d5a9fea9347464c2c494990753762b78890bc7"
+
+[recipe]
+algorithm = "VUMPS"
+artifact_kind = "project_b_vumps_thread_benchmark_recipe"
+automatic_advance = false
+automatic_promotion = false
+canonical_tolerance = 1.0e-8
+chi = 1024
+initial_energy_match_tolerance = 1.0e-10
+measured_iterations = 3
+random_seed = 101
+schema_version = 1
+seed_manifest = "configs/seeds/thread_benchmark_chi1024.toml"
+theta_over_pi = 0.15
+trajectory_energy_match_tolerance = 1.0e-8
+trajectory_error_match_rtol = 0.001
+warmup_iterations = 1
+
+    [recipe.resources]
+    allocation_cpus = 34
+    forecast_node_hours = 0.796875
+    memory = "64G"
+    pretimeout_seconds = 300
+    qos = "shared"
+    step_cpus = 16
+    time_limit = "06:00:00"
+
+    [[recipe.settings]]
+    blas_threads = 1
+    julia_threads = 2
+    name = "j2_b1"
+    [[recipe.settings]]
+    blas_threads = 4
+    julia_threads = 2
+    name = "j2_b4"
+    [[recipe.settings]]
+    blas_threads = 8
+    julia_threads = 1
+    name = "j1_b8"
+
+[seed]
+accepted_parent_sha256 = "38312fc996fef6ea65511eaa2fe927b2a2da634bff3dae6d6feae6b265fb7803"
+artifact_kind = "project_b_benchmark_seed_manifest"
+audit_path = "output/review_followup/checkpoint_audit_57801654_v2.toml"
+audit_sha256 = "253a72d8cdb724503f3d5f6a9b4ff56c7ad5bf2e05ac4ce5763488f0f9ad4996"
+authority = "historical owner-run audit; live source hash must be rechecked before submission"
+chi = 1024
+circumference = 8
+mps_period = 2
+role = "rejected_candidate_timing_only"
+schema_version = 1
+shift = 1
+source_energy_density = -0.5121627230317903
+source_job_id = "57801654"
+source_path = "/pscratch/sd/k/kwang98/QSL/project_b_flux_dimensional_reduction/phase1_vumps/yc8_1/job_57801654_5ffb4c3d1522/science_states/state_0001_yc8-1_primary_forward_chi512_legacy_0p1_independent_theta0_alternating_chi512_forward_seed101_chi1024_theta_p0p15000000_rejected_159cfa7dad72.h5"
+source_sha256 = "4e3a5f406f61cb791ea98ef6b0dc6cfb108877eb5199d4dc71d204f150c0a9e6"
+theta_over_pi = 0.15
+twist_gauge = "uniform"

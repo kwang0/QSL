@@ -1,0 +1,37 @@
+artifact_kind = "project_b_vumps_thread_benchmark_recipe"
+schema_version = 1
+seed_manifest = "configs/seeds/thread_benchmark_chi1024.toml"
+chi = 1024
+theta_over_pi = 0.15
+algorithm = "VUMPS"
+warmup_iterations = 1
+measured_iterations = 3
+random_seed = 101
+automatic_promotion = false
+automatic_advance = false
+initial_energy_match_tolerance = 1.0e-10
+trajectory_energy_match_tolerance = 1.0e-8
+trajectory_error_match_rtol = 1.0e-3
+canonical_tolerance = 1.0e-8
+
+[resources]
+qos = "shared"
+allocation_cpus = 34
+step_cpus = 16
+memory = "64G"
+time_limit = "06:00:00"
+pretimeout_seconds = 300
+forecast_node_hours = 0.796875
+
+[[settings]]
+name = "j2_b1"
+julia_threads = 2
+blas_threads = 1
+[[settings]]
+name = "j2_b4"
+julia_threads = 2
+blas_threads = 4
+[[settings]]
+name = "j1_b8"
+julia_threads = 1
+blas_threads = 8

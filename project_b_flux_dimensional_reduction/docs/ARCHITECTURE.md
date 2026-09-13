@@ -181,6 +181,15 @@ Julia compatibility, pinned manifests and entry points without loading tensor
 libraries or running numerical fixtures. Actual solver/reader execution retains
 the existing exact-environment, canonical and energy checks.
 
+The timing-only `thread_benchmark/` helpers support a general-chi AL import
+and one canonical block-sparse serialized restart shared across Julia/BLAS
+settings. This is a same-job, same-environment performance artifact, not the
+portable production growth/checkpoint interface. Source and canonical hashes,
+scalar trajectories, timings and process metrics remain compact; the common
+seed and bridge remain in scratch. The summary requires equivalent numerical
+work before comparing performance. These helpers reuse the unchanged VUMPS
+fixed-update kernel and cannot promote states or advance flux.
+
 | Class | Examples | Location | Routine sync |
 |---|---|---|---|
 | source and prepared launch inputs | code, TOML templates, sealed controls, required manifests, docs | Git checkout; sealed controls in `configs/controls/` | Git push/pull |
