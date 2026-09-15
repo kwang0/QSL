@@ -1,8 +1,8 @@
 # YC8-1 chi1024 VUMPS threading comparison
 
-Status: implemented, sealed and locally validated; awaiting owner-run preflight
-and submission on Perlmutter.
-Date: 2026-09-13.
+Status: v1 job 58275828 failed during startup; v2 fixes allocation handling
+and is locally validated for an owner-run retry.
+Date: 2026-09-14.
 
 ## Purpose and scope
 
@@ -65,10 +65,15 @@ per-update energies (1e-8 absolute) and native Galerkin errors (1e-3 relative,
 convergence thresholds. A failed check leaves the raw records for inspection
 and produces no validated fastest-setting recommendation.
 
-Request Shared QOS, 64 GiB, 34 allocation logical CPUs and six hours. Memory
-sets the allocation's CPU floor: 17 charged physical cores out of 128,
-for a maximum reservation of **0.796875 node-hours**. The last synchronized
-Phase 1 balance is 50.487189670139; live reconciliation is authoritative.
+Request Shared QOS, 64 GiB, 36 allocation logical CPUs and six hours. The
+initial 34-CPU request received 36 CPUs on Perlmutter. V2 budgets the observed
+18 charged physical cores out of 128, for a maximum reservation of
+**0.84375 node-hours**. The last synchronized Phase 1 balance is
+50.486642795139; live reconciliation is authoritative. The worker separately
+records the per-task request and allocated CPUs. It accepts 34-36 allocated
+CPUs with sufficient task CPUs for the unchanged 16-CPU step, and rejects an
+allocation beyond the sealed budget. Cost projections use the recorded
+actual allocation; live reconciliation continues to use Slurm accounting.
 The six-hour limit provides headroom for import, compilation and twelve
 updates; this chi1024 VUMPS workload has no measured completion-time estimate
 yet. A pretimeout signal preserves the compact progress and prevents further
@@ -86,8 +91,8 @@ source checkpoint is never modified.
 
 `configs/thread_benchmark.toml` defines the recipe. The tracked
 `configs/thread_benchmark_active_control.ref` selects the sealed control in
-`configs/controls/thread_benchmark_v1.toml`, SHA-256
-`2f32fdfecdbfa1339045041de59e296f256a4f3934efe2e5c539294c102558a5`.
+`configs/controls/thread_benchmark_v2.toml`, SHA-256
+`6e36988cff62f946cde4a661e46375a0a3d3618c78125a3e747d67b32aaba9cd`.
 It pins both environments, source, seed manifest and
 accounting policy. New helpers live in `scripts/thread_benchmark/` and
 `idmrg/thread_benchmark/`, preserving the runtimes and source enumeration of
@@ -144,6 +149,45 @@ Expect `BENCHMARK_COMPLETE=true` and the three-row timing table. Slurm
 run; otherwise the largest recorded job ID is used. Checksum-sync the compact
 `thread_benchmark/` package and `output/accounting/` back locally using Globus,
 with deletion/mirroring off. Do not transfer scratch tensors or `.git`.
+
+## September 14 startup failure and repair
+
+The owner-confirmed sync contains job **58275828**, `FAILED`, exit `2:0`,
+14 seconds, 36 allocated CPUs and 64G. Its log contains only the successful
+copied-worker smoke message; there are no `srun` steps, scratch-package
+manifest, seed export, canonical seed or timing reports. The submitted v1
+control and all 44 source pins matched the original checkout at review.
+The missing `seed.toml` on analysis is a consequence of failing before seed
+preparation, not evidence of a transfer problem or numerical failure.
+
+V1 silently exited unless `SLURM_CPUS_PER_TASK` equaled the requested 34.
+The 36-CPU allocation strongly suggests this check was the trigger, although
+the old log did not capture that variable or distinguish it from the next
+scratch prerequisite guard. We therefore cannot identify the exact failing
+guard conclusively from the saved artifacts. Slurm distinguishes the
+[per-task request from CPUs allocated on each node](https://slurm.schedmd.com/sbatch.html#SECTION_OUTPUT-ENVIRONMENT-VARIABLES).
+The site's precise reason for granting 36 instead of 34 is not established
+by this record.
+
+V2 requests and budgets 36 CPUs, checks allocation bounds separately from
+the task request, logs Slurm startup fields, and records the failed stage on
+an early exit. Missing result records now produce `BENCHMARK_COMPLETE=false`
+and an explanation, with nonzero CLI status and no timing recommendation.
+Seed, algorithms, thread settings, update counts, memory and wall limit are
+unchanged. Preserve the v1 control and failed package; do not resubmit v1.
+
+The live accounting evidence
+`output/accounting/evidence/812f1f5c01060eb7a113493caf453a40b9e4255719d7c2b7f354476391f58a5e.tsv`
+charges this attempt **0.000546875 node-hours**. Phase 1 is now
+19.513357204861 consumed, 50.486642795139 remaining.
+
+Targeted v2 validation covers the observed 36-CPU startup, differing
+requested/allocated counts, insufficient and over-budget allocations, and
+an actual copied-worker execution that reaches a deliberately unavailable
+scratch path and records that failure explicitly. Eight compact replay
+checks pass using the prior tiny fixture, including actual-CPU cost and
+missing-result handling. No numerical solver tests were rerun. The final
+local plan and Git delivery checks validate the newly sealed inputs.
 
 ## Remaining work
 

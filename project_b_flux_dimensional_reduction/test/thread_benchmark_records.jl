@@ -41,12 +41,15 @@ for setting in c["recipe"]["settings"]
     write(joinpath(directory,"metrics",name*".time"),"Maximum resident set size (kbytes): 1048576\n")
 end
 write(joinpath(directory,"step_exit_codes.tsv"),"step\texit_code\nexport\t0\nprepare\t0\nj2_b1\t0\nj2_b4\t0\nj1_b8\t0\n")
+write(joinpath(directory,"worker.tsv"),"control_sha256\t$hash\nallocation_cpus\t34\n")
 
 @testset "compact timing replay" begin
     summary=S.summarize(directory)
     @test summary["complete"] && length(summary["settings"])==3
     @test first(summary["settings"])["speedup_over_j2_b1"]==1
     @test all(r["peak_process_rss_gib"]==1 for r in summary["settings"])
+    @test all(isapprox(r["projected_node_hours_per_100_updates_at_64G"],
+        100*r["mean_seconds"]/3600*34/256) for r in summary["settings"])
     S.display_summary(summary)
     # A validly rehashed journal with a changed trajectory must not win on speed.
     path=joinpath(directory,"j2_b4.toml"); saved=TOML.parsefile(path); bad=deepcopy(saved)
@@ -58,4 +61,9 @@ write(joinpath(directory,"step_exit_codes.tsv"),"step\texit_code\nexport\t0\npre
     write(steps,replace(saved_steps,"j1_b8\t0"=>"j1_b8\t1"))
     @test_throws "failed worker step" S.summarize(directory)
     write(steps,saved_steps)
+    empty_run=joinpath(directory,"early_failure"); mkdir(empty_run)
+    cp(control,joinpath(empty_run,"control.snapshot.toml"))
+    incomplete=S.summarize(empty_run)
+    @test !incomplete["complete"] && "seed.toml" in incomplete["missing_artifacts"]
+    @test !haskey(incomplete,"fastest_measured_setting")
 end

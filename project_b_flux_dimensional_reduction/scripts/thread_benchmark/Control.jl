@@ -27,10 +27,12 @@ function validate_recipe(r)
         r[key]==value || error("benchmark comparison tolerance changed: $key")
     end
     a=r["resources"]
-    a["qos"]=="shared" && a["allocation_cpus"]==34 && a["step_cpus"]==16 && a["memory"]=="64G" || error("resource recipe")
+    # Retain v1 recipe readability for retrospective analysis. validate() also
+    # requires equality with the current recipe, so v1 cannot be relaunched.
+    a["qos"]=="shared" && a["allocation_cpus"] in (34,36) && a["step_cpus"]==16 && a["memory"]=="64G" || error("resource recipe")
     a["time_limit"]=="06:00:00" && a["pretimeout_seconds"]==300 || error("time recipe")
     f=P.ProjectBAccounting.reservation(a["allocation_cpus"],a["memory"],a["time_limit"];qos=a["qos"])
-    f.allocated_cpus==34 && f.node_hours==a["forecast_node_hours"]==0.796875 || error("reservation mismatch")
+    f.allocated_cpus==a["allocation_cpus"] && f.node_hours==a["forecast_node_hours"] || error("reservation mismatch")
     r
 end
 
@@ -39,7 +41,8 @@ function required_sources(root=ROOT)
         "configs/thread_benchmark.toml","configs/seeds/thread_benchmark_chi1024.toml","configs/project_b_accounting.toml",
         "scripts/prepare_thread_benchmark.jl","scripts/validate_thread_benchmark.jl","scripts/summarize_thread_benchmark.jl",
         "scripts/project_b_accounting.jl","scripts/audit_project_context.jl",
-        "slurm/lib/project_b_resources.sh","slurm/run_thread_benchmark_cpu.sh","slurm/run_thread_benchmark_job.sh"]
+        "slurm/lib/project_b_resources.sh","slurm/thread_benchmark/resources.sh",
+        "slurm/run_thread_benchmark_cpu.sh","slurm/run_thread_benchmark_job.sh"]
     for directory in ("src","scripts/lib","idmrg/src","scripts/thread_benchmark","idmrg/thread_benchmark")
         append!(files,[replace(joinpath(directory,f),'\\'=>'/') for f in readdir(joinpath(root,directory)) if endswith(f,".jl")])
     end

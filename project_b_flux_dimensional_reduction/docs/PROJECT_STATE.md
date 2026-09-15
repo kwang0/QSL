@@ -1,6 +1,6 @@
 # Project B current state
 
-Last updated: 2026-09-13 (America/Los_Angeles)
+Last updated: 2026-09-14 (America/Los_Angeles)
 
 This is the rolling state summary for a fresh Codex task. It records where the
 project is now, not the full history. Git holds exact implementation history;
@@ -24,13 +24,18 @@ larger-bond-dimension preparation. The active implementation plan is
 2/4 and 1/8, each with one warm-up and three measured updates from one shared
 canonical timing seed. It uses the rejected chi1024 0.15 candidate from job
 57801654 solely for timing, with live scratch/hash verification before
-submission. The reservation is six hours, 64 GiB and 0.796875 node-hours.
+submission. V1 job **58275828** failed after 14 seconds of startup, before any
+solver step. Slurm allocated 36 CPUs against the 34-CPU request; the worker's
+silent exact-CPU check is the probable cause. No timing or scientific result
+was produced. The failed package and original control are preserved.
+The repaired v2 reservation is six hours, 64 GiB, 36 CPUs and 0.84375 node-hours.
+It checks actual allocation bounds and records startup failure stages.
 The implementation and targeted local validation are complete. The tracked
 `configs/thread_benchmark_active_control.ref` selects
-`configs/controls/thread_benchmark_v1.toml`, SHA-256
-`2f32fdfecdbfa1339045041de59e296f256a4f3934efe2e5c539294c102558a5`.
+`configs/controls/thread_benchmark_v2.toml`, SHA-256
+`6e36988cff62f946cde4a661e46375a0a3d3618c78125a3e747d67b32aaba9cd`.
 Git delivery without ignored output and the copied-worker plan pass. Await
-owner-run Perlmutter preflight/submission; no new remote job is established.
+owner-run Perlmutter preflight/retry; no successor job is established.
 The proposed converged theta=0 chi1024/2048 preparation remains separate work.
 
 The [three full-flux limited-relaxation scans](plans/FULLFLUX_CONTINUATION.md)
@@ -380,9 +385,10 @@ state record, not a replacement for hash validation.
 
 ## Accounting state and completed guard repair
 
-Live post-fullflux reconciliation is synchronized and validated. The accounting
-audit deduplicates 32 Phase 1 allocations, applies the append-only corrections
-for the two older 18-CPU YC8 bridge jobs and includes all four diagnostic jobs:
+Live reconciliation through the failed threading startup is synchronized and
+validated. The accounting audit deduplicates 33 Phase 1 allocations, applies
+the append-only corrections for the two older 18-CPU YC8 bridge jobs, and
+includes the four completed diagnostic jobs plus the failed benchmark:
 
 | Job | Status | Charge used here (node-hours) |
 |---:|---|---:|
@@ -391,15 +397,16 @@ for the two older 18-CPU YC8 bridge jobs and includes all four diagnostic jobs:
 | `58082150` | completed bounded relaxation comparison | `0.983995225694` |
 | `58131989` | completed forward-and-return comparison | `0.199902343750` |
 | `58179916` | completed full-flux comparison | `0.282855902778` |
-| **Phase 1 total** | | **`19.512810329861`** |
+| `58275828` | threading benchmark failed at startup | `0.000546875000` |
+| **Phase 1 total** | | **`19.513357204861`** |
 
 The corresponding Project B total including Phase 0 is
-`20.607243329861` node-hours (Phase 0 remains an estimate). After the owner's
+`20.607790204861` node-hours (Phase 0 remains an estimate). After the owner's
 50-hour extension, the Phase 1 ceiling is 70 and leaves
-**`50.487189670139` node-hours** against this reconciliation. The project
+**`50.486642795139` node-hours** against this reconciliation. The project
 ceiling is 200; automatic submission stops at 190, preserving its 10-hour reserve.
-Job 58179916 reconciliation at `2026-09-11T18:54:28.682` uses evidence SHA-256
-`358e508cd27c30407b4df9ed61d4d733244d1d8e7b68a132ef6f19a71ccd4daa`. A nominal
+Job 58275828 reconciliation at `2026-09-15T02:47:16.329` UTC uses evidence SHA-256
+`812f1f5c01060eb7a113493caf453a40b9e4255719d7c2b7f354476391f58a5e`. A nominal
 48-hour 16-CPU forecast of 3.0 node-hours is not conservative when Slurm grants
 18 CPUs; the full-limit charge would be 3.375 node-hours.
 
@@ -435,7 +442,9 @@ submission. Original exports, controls and charge files are preserved.
    Treat the two measurements as distinct products. Defer central-charge fits
    and expansion to other geometries until the main reproduction is credible.
 6. Prepare a concrete production budget from those measurements. The current
-   Phase 1 balance is 50.487189670139 node-hours after the full-flux trial.
+   Phase 1 balance is 50.486642795139 node-hours after the failed threading startup.
+   Use observed CPU grants when forecasting Shared-QOS jobs: the modeled
+   64G memory floor predicted 34 CPUs, but Slurm granted 36 for job 58275828.
    No current benchmark establishes an
    affordable chi6144/12288 run. A successor needs a fresh live guard and a
    reservation within the remaining allowance.

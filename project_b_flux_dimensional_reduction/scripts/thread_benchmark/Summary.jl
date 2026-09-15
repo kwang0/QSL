@@ -7,6 +7,24 @@ function summarize(directory;check_worker=true)
     path=joinpath(directory,"control.snapshot.toml"); c=TOML.parsefile(path); r=C.validate_recipe(c["recipe"]); hash=C.sha(path)
     c["artifact_kind"]=="project_b_vumps_thread_benchmark_control" && c["schema_version"]==1 || error("control schema")
     c["seed"]["source_sha256"]==C.SEED_SHA && c["seed"]["role"]=="rejected_candidate_timing_only" || error("source seed role")
+    required=["seed.toml","export.toml",[s["name"]*".toml" for s in r["settings"]]...]
+    r["resources"]["allocation_cpus"]==36 && push!(required,"worker.tsv")
+    missing=filter(p->!isfile(joinpath(directory,p)),required)
+    if !isempty(missing)
+        outcome=joinpath(directory,"job.result")
+        return Dict("complete"=>false,"control_sha256"=>hash,"missing_artifacts"=>missing,
+            "worker_outcome"=>isfile(outcome) ? strip(read(outcome,String)) : "No worker outcome record is present.",
+            "interpretation"=>"Benchmark incomplete: no validated timing comparison. Inspect progress/logs for the failed or pending stage.")
+    end
+    allocation_cpus=r["resources"]["allocation_cpus"]
+    workerpath=joinpath(directory,"worker.tsv")
+    if isfile(workerpath)
+        worker=Dict(split(line,'\t';limit=2) for line in readlines(workerpath))
+        worker["control_sha256"]==hash || error("worker control mismatch")
+        actual=parse(Int,worker["allocation_cpus"])
+        34<=actual<=allocation_cpus && iseven(actual) || error("worker allocation outside reservation")
+        allocation_cpus=actual
+    end
     seedpath=joinpath(directory,"seed.toml"); seed=TOML.parsefile(seedpath)
     seed["artifact_kind"]=="project_b_thread_benchmark_canonical_seed" && !seed["scientific_promotion"] || error("canonical seed role")
     seed["control_sha256"]==hash && seed["source_seed_sha256"]==c["seed"]["source_sha256"] || error("seed provenance")
@@ -46,7 +64,7 @@ function summarize(directory;check_worker=true)
             "minimum_seconds"=>minimum(times),"maximum_seconds"=>maximum(times),
             "peak_process_rss_gib"=>parse(Int,rss[1])/2.0^20,
             "effective_cpu_cores"=>sum(h["cpu_seconds"] for h in measured)/sum(times),
-            "projected_node_hours_per_100_updates_at_64G"=>100mean(times)/3600*r["resources"]["allocation_cpus"]/256))
+            "projected_node_hours_per_100_updates_at_64G"=>100mean(times)/3600*allocation_cpus/256))
     end
     if check_worker
         status=Dict(split(line,'\t') for line in readlines(joinpath(directory,"step_exit_codes.tsv"))[2:end])
@@ -62,6 +80,12 @@ end
 
 function display_summary(s)
     println("BENCHMARK_COMPLETE=",s["complete"])
+    if !s["complete"]
+        println("Missing records: ",join(s["missing_artifacts"],", "))
+        println(s["worker_outcome"])
+        println(s["interpretation"])
+        return
+    end
     println("Same canonical seed and matching numerical trajectories: PASS")
     println("setting\tmean_seconds\trange_seconds\teffective_cores\tpeak_RSS_GiB\tspeedup\tnode_hours_per_100_at_64G")
     for r in s["settings"]
